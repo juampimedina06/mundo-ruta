@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="MundoRuta.BD/MundoRuta.BD.csproj" />
+  <Project Path="MundoRuta.Repositorio/MundoRuta.Repositorio.csproj" />
+  <Project Path="MundoRuta.Server/MundoRuta.Server.Client/MundoRuta.Server.Client.csproj" />
+  <Project Path="MundoRuta.Server/MundoRuta.Server/MundoRuta.Server.csproj" />
+  <Project Path="MundoRuta.Servicios/MundoRuta.Servicios.csproj" />
+  <Project Path="MundoRuta.Shared/MundoRuta.Shared.csproj" />
+</Solution>
