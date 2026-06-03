@@ -4,7 +4,11 @@ using System.Text;
 
 namespace MundoRuta.BD.Datos.Entity
 {
-    internal class Administrador : EntidadBase
+    public class Administrador : EntidadBase
     {
+        public string Email { get; set; }
+        public string Password { get; set; }
+        public int Telefono { get; set; }
+  
     }
 }
