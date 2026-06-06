@@ -11,6 +11,7 @@ namespace MundoRuta.BD.Datos
 
         public DbSet<Administrador> Administradores { get; set; }
         public DbSet<Usuario> Usuarios { get; set; }
+        public DbSet<Servicio> Servicios { get; set; }
 
         public AppDbContext(DbContextOptions options) : base(options)
         {
