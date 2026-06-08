@@ -18,6 +18,7 @@ namespace MundoRuta.BD.Datos
         public DbSet<Chofer> Choferes { get; set; }
         public DbSet<Vehiculo> Vehiculos { get; set; }
         public DbSet<Viaje> Viajes { get; set; }
+        public DbSet<Carga> Cargas { get; set; }
 
         public AppDbContext(DbContextOptions options) : base(options)
         {
