@@ -11,5 +11,6 @@ namespace MundoRuta.BD.Datos.Entity
         public string MetodoPago { get; set; }
         public Boolean Estado { get; set; }
         public int IdViaje { get; set; }
+        public Viaje Viaje { get; set; }
     }
 }
