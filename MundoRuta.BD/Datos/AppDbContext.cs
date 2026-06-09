@@ -20,6 +20,7 @@ namespace MundoRuta.BD.Datos
         public DbSet<Viaje> Viajes { get; set; }
         public DbSet<Carga> Cargas { get; set; }
         public DbSet<Pago> Pagos { get; set; }
+        public DbSet<Calificacion> Calificaciones { get; set; }
         public DbSet<Chat> Chats { get; set; }
 
         public AppDbContext(DbContextOptions options) : base(options)
