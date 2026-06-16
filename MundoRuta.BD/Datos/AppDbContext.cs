@@ -27,6 +27,35 @@ namespace MundoRuta.BD.Datos
         {
         }
 
-    
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Viaje>()
+                .HasOne(v => v.Prestador)
+                .WithMany()
+                .HasForeignKey(v => v.IdPrestador)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Viaje>()
+                .HasOne(v => v.Solicitante)
+                .WithMany()
+                .HasForeignKey(v => v.IdSolicitante)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Viaje>()
+                .HasOne(v => v.Pasajero)
+                .WithMany()
+                .HasForeignKey(v => v.IdPasajero)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Viaje>()
+                .HasOne(v => v.Chofer)
+                .WithMany()
+                .HasForeignKey(v => v.IdChofer)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
+
+
     }
 }
