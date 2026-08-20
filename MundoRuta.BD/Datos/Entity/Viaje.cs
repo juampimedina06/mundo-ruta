@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
 namespace MundoRuta.BD.Datos.Entity;
@@ -12,7 +13,7 @@ public class Viaje : EntidadBase
 
     public required string TipoSolicitud { get; set; }
 
-    public required Boolean Estado { get; set; }
+    public string Estado { get; set; }
 
     public DateTime Fecha { get; set; }
 
@@ -42,7 +43,12 @@ public class Viaje : EntidadBase
 
     public Servicio Servicio { get; set; }
 
-    
+    public int IdVehiculo { get; set; }
+
+    [ForeignKey("IdVehiculo")]
+    public Vehiculo Vehiculo { get; set; }
+
+
 
 
 
