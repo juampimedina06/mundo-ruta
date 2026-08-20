@@ -90,7 +90,7 @@ namespace MundoRuta.BD.Migrations
                 column: "IdVehiculo",
                 principalTable: "Vehiculos",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.NoAction);
         }
 
         /// <inheritdoc />
