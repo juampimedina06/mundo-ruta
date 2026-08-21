@@ -21,13 +21,59 @@ public class PrestadorController : ControllerBase
     {
         this.context = context;
     }
-    
+
     [HttpGet("{prestadorId}/solicitudes")]
     public IActionResult GetSolicitudes(int prestadorId)
     {
         var solicitudes = context.Viajes.Where(s => s.IdPrestador == prestadorId && s.Estado == "Pendiente").ToList();
 
         return Ok(solicitudes);
+    }
+
+    // POST /api/prestador/choferes
+    // El prestador agrega un nuevo chofer a la empresa.
+    [HttpPost("choferes")]
+    public async Task<IActionResult> AltaChofer([FromBody] ChoferAltaDTO dto)
+    {
+        var prestador = await context.Prestadores.FindAsync(dto.PrestadorId);
+        if (prestador == null)
+        {
+            return NotFound("El prestador indicado no existe.");
+        }
+
+        var chofer = new Chofer
+        {
+            Nombre = dto.Nombre,
+            Apellido = dto.Apellido,
+            Licencia = dto.Licencia,
+            Estado = true, // true = Disponible
+            IdPrestador = dto.PrestadorId
+        };
+
+        context.Choferes.Add(chofer);
+        await context.SaveChangesAsync();
+
+        return Ok(chofer);
+    }
+
+    // GET /api/prestador/{prestadorId}/choferes
+    // Lista los choferes que tiene ese prestador para que luego los pueda asignar a un flete.
+    [HttpGet("{prestadorId}/choferes")]
+    public async Task<IActionResult> GetChoferes(int prestadorId)
+    {
+        var choferes = await context.Choferes
+            .Where(c => c.IdPrestador == prestadorId)
+            .Select(c => new ChoferDTO
+            {
+                Id = c.Id,
+                Nombre = c.Nombre,
+                Apellido = c.Apellido,
+                Licencia = c.Licencia,
+                Estado = c.Estado
+            })
+            .ToListAsync();
+
+        return Ok(choferes);
     }
 
     [HttpPut("viajes/{id}/responder")]
@@ -39,13 +85,13 @@ public class PrestadorController : ControllerBase
             return NotFound("No encontrado");
         }
 
-        if(dto.Accion == "ACEPTAR")
+        if (dto.Accion == "ACEPTAR")
         {
             viaje.Estado = "Aceptado";
             viaje.IdChofer = dto.IdChofer;
             viaje.IdVehiculo = dto.IdVehiculo;
         }
-        else if(dto.Accion == "RECHAZAR")
+        else if (dto.Accion == "RECHAZAR")
         {
             viaje.Estado = "Rechazado";
         }
@@ -60,7 +106,7 @@ public class PrestadorController : ControllerBase
     [HttpPut("viajes/{id}/contraofertar")]
     public async Task<IActionResult> ContraOfertar(int id, [FromBody] ContraOfertaDTO dto)
     {
-       var viaje = await context.Viajes.FindAsync(id);
+        var viaje = await context.Viajes.FindAsync(id);
         if (viaje == null)
         {
             return NotFound("No encontrado");
