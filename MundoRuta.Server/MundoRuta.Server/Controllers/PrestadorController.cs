@@ -74,4 +74,18 @@ public class PrestadorController : ControllerBase
     }
 
 
+    [HttpPut("viajes/{id}/finalizar")]
+    public async Task<IActionResult> FinalizarServicio(int id)
+    {
+        var viaje = await context.Viajes.FindAsync(id);
+        if (viaje == null)
+        {
+            return NotFound("No encontrado");
+        }
+
+        await context.SaveChangesAsync();
+        return Ok(new { mensaje = "Viaje finalizado correctamente" });
+    }
+
+
 }
