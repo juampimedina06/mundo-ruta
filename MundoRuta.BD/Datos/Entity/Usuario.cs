@@ -13,6 +13,7 @@ namespace MundoRuta.BD.Datos.Entity
         public string Telefono { get; set; }
         public  DateTime FechaRegistro { get; set; }
         public string Estado { get; set; }
+        public string Rol {  get; set; }
 
     }
 }
