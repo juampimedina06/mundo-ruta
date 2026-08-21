@@ -60,7 +60,7 @@ public class PrestadorController : ControllerBase
     [HttpPut("viajes/{id}/contraofertar")]
     public async Task<IActionResult> ContraOfertar(int id, [FromBody] ContraOfertaDTO dto)
     {
-       var viaje = await context.Viajes.FindAsync(id); // Buscar el viaje por su ID
+       var viaje = await context.Viajes.FindAsync(id);
         if (viaje == null)
         {
             return NotFound("No encontrado");
@@ -73,5 +73,16 @@ public class PrestadorController : ControllerBase
         return Ok(new { mensaje = "Contraoferta enviada al pasajero" });
     }
 
+    [HttpPut("viajes/{id}/finalizar")]
+    public async Task<IActionResult> FinalizarServicio(int id)
+    {
+        var viaje = await context.Viajes.FindAsync(id);
+        if (viaje == null)
+        {
+            return NotFound("No encontrado");
+        }
 
+        await context.SaveChangesAsync();
+        return Ok(new { mensaje = "Viaje finalizado correctamente" });
+    }
 }
