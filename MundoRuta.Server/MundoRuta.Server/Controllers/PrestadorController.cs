@@ -21,7 +21,7 @@ public class PrestadorController : ControllerBase
     {
         this.context = context;
     }
-    
+
     [HttpGet("{prestadorId}/solicitudes")]
     public IActionResult GetSolicitudes(int prestadorId)
     {
@@ -39,13 +39,13 @@ public class PrestadorController : ControllerBase
             return NotFound("No encontrado");
         }
 
-        if(dto.Accion == "ACEPTAR")
+        if (dto.Accion == "ACEPTAR")
         {
             viaje.Estado = "Aceptado";
             viaje.IdChofer = dto.IdChofer;
             viaje.IdVehiculo = dto.IdVehiculo;
         }
-        else if(dto.Accion == "RECHAZAR")
+        else if (dto.Accion == "RECHAZAR")
         {
             viaje.Estado = "Rechazado";
         }
@@ -60,7 +60,7 @@ public class PrestadorController : ControllerBase
     [HttpPut("viajes/{id}/contraofertar")]
     public async Task<IActionResult> ContraOfertar(int id, [FromBody] ContraOfertaDTO dto)
     {
-       var viaje = await context.Viajes.FindAsync(id);
+        var viaje = await context.Viajes.FindAsync(id);
         if (viaje == null)
         {
             return NotFound("No encontrado");
@@ -73,5 +73,38 @@ public class PrestadorController : ControllerBase
         return Ok(new { mensaje = "Contraoferta enviada al pasajero" });
     }
 
+
+    [HttpPut("viajes/{id}/finalizar")]
+    public async Task<IActionResult> FinalizarServicio(int id)
+    {
+        var viaje = await context.Viajes.FindAsync(id);
+
+        if (viaje == null)
+        {
+            return NotFound("No encontrado");
+        }
+
+        if (viaje.Estado != "EN_CURSO")
+        {
+            return BadRequest("El viaje no está en curso, no se puede finalizar");
+        }
+           
+        viaje.Estado = "FINALIZADO";
+        viaje.Fecha = DateTime.UtcNow; // Actualizar la fecha de finalización del viaje
+        await context.SaveChangesAsync();
+
+        //liberamos al chofer
+
+        var chofer = await context.Choferes.FindAsync(viaje.IdChofer);
+        if (chofer != null)
+        {
+            chofer.Estado = "DISPONIBLE";
+            await context.SaveChangesAsync();
+        }
+
+        return Ok(new { mensaje = "Viaje finalizado correctamente" });
+
+
+    }
 
 }
