@@ -45,32 +45,26 @@ namespace MundoRuta.Server.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
-            // 1. Buscamos al usuario en la base de datos (¡Esto te lo resuelvo yo!)
-            // Esto va a la tabla Usuarios y busca el que coincida con el Email y la Contraseña.
+
             var usuario = await _context.Usuarios
                 .FirstOrDefaultAsync(u => u.Email == request.Email && u.Password == request.Password);
-
-            // 2. Validar si existe (¡También te lo resuelvo!)
             if (usuario == null)
             {
                 return Unauthorized("Credenciales incorrectas"); // Error 401
             }
 
-            // 3. Validar el estado (¡ESTA ES TUYA!)
-            // TAREA: Si la propiedad Estado del usuario es igual a "PENDIENTE", devolvé el error.
             if (usuario.Estado == "PENDIENTE")
             {
                 return StatusCode(403, "Cuenta pendiente de aprobación");
             }
 
-            // 4. Devolver los datos (¡ESTA TAMBIÉN ES TUYA!)
-            // TAREA: Enganchá las propiedades del 'usuario' para que se devuelvan en el JSON.
+
             return Ok(new
             {
                 mensaje = "Login exitoso",
-                id = usuario.Id, // <-- Mirá cómo enganché el Id
-                nombre = usuario.Nombre, // <-- Mirá cómo enganché el Nombre
-                rol = usuario.Rol// <-- ¡Te falta enganchar el Rol a vos!
+                id = usuario.Id, 
+                nombre = usuario.Nombre,
+                rol = usuario.Rol
             });
         }
 
