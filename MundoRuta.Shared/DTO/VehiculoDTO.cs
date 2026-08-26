@@ -11,4 +11,9 @@ public class VehiculoDTO
     public string Marca { get; set; }
     public string Licencia { get; set; }
     public string Estado { get; set; }
+    public string CapacidadCarga { get; set; }
+    public string TipoVehiculo { get; set; }
+    public int IdPrestador { get; set; }
+    public int IdChofer { get; set; }
+
 }
