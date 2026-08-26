@@ -17,8 +17,9 @@ namespace MundoRuta.Server.Controllers
             _context = context;
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetUsuario(int id)
+        [HttpGet("{id : int}")]
+        //public async Task<ActionResult<UsuarioDTO>> GetById(int id)
+        public async Task<ActionResult<UsuarioDTO>> GetUsuario(int id)
         {
             var usuario = await _context.Usuarios.FindAsync(id);
 
@@ -26,8 +27,21 @@ namespace MundoRuta.Server.Controllers
             {
                 return NotFound(new { mensaje = "El usuario no existe en la base de datos" });
             }
+            UsuarioDTO DTO = new UsuarioDTO
+            {
+                Nombre = usuario.Nombre,
+                Apellido = usuario.Apellido,
+                Email = usuario.Email,
+                Password = usuario.Password,
+                Telefono = usuario.Telefono,
+                FechaRegistro = usuario.FechaRegistro,
+                Estado = usuario.Estado,
+                Rol = usuario.Rol,
+                RazonSocial = usuario.RazonSocial,
+                Cuit = usuario.Cuit
+            };
 
-            return Ok(usuario);
+            return Ok(DTO);
         }
 
         
