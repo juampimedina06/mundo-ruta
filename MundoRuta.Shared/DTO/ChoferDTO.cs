@@ -11,4 +11,6 @@ public class ChoferDTO
     public string Apellido { get; set; }
     public string Licencia { get; set; }
     public bool Estado { get; set; }
+    public int IdPrestador { get; set; }
+
 }

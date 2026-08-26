@@ -23,7 +23,7 @@ public class PrestadorController : ControllerBase
     }
 
     [HttpGet("{prestadorId}/solicitudes")]
-    public IActionResult GetSolicitudes(int prestadorId)
+    public ActionResult GetSolicitudes(int prestadorId)
     {
         var solicitudes = context.Viajes.Where(s => s.IdPrestador == prestadorId && s.Estado == "Pendiente").ToList();
 
@@ -33,7 +33,7 @@ public class PrestadorController : ControllerBase
     // POST /api/prestador/choferes
     // El prestador agrega un nuevo chofer a la empresa.
     [HttpPost("choferes")]
-    public async Task<IActionResult> AltaChofer([FromBody] ChoferAltaDTO dto)
+    public async Task<ActionResult> AltaChofer([FromBody] ChoferAltaDTO dto)
     {
         var prestador = await context.Prestadores.FindAsync(dto.PrestadorId);
         if (prestador == null)
@@ -59,7 +59,7 @@ public class PrestadorController : ControllerBase
     // GET /api/prestador/{prestadorId}/choferes
     // Lista los choferes que tiene ese prestador para que luego los pueda asignar a un flete.
     [HttpGet("{prestadorId}/choferes")]
-    public async Task<IActionResult> GetChoferes(int prestadorId)
+    public async Task<ActionResult<ChoferDTO>> GetChoferes(int prestadorId)
     {
         var choferes = await context.Choferes
             .Where(c => c.IdPrestador == prestadorId)
@@ -77,7 +77,7 @@ public class PrestadorController : ControllerBase
     }
 
     [HttpPut("viajes/{id}/responder")]
-    public async Task<IActionResult> ResponderSolicitud(int id, [FromBody] ResponderSolicitudDTO dto)
+    public async Task<ActionResult> ResponderSolicitud(int id, [FromBody] ResponderSolicitudDTO dto)
     {
         var viaje = await context.Viajes.FindAsync(id); // Buscar el viaje por su ID
         if (viaje == null)
@@ -104,7 +104,7 @@ public class PrestadorController : ControllerBase
     }
 
     [HttpPut("viajes/{id}/contraofertar")]
-    public async Task<IActionResult> ContraOfertar(int id, [FromBody] ContraOfertaDTO dto)
+    public async Task<ActionResult> ContraOfertar(int id, [FromBody] ContraOfertaDTO dto)
     {
         var viaje = await context.Viajes.FindAsync(id);
         if (viaje == null)
