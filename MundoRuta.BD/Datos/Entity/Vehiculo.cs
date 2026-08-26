@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 
 namespace MundoRuta.BD.Datos.Entity
@@ -13,6 +14,11 @@ namespace MundoRuta.BD.Datos.Entity
         public DateTime FechaFabricación { get; set; }
         public int NumeroConductor { get; set; }
         public string CaracteristicasConductor { get; set; }
+        public string TipoVehiculo { get; set; }
+        public string CapacidadCarga { get; set; }
+        public string MarcaModelo { get; set; }
+        public int IdPrestador { get; set; }
+        public Prestador Prestador { get; set; }
         public int IdChofer { get; set; }
         public Chofer Chofer { get; set; }
 
