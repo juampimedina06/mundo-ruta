@@ -25,7 +25,7 @@ namespace MundoRuta.Server.Controllers
             {
                 estadoAsignado = "APROBADO";
             }
-            else
+            else if (request.Rol == "Prestador")
             {
                 estadoAsignado = "PENDIENTE";
             }
