@@ -118,6 +118,38 @@ public class PrestadorController : ControllerBase
         await context.SaveChangesAsync();
         return Ok(new { mensaje = "Contraoferta enviada al pasajero" });
     }
+    [HttpPost("prestador/vehiculos")]
+    public async Task<ActionResult<RegistroVehiculoDTO>> Post(RegistroVehiculoDTO DTO)
+    {
+        Vehiculo entidad = new Vehiculo();
+        entidad.Patente = DTO.Patente;
+        entidad.Marca = DTO.Marca;
+        entidad.Licencia = DTO.Licencia;
+        entidad.Estado = DTO.Estado;
+        entidad.FechaFabricación = DTO.FechaFabricación;
+        entidad.NumeroConductor = DTO.NumeroConductor;
+        entidad.CaracteristicasConductor = DTO.CaracteristicasConductor;
+        entidad.TipoVehiculo = DTO.TipoVehiculo;
+        entidad.CapacidadCarga = DTO.CapacidadCarga;
+        entidad.MarcaModelo = DTO.MarcaModelo;
+        entidad.IdPrestador = DTO.IdPrestador;
 
+        context.Vehiculos.Add(entidad);
+        await context.SaveChangesAsync();
+
+
+        return Ok(entidad);
+    }
+
+    [HttpGet("prestador/{id}/vehiculos")]
+    public async Task<ActionResult<Vehiculo>> GetVehiculo(int id)
+    {
+        var vehiculo = await context.Vehiculos.Where(v => v.Id == id).ToListAsync();
+        if (vehiculo == null)
+        {
+            return NotFound("Vehículo no encontrado");
+        }
+        return Ok(vehiculo);
+    }
 
 }
