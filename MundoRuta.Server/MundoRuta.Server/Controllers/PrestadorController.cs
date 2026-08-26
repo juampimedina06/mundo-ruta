@@ -21,14 +21,18 @@ public class PrestadorController : ControllerBase
     {
         this.context = context;
     }
-    
+
     [HttpGet("{prestadorId}/solicitudes")]
     public IActionResult GetSolicitudes(int prestadorId)
     {
-        var solicitudes = context.Viajes.Where(s => s.IdPrestador == prestadorId && s.Estado == "Pendiente").ToList();
+       
+        var solicitudes = context.Viajes.Where(s => s.IdPrestador == prestadorId && s.Estado == "PENDIENTE").ToList();
 
         return Ok(solicitudes);
     }
+
+
+  
 
     [HttpPut("viajes/{id}/responder")]
     public async Task<IActionResult> ResponderSolicitud(int id, [FromBody] ResponderSolicitudDTO dto)
