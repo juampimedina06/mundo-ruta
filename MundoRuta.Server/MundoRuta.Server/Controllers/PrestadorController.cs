@@ -74,6 +74,41 @@ public class PrestadorController : ControllerBase
             .ToListAsync();
 
         return Ok(choferes);
+    // GET /api/prestador/{id}/perfil-publico
+    // Muestra la información detallada de un Prestador antes de contratarlo,
+    // incluyendo la lista de vehículos de sus choferes.
+    [HttpGet("{id}/perfil-publico")]
+    public async Task<IActionResult> GetPerfilPublico(int id)
+    {
+        var prestador = await context.Prestadores.FirstOrDefaultAsync(p => p.Id == id);
+        if (prestador == null)
+        {
+            return NotFound();
+        }
+
+        var vehiculos = await context.Vehiculos
+            .Where(v => context.Choferes.Any(c => c.Id == v.IdChofer && c.IdPrestador == id))
+            .Select(v => new VehiculoDTO
+            {
+                Id = v.Id,
+                Patente = v.Patente,
+                Marca = v.Marca,
+                Licencia = v.Licencia,
+                Estado = v.Estado
+            })
+            .ToListAsync();
+
+        var perfil = new PrestadorPerfilPublicoDTO
+        {
+            Id = prestador.Id,
+            RazonSocial = prestador.RazonSocial,
+            Telefono = prestador.Telefono,
+            Email = prestador.Email,
+            Ciudad = prestador.Ciudad,
+            Vehiculos = vehiculos
+        };
+
+        return Ok(perfil);
     }
 
     [HttpPut("viajes/{id}/responder")]

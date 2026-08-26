@@ -25,5 +25,6 @@ public class Prestador : EntidadBase
     public string? DocumentoUrl { get; set; }
     public int IdAdministrador { get; set; }
     public Administrador Administrador { get; set; }
+    public string Rol {  get; set; }
 
 }
