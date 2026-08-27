@@ -16,6 +16,33 @@ namespace MundoRuta.Server.Controllers
             this.context = context;
         }
 
+        [HttpPut("viajes/{id}/cancelar")]
+        public async Task<IActionResult> CancelarViaje(int id, [FromBody] CancelarViajeDTO dto)
+        {
+            var viaje = await context.Viajes.FindAsync(id);
+
+            if (viaje == null)
+            {
+                return NotFound("El viaje no existe");
+            }
+
+            var fechaHoraViaje = viaje.Fecha.Date + viaje.Hora;
+            var tiempoRestante = fechaHoraViaje - DateTime.Now;
+
+            if (tiempoRestante.TotalMinutes < 30)
+            {
+                return BadRequest("No se puede cancelar el viaje con menos de 30 minutos de anticipación");
+            }
+
+            viaje.Estado = "CANCELADO";
+
+            await context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                mensaje = "Viaje cancelado con éxito",
+                motivo = dto.Motivo
+            });
         [HttpPost("viajes/solicitar")]
         public async Task<IActionResult> SolicitarViaje([FromBody] SolicitarViajeDTO dto)
         {
