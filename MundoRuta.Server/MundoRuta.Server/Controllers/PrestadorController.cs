@@ -107,4 +107,26 @@ public class PrestadorController : ControllerBase
 
     }
 
+    [HttpPut("viajes/{id}/registrar-pago")]
+    public async Task<ActionResult> RegistrarPago (int id, [FromBody] ConfirmacionPagoDTO dto)
+    {
+        var viaje = await context.Viajes.FindAsync(id);
+
+        if (viaje == null)
+        {
+            return NotFound("Viaje no encontrado");
+        }
+
+        viaje.EstadoPago = "PAGADO";
+        viaje.Monto = dto.montoCobrado;
+        viaje.MetodoDePago = dto.metodoPago;
+
+        await context.SaveChangesAsync();
+        return Ok(new { mensaje = "Pago realizado con exito", viaje });
+        
+    }
+
+
+
+
 }

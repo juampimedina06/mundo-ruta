@@ -15,6 +15,8 @@ public class Viaje : EntidadBase
 
     public string Estado { get; set; }
 
+    public string EstadoPago { get; set; }
+
     public DateTime Fecha { get; set; }
 
     public TimeSpan Hora { get; set; }
@@ -22,6 +24,8 @@ public class Viaje : EntidadBase
     public bool EquipajeCarga { get; set; }
 
     public decimal Monto { get; set; }
+
+    public string MetodoDePago { get; set; }
 
     public int IdSolicitante { get; set; }
     
