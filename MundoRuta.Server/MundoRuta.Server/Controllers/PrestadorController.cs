@@ -190,4 +190,37 @@ public class PrestadorController : ControllerBase
         return Ok(vehiculo);
     }
 
+    [HttpPut("viajes/{id}/finalizar")]
+    public async Task<IActionResult> FinalizarServicio(int id)
+    {
+        var viaje = await context.Viajes.FindAsync(id);
+
+        if (viaje == null)
+        {
+            return NotFound("No encontrado");
+        }
+
+        if (viaje.Estado != "EN_CURSO")
+        {
+            return BadRequest("El viaje no está en curso, no se puede finalizar");
+        }
+           
+        viaje.Estado = "FINALIZADO";
+        viaje.Fecha = DateTime.UtcNow; // Actualizar la fecha de finalización del viaje
+        await context.SaveChangesAsync();
+
+        //liberamos al chofer
+
+        var chofer = await context.Choferes.FindAsync(viaje.IdChofer);
+        if (chofer != null)
+        {
+            chofer.Estado = "DISPONIBLE";
+            await context.SaveChangesAsync();
+        }
+
+        return Ok(new { mensaje = "Viaje finalizado correctamente" });
+
+
+    }
+
 }
