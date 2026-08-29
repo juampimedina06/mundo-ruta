@@ -8,8 +8,14 @@ namespace MundoRuta.BD.Datos.Entity
     {
         public int Puntaje { get; set; }
         public string Comentario { get; set; }
+
+        public int IdViaje { get; set; }
         public Viaje Viaje { get; set; }
+
+        public int IdUsuario { get; set; }
         public Usuario Usuario { get; set; }
+
+        public int IdPrestador { get; set; }
         public Prestador Prestador { get; set; }
 
     }
