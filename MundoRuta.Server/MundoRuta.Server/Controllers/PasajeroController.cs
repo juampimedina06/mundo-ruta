@@ -4,22 +4,22 @@ using MundoRuta.BD.Datos.Entity;
 using MundoRuta.Shared.DTO;
 
 namespace MundoRuta.Server.Controllers
-{ 
+{
     [ApiController]
     [Route("api/pasajero")]
     public class PasajeroController : ControllerBase
     {
-        private readonly AppDbContext context;
+        private readonly AppDbContext _context;
 
         public PasajeroController(AppDbContext context)
         {
-            this.context = context;
+            _context = context;
         }
 
         [HttpPut("viajes/{id}/cancelar")]
         public async Task<IActionResult> CancelarViaje(int id, [FromBody] CancelarViajeDTO dto)
         {
-            var viaje = await context.Viajes.FindAsync(id);
+            var viaje = await _context.Viajes.FindAsync(id);
 
             if (viaje == null)
             {
@@ -36,13 +36,11 @@ namespace MundoRuta.Server.Controllers
 
             viaje.Estado = "CANCELADO";
 
-            await context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
-            return Ok(new
-            {
-                mensaje = "Viaje cancelado con éxito",
-                motivo = dto.Motivo
-            });
+            return Ok(new { mensaje = "Viaje cancelado con éxito", motivo = dto.Motivo });
+        }
+
         [HttpPost("viajes/solicitar")]
         public async Task<IActionResult> SolicitarViaje([FromBody] SolicitarViajeDTO dto)
         {
@@ -62,10 +60,39 @@ namespace MundoRuta.Server.Controllers
                 IdServicio = dto.IdServicio
             };
 
-            context.Viajes.Add(viaje);
-            await context.SaveChangesAsync();
+            _context.Viajes.Add(viaje);
+            await _context.SaveChangesAsync();
 
             return Ok(new { mensaje = "Solicitud de viaje creada", id = viaje.Id });
+        }
+
+        [HttpPut("viajes/{id}/responder-contraoferta")]
+        public async Task<IActionResult> ResponderContraOferta(int id, [FromBody] ResponderContraOfertaDTO dto)
+        {
+            var viaje = await _context.Viajes.FindAsync(id);
+
+            if (viaje == null)
+            {
+                return NotFound("El viaje no existe");
+            }
+
+            if (dto.Aceptar)
+            {
+                viaje.Estado = "ACEPTADO";
+            }
+            else
+            {
+                viaje.Estado = "CANCELADO";
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                mensaje = dto.Aceptar
+                    ? "Contraoferta aceptada"
+                    : "Contraoferta rechazada"
+            });
         }
     }
 }
