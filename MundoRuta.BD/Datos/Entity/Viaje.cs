@@ -45,6 +45,12 @@ public class Viaje : EntidadBase
 
     public Servicio Servicio { get; set; }
 
+    public DateTime FechaHoraReserva { get; set; } //
+
+    public string DetalleCarga { get; set; } //
+
+    public string MotivoCancelacion { get; set; } //
+
     public int IdVehiculo { get; set; }
 
     [ForeignKey("IdVehiculo")]

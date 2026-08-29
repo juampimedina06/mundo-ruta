@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Text;
 
-namespace MundoRuta.BD.Datos.Entity
+namespace MundoRuta.Shared.DTO
 {
-    public class Vehiculo : EntidadBase
+    public class RegistroVehiculoDTO
     {
         public string Patente { get; set; }
         public string Marca { get; set; }
@@ -18,9 +17,7 @@ namespace MundoRuta.BD.Datos.Entity
         public string CapacidadCarga { get; set; }
         public string MarcaModelo { get; set; }
         public int IdPrestador { get; set; }
-        public Prestador Prestador { get; set; }
         public int IdChofer { get; set; }
-        public Chofer Chofer { get; set; }
 
     }
 }
