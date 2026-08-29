@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MundoRuta.BD.Datos;
 
@@ -11,9 +12,11 @@ using MundoRuta.BD.Datos;
 namespace MundoRuta.BD.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260826131118_MofidicacionesViaje")]
+    partial class MofidicacionesViaje
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -352,10 +355,6 @@ namespace MundoRuta.BD.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Rol")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Telefono")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -441,10 +440,6 @@ namespace MundoRuta.BD.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Cuit")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -461,14 +456,6 @@ namespace MundoRuta.BD.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Password")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RazonSocial")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Rol")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -489,10 +476,6 @@ namespace MundoRuta.BD.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("CapacidadCarga")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("CaracteristicasConductor")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -510,18 +493,11 @@ namespace MundoRuta.BD.Migrations
                     b.Property<int>("IdChofer")
                         .HasColumnType("int");
 
-                    b.Property<int>("IdPrestador")
-                        .HasColumnType("int");
-
                     b.Property<string>("Licencia")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Marca")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MarcaModelo")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -532,18 +508,9 @@ namespace MundoRuta.BD.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("PrestadorId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TipoVehiculo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ChoferId");
-
-                    b.HasIndex("PrestadorId");
 
                     b.ToTable("Vehiculos");
                 });
@@ -560,10 +527,6 @@ namespace MundoRuta.BD.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("DetalleCarga")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<bool>("EquipajeCarga")
                         .HasColumnType("bit");
 
@@ -572,9 +535,6 @@ namespace MundoRuta.BD.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("Fecha")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FechaHoraReserva")
                         .HasColumnType("datetime2");
 
                     b.Property<TimeSpan>("Hora")
@@ -603,9 +563,6 @@ namespace MundoRuta.BD.Migrations
 
                     b.Property<decimal>("MontoEstimado")
                         .HasColumnType("decimal(18,2)");
-                    b.Property<string>("MotivoCancelacion")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Origen")
                         .IsRequired()
@@ -782,15 +739,7 @@ namespace MundoRuta.BD.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MundoRuta.BD.Datos.Entity.Prestador", "Prestador")
-                        .WithMany()
-                        .HasForeignKey("PrestadorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Chofer");
-
-                    b.Navigation("Prestador");
                 });
 
             modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Viaje", b =>

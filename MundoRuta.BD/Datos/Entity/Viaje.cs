@@ -23,6 +23,8 @@ public class Viaje : EntidadBase
 
     public decimal Monto { get; set; }
 
+    public decimal MontoEstimado { get; set; }
+
     public int IdSolicitante { get; set; }
     
     public Usuario Solicitante { get; set; }

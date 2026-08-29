@@ -25,11 +25,14 @@ public class PrestadorController : ControllerBase
     [HttpGet("{prestadorId}/solicitudes")]
     public ActionResult GetSolicitudes(int prestadorId)
     {
-        var solicitudes = context.Viajes.Where(s => s.IdPrestador == prestadorId && s.Estado == "Pendiente").ToList();
+       
+        var solicitudes = context.Viajes.Where(s => s.IdPrestador == prestadorId && s.Estado == "PENDIENTE").ToList();
 
         return Ok(solicitudes);
     }
 
+
+  
     // POST /api/prestador/choferes
     // El prestador agrega un nuevo chofer a la empresa.
     [HttpPost("choferes")]
