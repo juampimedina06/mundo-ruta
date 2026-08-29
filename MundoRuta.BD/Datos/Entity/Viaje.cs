@@ -26,6 +26,7 @@ public class Viaje : EntidadBase
     public decimal Monto { get; set; }
 
     public string MetodoDePago { get; set; }
+    public decimal MontoEstimado { get; set; }
 
     public int IdSolicitante { get; set; }
     
@@ -46,6 +47,12 @@ public class Viaje : EntidadBase
     public int IdServicio { get; set; }
 
     public Servicio Servicio { get; set; }
+
+    public DateTime FechaHoraReserva { get; set; } //
+
+    public string DetalleCarga { get; set; } //
+
+    public string MotivoCancelacion { get; set; } //
 
     public int IdVehiculo { get; set; }
 
