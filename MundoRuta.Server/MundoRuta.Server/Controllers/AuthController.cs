@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace MundoRuta.Server.Controllers
 {
     [ApiController]
-    [Route("api/register")]
+    [Route("api/auth")]
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -16,41 +16,54 @@ namespace MundoRuta.Server.Controllers
         {
             _context = context;
         }
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
-        {
-            string estadoAsignado = "";
 
-            if (request.Rol == "Usuario")
+
+        [HttpPost("register")] //api/auth/register
+        public async Task<ActionResult<int>> Register( RegisterRequestDto registerDTO)
+        {
+            var existe = await _context.Usuarios
+        .AnyAsync(u => u.Email == registerDTO.Email);
+
+            if (existe)
+                return Conflict("El email ya está registrado.");
+
+            var estadoAsignado = registerDTO.Rol switch
             {
-                estadoAsignado = "APROBADO";
-            }
-            else if (request.Rol == "Prestador")
-            {
-                estadoAsignado = "PENDIENTE";
-            }
+                "Usuario" => "APROBADO",
+                "Prestador" => "PENDIENTE",
+                _ => throw new ArgumentException("Rol inválido")
+            };
+
             var nuevoUsuario = new Usuario
             {
-                Nombre = request.Nombre,
-                Email = request.Email,
-                Password = request.Password,
-                Rol = request.Rol,
+                Nombre = registerDTO.Nombre,
+                Email = registerDTO.Email,
+                Password = registerDTO.Password,
+                Rol = registerDTO.Rol,
                 Estado = estadoAsignado
             };
+
             _context.Usuarios.Add(nuevoUsuario);
             await _context.SaveChangesAsync();
 
-            return Ok(new { mensaje = "Usuario registrado con éxito" });
+            return Ok(nuevoUsuario.Id);
         }
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+
+
+        [HttpPost("login")] //api/auth/login
+        public async Task<ActionResult> Login(LoginRequestDto loginDTO)
         {
 
             var usuario = await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.Email == request.Email && u.Password == request.Password);
+                .FirstOrDefaultAsync(u => u.Email == loginDTO.Email && u.Password == loginDTO.Password);
             if (usuario == null)
             {
-                return Unauthorized("Credenciales incorrectas"); // Error 401
+                return Unauthorized("Credenciales incorrectas"); 
+            }
+
+            if (usuario.Password != loginDTO.Password)
+            {
+                return Unauthorized("Credenciales incorrectas");
             }
 
             if (usuario.Estado == "PENDIENTE")

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos;
+using MundoRuta.Shared.DTO;
 
 namespace MundoRuta.Server.Controllers
 {
@@ -15,21 +16,34 @@ namespace MundoRuta.Server.Controllers
             _context = context;
         }
 
-        [HttpGet("prestadores-pendientes")]
-        public async Task<IActionResult> GetPrestadoresPendientes()
+        [HttpGet("prestadores-pendientes")] //api/admin/prestadores-pendientes
+        public async Task<ActionResult<List<PrestadorListadoDTO>>> ListaPrestadoresPendientes()
         {
-            var pendientes = await _context.Usuarios
-                .Where(u => u.Rol == "Prestador" && u.Estado == "PENDIENTE")
-                .ToListAsync(); 
+            var listaPrestadoresPendientes = await _context.Usuarios
+        .Where(u => u.Rol == "Prestador" && u.Estado == "PENDIENTE")
+        .Select(u => new PrestadorListadoDTO
+        {
+            Email = u.Email,
+            Telefono = u.Telefono,
+            Estado = u.Estado,
+            Rol = u.Rol
+        })
+        .ToListAsync();
 
-            return Ok(pendientes);
+            if(listaPrestadoresPendientes == null || !listaPrestadoresPendientes.Any())
+            {
+                return NotFound(new { mensaje = "No hay prestadores pendientes" });
+            }
+
+            return Ok(listaPrestadoresPendientes);
         }
 
 
-        [HttpPut("aprobar-prestador/{id}")]
+        [HttpPut("aprobar-prestador/{id : int}")]
         public async Task<IActionResult> AprobarPrestador(int id)
         {
-            var prestador = await _context.Usuarios.FindAsync(id);
+            var prestador = await _context.Usuarios
+              .FirstOrDefaultAsync(u => u.Id == id && u.Rol == "Prestador");
 
             if (prestador == null)
             {
@@ -43,7 +57,7 @@ namespace MundoRuta.Server.Controllers
         }
 
 
-        [HttpGet("dashboard")]
+        [HttpGet("dashboard")] //api/admin/dashboard
         public async Task<IActionResult> GetDashboard()
         {
             var totalUsuarios = await _context.Usuarios.CountAsync(u => u.Rol == "Usuario");
