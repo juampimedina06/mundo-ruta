@@ -115,7 +115,7 @@ public class PrestadorController : ControllerBase
     }
 
     [HttpPut("viajes/{id}/responder")]
-    public async Task<ActionResult> ResponderSolicitud(int id, [FromBody] ResponderSolicitudDTO dto)
+    public async Task<IActionResult> ResponderSolicitud(int id, ResponderSolicitudDTO dto)
     {
         var viaje = await context.Viajes.FindAsync(id); // Buscar el viaje por su ID
         if (viaje == null)
@@ -142,7 +142,7 @@ public class PrestadorController : ControllerBase
     }
 
     [HttpPut("viajes/{id}/contraofertar")]
-    public async Task<ActionResult> ContraOfertar(int id, [FromBody] ContraOfertaDTO dto)
+    public async Task<IActionResult> ContraOfertar(int id, ContraOfertaDTO dto)
     {
         var viaje = await context.Viajes.FindAsync(id);
         if (viaje == null)
@@ -222,5 +222,27 @@ public class PrestadorController : ControllerBase
 
 
     }
+
+    [HttpPut("viajes/{id}/registrar-pago")]
+    public async Task<ActionResult> RegistrarPago (int id, ConfirmacionPagoDTO dto)
+    {
+        var viaje = await context.Viajes.FindAsync(id);
+
+        if (viaje == null)
+        {
+            return NotFound("Viaje no encontrado");
+        }
+
+        viaje.EstadoPago = "PAGADO";
+        viaje.Monto = dto.montoCobrado;
+        viaje.MetodoDePago = dto.metodoPago;
+
+        await context.SaveChangesAsync();
+        return Ok(new { mensaje = "Pago realizado con exito", viaje });
+        
+    }
+
+
+
 
 }
