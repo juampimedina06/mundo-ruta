@@ -25,11 +25,14 @@ public class PrestadorController : ControllerBase
     [HttpGet("{prestadorId}/solicitudes")]
     public ActionResult GetSolicitudes(int prestadorId)
     {
-        var solicitudes = context.Viajes.Where(s => s.IdPrestador == prestadorId && s.Estado == "Pendiente").ToList();
+       
+        var solicitudes = context.Viajes.Where(s => s.IdPrestador == prestadorId && s.Estado == "PENDIENTE").ToList();
 
         return Ok(solicitudes);
     }
 
+
+  
     // POST /api/prestador/choferes
     // El prestador agrega un nuevo chofer a la empresa.
     [HttpPost("choferes")]
@@ -112,7 +115,7 @@ public class PrestadorController : ControllerBase
     }
 
     [HttpPut("viajes/{id}/responder")]
-    public async Task<ActionResult> ResponderSolicitud(int id, [FromBody] ResponderSolicitudDTO dto)
+    public async Task<IActionResult> ResponderSolicitud(int id, ResponderSolicitudDTO dto)
     {
         var viaje = await context.Viajes.FindAsync(id); // Buscar el viaje por su ID
         if (viaje == null)
@@ -139,7 +142,7 @@ public class PrestadorController : ControllerBase
     }
 
     [HttpPut("viajes/{id}/contraofertar")]
-    public async Task<ActionResult> ContraOfertar(int id, [FromBody] ContraOfertaDTO dto)
+    public async Task<IActionResult> ContraOfertar(int id, ContraOfertaDTO dto)
     {
         var viaje = await context.Viajes.FindAsync(id);
         if (viaje == null)
@@ -186,5 +189,60 @@ public class PrestadorController : ControllerBase
         }
         return Ok(vehiculo);
     }
+
+    [HttpPut("viajes/{id}/finalizar")]
+    public async Task<IActionResult> FinalizarServicio(int id)
+    {
+        var viaje = await context.Viajes.FindAsync(id);
+
+        if (viaje == null)
+        {
+            return NotFound("No encontrado");
+        }
+
+        if (viaje.Estado != "EN_CURSO")
+        {
+            return BadRequest("El viaje no está en curso, no se puede finalizar");
+        }
+           
+        viaje.Estado = "FINALIZADO";
+        viaje.Fecha = DateTime.UtcNow; // Actualizar la fecha de finalización del viaje
+        await context.SaveChangesAsync();
+
+        //liberamos al chofer
+
+        var chofer = await context.Choferes.FindAsync(viaje.IdChofer);
+        if (chofer != null)
+        {
+            chofer.Estado = "DISPONIBLE";
+            await context.SaveChangesAsync();
+        }
+
+        return Ok(new { mensaje = "Viaje finalizado correctamente" });
+
+
+    }
+
+    [HttpPut("viajes/{id}/registrar-pago")]
+    public async Task<ActionResult> RegistrarPago (int id, ConfirmacionPagoDTO dto)
+    {
+        var viaje = await context.Viajes.FindAsync(id);
+
+        if (viaje == null)
+        {
+            return NotFound("Viaje no encontrado");
+        }
+
+        viaje.EstadoPago = "PAGADO";
+        viaje.Monto = dto.montoCobrado;
+        viaje.MetodoDePago = dto.metodoPago;
+
+        await context.SaveChangesAsync();
+        return Ok(new { mensaje = "Pago realizado con exito", viaje });
+        
+    }
+
+
+
 
 }

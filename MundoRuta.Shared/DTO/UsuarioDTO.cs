@@ -9,7 +9,6 @@ namespace MundoRuta.Shared.DTO
         public string Nombre { get; set; }
         public string Apellido { get; set; }
         public string Email { get; set; }
-        public string Password { get; set; }
         public string Telefono { get; set; }
         public DateTime FechaRegistro { get; set; }
         public string Estado { get; set; }

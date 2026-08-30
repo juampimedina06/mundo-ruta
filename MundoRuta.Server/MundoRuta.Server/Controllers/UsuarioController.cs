@@ -17,22 +17,32 @@ namespace MundoRuta.Server.Controllers
             _context = context;
         }
 
-        [HttpGet("{id : int}")]
-        //public async Task<ActionResult<UsuarioDTO>> GetById(int id)
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<UsuarioDTO>> GetUsuario(int id)
         {
             var usuario = await _context.Usuarios.FindAsync(id);
 
             if (usuario == null)
             {
-                return NotFound(new { mensaje = "El usuario no existe en la base de datos" });
+                return NotFound(new
+                {
+                    mensaje = "El usuario no existe en la base de datos"
+                });
             }
-            UsuarioDTO DTO = new UsuarioDTO
+
+            if (usuario.Estado == "Inactivo")
+            {
+                return BadRequest(new
+                {
+                    mensaje = "El usuario se encuentra inactivo"
+                });
+            }
+
+            var dto = new UsuarioDTO
             {
                 Nombre = usuario.Nombre,
                 Apellido = usuario.Apellido,
                 Email = usuario.Email,
-                Password = usuario.Password,
                 Telefono = usuario.Telefono,
                 FechaRegistro = usuario.FechaRegistro,
                 Estado = usuario.Estado,
@@ -41,12 +51,12 @@ namespace MundoRuta.Server.Controllers
                 Cuit = usuario.Cuit
             };
 
-            return Ok(DTO);
+            return Ok(dto);
         }
 
-        
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUsuario(int id, [FromBody] UpdateUserRequestDto request)
+
+        [HttpPut("{id : int}")]
+        public async Task<ActionResult> UpdateUsuario(int id, UpdateUserRequestDto request)
         {
             var usuario = await _context.Usuarios.FindAsync(id);
 
@@ -55,15 +65,42 @@ namespace MundoRuta.Server.Controllers
                 return NotFound(new { mensaje = "El usuario no existe" });
             }
 
+            var emailExiste = await _context.Usuarios
+        .AnyAsync(u => u.Email == request.Email && u.Id != id);
+
+            if (emailExiste)
+            {
+                return Conflict(new
+                {
+                    mensaje = "El email ya está registrado"
+                });
+            }
+
             usuario.Nombre = request.Nombre;
             usuario.Telefono = request.Telefono;
+            usuario.Apellido = request.Apellido;
+            usuario.Email = request.Email;
+            usuario.Password = request.Password;
+            usuario.RazonSocial = request.RazonSocial;
+            usuario.Cuit = request.Cuit;
 
             await _context.SaveChangesAsync();
 
             return Ok(new
             {
                 mensaje = "Perfil actualizado correctamente",
-                usuarioActualizado = usuario
+                usuarioActualizado = new UsuarioDTO
+                {
+                    Nombre = usuario.Nombre,
+                    Apellido = usuario.Apellido,
+                    Email = usuario.Email,
+                    Telefono = usuario.Telefono,
+                    FechaRegistro = usuario.FechaRegistro,
+                    Estado = usuario.Estado,
+                    Rol = usuario.Rol,
+                    RazonSocial = usuario.RazonSocial,
+                    Cuit = usuario.Cuit
+                }
             });
         }
     }
