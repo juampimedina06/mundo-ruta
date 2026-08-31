@@ -16,7 +16,7 @@ namespace MundoRuta.Server.Controllers
             _context = context;
         }
 
-        [HttpPut("viajes/{id}/cancelar")]
+        [HttpPut("viajes/{id:int}/cancelar")]
         public async Task<IActionResult> CancelarViaje(int id, [FromBody] CancelarViajeDTO dto)
         {
             var viaje = await _context.Viajes.FindAsync(id);
@@ -39,8 +39,6 @@ namespace MundoRuta.Server.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { mensaje = "Viaje cancelado con éxito", motivo = dto.Motivo });
-        }
-
         }
 
         [HttpPost("viajes/solicitar")]
@@ -68,7 +66,7 @@ namespace MundoRuta.Server.Controllers
             return Ok(new { mensaje = "Solicitud de viaje creada", id = viaje.Id });
         }
 
-        [HttpPut("viajes/{id}/responder-contraoferta")]
+        [HttpPut("viajes/{id:int}/responder-contraoferta")]
         public async Task<IActionResult> ResponderContraOferta(int id, [FromBody] ResponderContraOfertaDTO dto)
         {
             var viaje = await _context.Viajes.FindAsync(id);

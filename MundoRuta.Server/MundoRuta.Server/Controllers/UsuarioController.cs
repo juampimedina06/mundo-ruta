@@ -55,7 +55,7 @@ namespace MundoRuta.Server.Controllers
         }
 
 
-        [HttpPut("{id : int}")]
+        [HttpPut("{id:int}")]
         public async Task<ActionResult> UpdateUsuario(int id, UpdateUserRequestDto request)
         {
             var usuario = await _context.Usuarios.FindAsync(id);

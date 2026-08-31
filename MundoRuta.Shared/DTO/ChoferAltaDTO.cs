@@ -10,4 +10,5 @@ public class ChoferAltaDTO
     public string Nombre { get; set; }
     public string Apellido { get; set; }
     public string Licencia { get; set; }
+    public required string Estado { get; set; }
 }

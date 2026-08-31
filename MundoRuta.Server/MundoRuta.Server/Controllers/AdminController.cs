@@ -39,7 +39,7 @@ namespace MundoRuta.Server.Controllers
         }
 
         
-        [HttpPut("aprobar-prestador/{id : int}")]
+        [HttpPut("aprobar-prestador/{id:int}")]
         public async Task<IActionResult> AprobarPrestador(int id)
         {
             var prestador = await _context.Usuarios

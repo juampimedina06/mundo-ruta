@@ -22,7 +22,7 @@ public class PrestadorController : ControllerBase
         this.context = context;
     }
 
-    [HttpGet("{prestadorId}/solicitudes")]
+    [HttpGet("{prestadorId:int}/solicitudes")]
     public ActionResult GetSolicitudes(int prestadorId)
     {
        
@@ -33,10 +33,10 @@ public class PrestadorController : ControllerBase
 
 
   
-    // POST /api/prestador/choferes
+    // POST 
     // El prestador agrega un nuevo chofer a la empresa.
-    [HttpPost("choferes")]
-    public async Task<ActionResult> AltaChofer([FromBody] ChoferAltaDTO dto)
+    [HttpPost("choferes")]//api/prestador/choferes 
+    public async Task<ActionResult<ChoferAltaDTO>> AltaChofer(ChoferAltaDTO dto)
     {
         var prestador = await context.Usuarios
             .FirstOrDefaultAsync(u => u.Id == dto.IdUsuario && u.Rol == "Prestador");
@@ -45,12 +45,12 @@ public class PrestadorController : ControllerBase
             return NotFound("El prestador indicado no existe.");
         }
 
-        var chofer = new Chofer
+        var chofer = new Chofer()
         {
             Nombre = dto.Nombre,
             Apellido = dto.Apellido,
             Licencia = dto.Licencia,
-            Estado = "DISPONIBLE",
+            Estado = dto.Estado,
             IdUsuario = dto.IdUsuario
         };
 
@@ -60,9 +60,9 @@ public class PrestadorController : ControllerBase
         return Ok(chofer);
     }
 
-    // GET /api/prestador/{prestadorId}/choferes
+    // GET 
     // Lista los choferes que tiene ese prestador para que luego los pueda asignar a un flete.
-    [HttpGet("{prestadorId}/choferes")]
+    [HttpGet("{prestadorId:int}/choferes")]//api/prestador/{prestadorId}/choferes
     public async Task<ActionResult<ChoferDTO>> GetChoferes(int prestadorId)
     {
         var choferes = await context.Choferes
@@ -83,7 +83,7 @@ public class PrestadorController : ControllerBase
     // GET 
     // Muestra la información detallada de un Prestador antes de contratarlo,
     // incluyendo la lista de vehículos de sus choferes.
-    [HttpGet("{id}/perfil-publico")]//api/prestador/{id}/perfil-publico
+    [HttpGet("{id:int}/perfil-publico")]//api/prestador/{id}/perfil-publico
     public async Task<ActionResult<PrestadorPerfilPublicoDTO>> GetPerfilPublico(int id)
     {
 
@@ -126,7 +126,7 @@ public class PrestadorController : ControllerBase
         return Ok(perfilPublico);
     }
 
-    [HttpPut("viajes/{id}/responder")]
+    [HttpPut("viajes/{id:int}/responder")]
     public async Task<IActionResult> ResponderSolicitud(int id, ResponderSolicitudDTO dto)
     {
         var viaje = await context.Viajes.FindAsync(id); // Buscar el viaje por su ID
@@ -153,7 +153,7 @@ public class PrestadorController : ControllerBase
         return Ok(viaje);
     }
 
-    [HttpPut("viajes/{id}/contraofertar")]
+    [HttpPut("viajes/{id:int}/contraofertar")]
     public async Task<IActionResult> ContraOfertar(int id, ContraOfertaDTO dto)
     {
         var viaje = await context.Viajes.FindAsync(id);
@@ -168,7 +168,10 @@ public class PrestadorController : ControllerBase
         await context.SaveChangesAsync();
         return Ok(new { mensaje = "Contraoferta enviada al pasajero" });
     }
-    [HttpPost("prestador/vehiculos")]
+
+
+
+    [HttpPost("vehiculo")] //api/prestador/vehiculo
     public async Task<ActionResult<RegistroVehiculoDTO>> Post(RegistroVehiculoDTO DTO)
     {
         Vehiculo entidad = new Vehiculo();
@@ -191,18 +194,37 @@ public class PrestadorController : ControllerBase
         return Ok(entidad);
     }
 
-    [HttpGet("prestador/{id}/vehiculos")]
-    public async Task<ActionResult<Vehiculo>> GetVehiculo(int id)
+    //Listado de vehiculos de un prestador
+    [HttpGet("{id:int}/vehiculos")]
+    public async Task<ActionResult<List<VehiculoDTO>>> GetVehiculos(int id)
     {
-        var vehiculo = await context.Vehiculos.Where(v => v.Id == id).ToListAsync();
-        if (vehiculo == null)
+        var vehiculos = await context.Vehiculos
+            .Where(v => context.Choferes
+                .Any(c => c.Id == v.IdChofer && c.IdUsuario == id))
+            .Select(v => new VehiculoDTO
+            {
+                Id = v.Id,
+                Patente = v.Patente,
+                Marca = v.Marca,
+                Licencia = v.Licencia,
+                Estado = v.Estado,
+                CapacidadCarga = v.CapacidadCarga,
+                TipoVehiculo = v.TipoVehiculo,
+                IdUsuario = v.IdUsuario,
+                IdChofer = v.IdChofer
+            
+             })
+            .ToListAsync();
+
+        if (!vehiculos.Any())
         {
-            return NotFound("Vehículo no encontrado");
+            return NotFound("No se encontraron vehículos");
         }
-        return Ok(vehiculo);
+
+        return Ok(vehiculos);
     }
 
-    [HttpPut("viajes/{id}/finalizar")]
+    [HttpPut("viajes/{id:int}/finalizar")]
     public async Task<IActionResult> FinalizarServicio(int id)
     {
         var viaje = await context.Viajes.FindAsync(id);
@@ -235,7 +257,7 @@ public class PrestadorController : ControllerBase
 
     }
 
-    [HttpPut("viajes/{id}/registrar-pago")]
+    [HttpPut("viajes/{id:int}/registrar-pago")]
     public async Task<ActionResult> RegistrarPago (int id, ConfirmacionPagoDTO dto)
     {
         var viaje = await context.Viajes.FindAsync(id);
@@ -251,9 +273,9 @@ public class PrestadorController : ControllerBase
 
         await context.SaveChangesAsync();
         return Ok(new { mensaje = "Pago realizado con exito", viaje });
+
         
     }
-
 
 
 

@@ -53,7 +53,7 @@ namespace MundoRuta.Server.Controllers
         }
 
 
-        [HttpGet("api/prestador/{IdPrestador}/calificaciones")]
+        [HttpGet("api/prestador/{IdPrestador:int}/calificaciones")]
 
         public async Task<ActionResult> ListadoCalificaciones(int IdPrestador)
         {
