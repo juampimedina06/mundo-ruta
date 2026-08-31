@@ -14,6 +14,6 @@ public class VehiculoDTO
     public string CapacidadCarga { get; set; }
     public string TipoVehiculo { get; set; }
     public int IdUsuario { get; set; }
-    public int IdChofer { get; set; }
+    public int? IdChofer { get; set; }
 
 }

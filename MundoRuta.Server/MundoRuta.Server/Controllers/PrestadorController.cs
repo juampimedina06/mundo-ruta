@@ -210,6 +210,7 @@ public class PrestadorController : ControllerBase
         entidad.CapacidadCarga = DTO.CapacidadCarga;
         entidad.MarcaModelo = DTO.MarcaModelo;
         entidad.IdUsuario = DTO.IdUsuario;
+        entidad.IdChofer = DTO.IdChofer > 0 ? DTO.IdChofer : null;
 
         context.Vehiculos.Add(entidad);
         await context.SaveChangesAsync();

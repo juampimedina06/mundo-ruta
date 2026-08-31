@@ -65,6 +65,20 @@ namespace MundoRuta.BD.Datos
                 .WithMany()
                 .HasForeignKey(c => c.IdPrestador)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Vehiculo>()
+                .HasOne(v => v.Chofer)
+                .WithMany()
+                .HasForeignKey(v => v.IdChofer)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Vehiculo>()
+                .HasOne(v => v.Usuario)
+                .WithMany()
+                .HasForeignKey(v => v.IdUsuario)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
 

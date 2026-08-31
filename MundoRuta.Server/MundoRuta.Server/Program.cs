@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos;
+using MundoRuta.BD.Datos.Entity;
 using MundoRuta.Server.Client.Pages;
 using MundoRuta.Server.Components;
 
@@ -77,5 +78,27 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(MundoRuta.Server.Client._Imports).Assembly);
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    if (!db.Usuarios.Any(u => u.Rol == "Admin"))
+    {
+        db.Usuarios.Add(new Usuario
+        {
+            Nombre = "Administrador",
+            Apellido = "Sistema",
+            Email = "admin@mundoruta.com",
+            Password = "Admin123!",
+            Telefono = "",
+            FechaRegistro = DateTime.Now,
+            Estado = "APROBADO",
+            Rol = "Admin",
+            Cuit = "",
+            RazonSocial = ""
+        });
+        db.SaveChanges();
+    }
+}
 
 app.Run();

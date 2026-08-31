@@ -27,6 +27,8 @@ namespace MundoRuta.Server.Controllers
             if (existe)
                 return Conflict("El email ya está registrado.");
 
+            var esPrestador = registerDTO.Rol == "Prestador";
+
             var estadoAsignado = registerDTO.Rol switch
             {
                 "Usuario" => "APROBADO",
@@ -37,10 +39,15 @@ namespace MundoRuta.Server.Controllers
             var nuevoUsuario = new Usuario
             {
                 Nombre = registerDTO.Nombre,
+                Apellido = registerDTO.Apellido,
                 Email = registerDTO.Email,
+                Telefono = registerDTO.Telefono,
                 Password = registerDTO.Password,
+                FechaRegistro = DateTime.Now,
                 Rol = registerDTO.Rol,
-                Estado = estadoAsignado
+                Estado = estadoAsignado,
+                Cuit = esPrestador ? registerDTO.Cuit : "",
+                RazonSocial = esPrestador ? registerDTO.RazonSocial : ""
             };
 
             _context.Usuarios.Add(nuevoUsuario);
