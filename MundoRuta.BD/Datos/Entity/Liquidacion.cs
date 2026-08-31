@@ -11,7 +11,7 @@ namespace MundoRuta.BD.Datos.Entity
         public int MontoNeto { get; set; }
         public bool Estado { get; set; }
         public DateTime Fecha { get; set; }
-        public int idPrestador { get; set; }
-        public Prestador Prestador { get; set; }
+        public int IdUsuario { get; set; }
+        public Usuario Usuario { get; set; }
     }
 }

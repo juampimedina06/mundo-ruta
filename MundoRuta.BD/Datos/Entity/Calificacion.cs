@@ -15,8 +15,8 @@ namespace MundoRuta.BD.Datos.Entity
         public int IdUsuario { get; set; }
         public Usuario Usuario { get; set; }
 
-        public int IdPrestador { get; set; }
-        public Prestador Prestador { get; set; }
+        public int IdUsuarioPrestador { get; set; }
+        public Usuario UsuarioPrestador { get; set; }
 
     }
 }

@@ -16,7 +16,7 @@ namespace MundoRuta.Shared.DTO
         public string TipoVehiculo { get; set; }
         public string CapacidadCarga { get; set; }
         public string MarcaModelo { get; set; }
-        public int IdPrestador { get; set; }
+        public int IdUsuario { get; set; }
         public int IdChofer { get; set; }
 
     }

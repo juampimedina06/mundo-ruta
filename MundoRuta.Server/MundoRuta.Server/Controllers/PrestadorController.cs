@@ -26,7 +26,7 @@ public class PrestadorController : ControllerBase
     public ActionResult GetSolicitudes(int prestadorId)
     {
        
-        var solicitudes = context.Viajes.Where(s => s.IdPrestador == prestadorId && s.Estado == "PENDIENTE").ToList();
+        var solicitudes = context.Viajes.Where(s => s.IdUsuario == prestadorId && s.Estado == "PENDIENTE").ToList();
 
         return Ok(solicitudes);
     }
@@ -38,7 +38,8 @@ public class PrestadorController : ControllerBase
     [HttpPost("choferes")]
     public async Task<ActionResult> AltaChofer([FromBody] ChoferAltaDTO dto)
     {
-        var prestador = await context.Prestadores.FindAsync(dto.PrestadorId);
+        var prestador = await context.Usuarios
+            .FirstOrDefaultAsync(u => u.Id == dto.IdUsuario && u.Rol == "Prestador");
         if (prestador == null)
         {
             return NotFound("El prestador indicado no existe.");
@@ -49,8 +50,8 @@ public class PrestadorController : ControllerBase
             Nombre = dto.Nombre,
             Apellido = dto.Apellido,
             Licencia = dto.Licencia,
-            Estado = true, // true = Disponible
-            IdPrestador = dto.PrestadorId
+            Estado = "DISPONIBLE",
+            IdUsuario = dto.IdUsuario
         };
 
         context.Choferes.Add(chofer);
@@ -65,7 +66,7 @@ public class PrestadorController : ControllerBase
     public async Task<ActionResult<ChoferDTO>> GetChoferes(int prestadorId)
     {
         var choferes = await context.Choferes
-            .Where(c => c.IdPrestador == prestadorId)
+            .Where(c => c.IdUsuario == prestadorId)
             .Select(c => new ChoferDTO
             {
                 Id = c.Id,
@@ -77,20 +78,26 @@ public class PrestadorController : ControllerBase
             .ToListAsync();
 
         return Ok(choferes);
-    // GET /api/prestador/{id}/perfil-publico
+    }
+
+    // GET 
     // Muestra la información detallada de un Prestador antes de contratarlo,
     // incluyendo la lista de vehículos de sus choferes.
-    [HttpGet("{id}/perfil-publico")]
-    public async Task<IActionResult> GetPerfilPublico(int id)
+    [HttpGet("{id}/perfil-publico")]//api/prestador/{id}/perfil-publico
+    public async Task<ActionResult<PrestadorPerfilPublicoDTO>> GetPerfilPublico(int id)
     {
-        var prestador = await context.Prestadores.FirstOrDefaultAsync(p => p.Id == id);
+
+        var prestador = await context.Usuarios
+               .FirstOrDefaultAsync(u => u.Id == id && u.Rol == "Prestador");
+
         if (prestador == null)
         {
-            return NotFound();
+            return NotFound("no se encontro el prestador");
         }
 
         var vehiculos = await context.Vehiculos
-            .Where(v => context.Choferes.Any(c => c.Id == v.IdChofer && c.IdPrestador == id))
+            .Where(v => context.Choferes
+                .Any(c => c.Id == v.IdChofer && c.IdUsuario == id))
             .Select(v => new VehiculoDTO
             {
                 Id = v.Id,
@@ -101,17 +108,22 @@ public class PrestadorController : ControllerBase
             })
             .ToListAsync();
 
-        var perfil = new PrestadorPerfilPublicoDTO
+        var perfilPublico = new PrestadorPerfilPublicoDTO
         {
             Id = prestador.Id,
-            RazonSocial = prestador.RazonSocial,
-            Telefono = prestador.Telefono,
+            Nombre = prestador.Nombre,
+            Apellido = prestador.Apellido,
             Email = prestador.Email,
-            Ciudad = prestador.Ciudad,
+            Telefono = prestador.Telefono,
+            FechaRegistro = prestador.FechaRegistro,
+            Estado = prestador.Estado,
+            Rol = prestador.Rol,
+            RazonSocial = prestador.RazonSocial,
+            Cuit = prestador.Cuit,
             Vehiculos = vehiculos
         };
 
-        return Ok(perfil);
+        return Ok(perfilPublico);
     }
 
     [HttpPut("viajes/{id}/responder")]
@@ -170,7 +182,7 @@ public class PrestadorController : ControllerBase
         entidad.TipoVehiculo = DTO.TipoVehiculo;
         entidad.CapacidadCarga = DTO.CapacidadCarga;
         entidad.MarcaModelo = DTO.MarcaModelo;
-        entidad.IdPrestador = DTO.IdPrestador;
+        entidad.IdUsuario = DTO.IdUsuario;
 
         context.Vehiculos.Add(entidad);
         await context.SaveChangesAsync();

@@ -10,7 +10,7 @@ public class Chofer : EntidadBase
     public required string Apellido{ get; set; }
     public required string Licencia { get; set; }
     public required string Estado { get; set; }
-    public int IdPrestador { get; set; }
-    public Prestador Prestador { get; set; }
+    public int IdUsuario { get; set; }
+    public Usuario Usuario { get; set; }
 
 }

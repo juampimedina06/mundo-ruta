@@ -13,7 +13,7 @@ public class VehiculoDTO
     public string Estado { get; set; }
     public string CapacidadCarga { get; set; }
     public string TipoVehiculo { get; set; }
-    public int IdPrestador { get; set; }
+    public int IdUsuario { get; set; }
     public int IdChofer { get; set; }
 
 }

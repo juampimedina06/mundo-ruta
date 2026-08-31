@@ -41,6 +41,8 @@ namespace MundoRuta.Server.Controllers
             return Ok(new { mensaje = "Viaje cancelado con éxito", motivo = dto.Motivo });
         }
 
+        }
+
         [HttpPost("viajes/solicitar")]
         public async Task<ActionResult> SolicitarViaje([FromBody] SolicitarViajeDTO dto)
         {
@@ -56,7 +58,7 @@ namespace MundoRuta.Server.Controllers
                 Monto = dto.Monto,
                 IdSolicitante = dto.IdSolicitante,
                 IdPasajero = dto.IdPasajero,
-                IdPrestador = dto.IdPrestador,
+                IdUsuario = dto.IdUsuario,
                 IdServicio = dto.IdServicio
             };
 

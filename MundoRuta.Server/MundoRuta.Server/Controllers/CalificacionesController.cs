@@ -39,7 +39,7 @@ namespace MundoRuta.Server.Controllers
             {
                 IdViaje = dto.viajeId,
                 IdUsuario = dto.usuarioId,
-                IdPrestador = dto.prestadorId,
+                IdUsuarioPrestador = dto.usuarioPrestadorId,
                 Puntaje = dto.puntaje,
                 Comentario = dto.comentario,
             };
@@ -57,7 +57,7 @@ namespace MundoRuta.Server.Controllers
 
         public async Task<ActionResult> ListadoCalificaciones(int IdPrestador)
         {
-            var lista = await context.Calificaciones.Where(c => c.IdPrestador== IdPrestador).ToListAsync();
+            var lista = await context.Calificaciones.Where(c => c.IdUsuarioPrestador == IdPrestador).ToListAsync();
 
             double promedio = lista.Any() ? lista.Average(c => c.Puntaje) : 0.0;
 

@@ -38,7 +38,7 @@ namespace MundoRuta.Server.Controllers
             return Ok(listaPrestadoresPendientes);
         }
 
-
+        
         [HttpPut("aprobar-prestador/{id : int}")]
         public async Task<IActionResult> AprobarPrestador(int id)
         {

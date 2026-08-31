@@ -36,9 +36,9 @@ public class Viaje : EntidadBase
 
     public Usuario Pasajero { get; set; }
 
-    public int IdPrestador { get; set; }
+    public int IdUsuario { get; set; }
 
-    public Prestador Prestador { get; set; }
+    public Usuario Usuario { get; set; }
 
     public int IdChofer { get; set; }
 

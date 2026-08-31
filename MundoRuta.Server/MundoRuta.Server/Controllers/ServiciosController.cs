@@ -16,20 +16,20 @@ public class ServiciosController : ControllerBase
         this.context = context;
     }
 
-    // GET /api/servicios/fletes
+    // GET 
     // Muestra el listado de todos los Prestadores disponibles para contratar.
-    [HttpGet("fletes")]
-    public async Task<IActionResult> GetFletes()
+    [HttpGet("fletes")]//api/servicios/fletes
+    public async Task<ActionResult<List<PrestadorListadoDTO>>> GetFletes()
     {
-        var prestadores = await context.Prestadores
-            .Where(p => p.Estado == "APROBADO")
+        var prestadores = await context.Usuarios
+            .Where(p => p.Rol == "Prestador" && p.Estado == "APROBADO")
             .Select(p => new PrestadorListadoDTO
             {
                 Id = p.Id,
-                RazonSocial = p.RazonSocial,
-                Telefono = p.Telefono,
                 Email = p.Email,
-                Ciudad = p.Ciudad
+                Estado = p.Estado,
+                Rol = p.Rol,
+
             })
             .ToListAsync();
 

@@ -11,7 +11,7 @@ public class CalificacionesDTO
     public int viajeId {  get; set; }
     public int usuarioId { get; set; }
 
-    public int prestadorId { get; set; }
+    public int usuarioPrestadorId { get; set; }
     public int puntaje { get; set; }
     public string comentario { get; set; }
 }

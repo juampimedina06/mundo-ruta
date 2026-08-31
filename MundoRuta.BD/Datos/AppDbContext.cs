@@ -9,11 +9,9 @@ namespace MundoRuta.BD.Datos
     public class AppDbContext : DbContext
     {
 
-        public DbSet<Administrador> Administradores { get; set; }
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Servicio> Servicios { get; set; }
         public DbSet<PrestadorServicio> PrestadorServicios { get; set; }
-        public DbSet<Prestador> Prestadores { get; set; }
         public DbSet<Liquidacion> Liquidaciones { get; set; }
         public DbSet<Chofer> Choferes { get; set; }
         public DbSet<Vehiculo> Vehiculos { get; set; }
@@ -33,9 +31,9 @@ namespace MundoRuta.BD.Datos
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Viaje>()
-                .HasOne(v => v.Prestador)
+                .HasOne(v => v.Usuario)
                 .WithMany()
-                .HasForeignKey(v => v.IdPrestador)
+                .HasForeignKey(v => v.IdUsuario)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Viaje>()
