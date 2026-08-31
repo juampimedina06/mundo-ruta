@@ -13,4 +13,7 @@ public class Chofer : EntidadBase
     public int IdUsuario { get; set; }
     public Usuario Usuario { get; set; }
 
+    public int IdPrestador { get; set; }
+    public Usuario Prestador { get; set; }
+
 }

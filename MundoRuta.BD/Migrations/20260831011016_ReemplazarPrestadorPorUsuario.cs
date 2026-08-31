@@ -178,7 +178,7 @@ namespace MundoRuta.BD.Migrations
                 column: "UsuarioPrestadorId",
                 principalTable: "Usuarios",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Choferes_Usuarios_UsuarioId",
@@ -186,7 +186,7 @@ namespace MundoRuta.BD.Migrations
                 column: "UsuarioId",
                 principalTable: "Usuarios",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Liquidaciones_Usuarios_UsuarioId",
@@ -194,7 +194,7 @@ namespace MundoRuta.BD.Migrations
                 column: "UsuarioId",
                 principalTable: "Usuarios",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Mensajes_Usuarios_DestinatarioId",
@@ -202,7 +202,7 @@ namespace MundoRuta.BD.Migrations
                 column: "DestinatarioId",
                 principalTable: "Usuarios",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Mensajes_Usuarios_EmisorId",
@@ -210,7 +210,7 @@ namespace MundoRuta.BD.Migrations
                 column: "EmisorId",
                 principalTable: "Usuarios",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_PrestadorServicios_Usuarios_UsuarioId",
@@ -218,7 +218,7 @@ namespace MundoRuta.BD.Migrations
                 column: "UsuarioId",
                 principalTable: "Usuarios",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Vehiculos_Usuarios_UsuarioId",
@@ -226,7 +226,7 @@ namespace MundoRuta.BD.Migrations
                 column: "UsuarioId",
                 principalTable: "Usuarios",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Viajes_Usuarios_IdUsuario",

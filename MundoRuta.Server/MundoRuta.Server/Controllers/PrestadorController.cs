@@ -39,11 +39,27 @@ public class PrestadorController : ControllerBase
     public async Task<ActionResult<ChoferAltaDTO>> AltaChofer(ChoferAltaDTO dto)
     {
         var prestador = await context.Usuarios
-            .FirstOrDefaultAsync(u => u.Id == dto.IdUsuario && u.Rol == "Prestador");
+            .FirstOrDefaultAsync(u => u.Id == dto.IdPrestador && u.Rol == "Prestador");
         if (prestador == null)
         {
             return NotFound("El prestador indicado no existe.");
         }
+
+        var emailExiste = await context.Usuarios.AnyAsync(u => u.Email == dto.Email);
+        if (emailExiste)
+        {
+            return Conflict("El email ya está registrado.");
+        }
+
+        var usuarioChofer = new Usuario()
+        {
+            Nombre = dto.Nombre,
+            Apellido = dto.Apellido,
+            Email = dto.Email,
+            Password = dto.Password,
+            Rol = "Chofer",
+            Estado = "APROBADO"
+        };
 
         var chofer = new Chofer()
         {
@@ -51,11 +67,19 @@ public class PrestadorController : ControllerBase
             Apellido = dto.Apellido,
             Licencia = dto.Licencia,
             Estado = dto.Estado,
-            IdUsuario = dto.IdUsuario
+            IdUsuario = usuarioChofer.Id,
+            IdPrestador = dto.IdPrestador
         };
 
-        context.Choferes.Add(chofer);
-        await context.SaveChangesAsync();
+        using (var transaction = await context.Database.BeginTransactionAsync())
+        {
+            context.Usuarios.Add(usuarioChofer);
+            await context.SaveChangesAsync();
+            chofer.IdUsuario = usuarioChofer.Id;
+            context.Choferes.Add(chofer);
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
 
         return Ok(chofer);
     }
@@ -66,7 +90,7 @@ public class PrestadorController : ControllerBase
     public async Task<ActionResult<ChoferDTO>> GetChoferes(int prestadorId)
     {
         var choferes = await context.Choferes
-            .Where(c => c.IdUsuario == prestadorId)
+            .Where(c => c.IdPrestador == prestadorId)
             .Select(c => new ChoferDTO
             {
                 Id = c.Id,
@@ -97,7 +121,7 @@ public class PrestadorController : ControllerBase
 
         var vehiculos = await context.Vehiculos
             .Where(v => context.Choferes
-                .Any(c => c.Id == v.IdChofer && c.IdUsuario == id))
+                .Any(c => c.Id == v.IdChofer && c.IdPrestador == id))
             .Select(v => new VehiculoDTO
             {
                 Id = v.Id,
@@ -200,7 +224,7 @@ public class PrestadorController : ControllerBase
     {
         var vehiculos = await context.Vehiculos
             .Where(v => context.Choferes
-                .Any(c => c.Id == v.IdChofer && c.IdUsuario == id))
+                .Any(c => c.Id == v.IdChofer && c.IdPrestador == id))
             .Select(v => new VehiculoDTO
             {
                 Id = v.Id,
