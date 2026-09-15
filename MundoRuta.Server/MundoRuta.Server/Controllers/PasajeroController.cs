@@ -63,6 +63,7 @@ namespace MundoRuta.Server.Controllers
                 Fecha = dto.Fecha,
                 Hora = dto.Hora,
                 EquipajeCarga = dto.EquipajeCarga,
+                DetalleCarga= dto.detalleCarga,
                 Monto = dto.Monto,
                 IdSolicitante = dto.IdSolicitante,
                 IdPasajero = dto.IdPasajero,
