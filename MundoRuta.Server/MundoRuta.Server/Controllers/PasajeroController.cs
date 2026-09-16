@@ -51,23 +51,40 @@ namespace MundoRuta.Server.Controllers
             });
         }
 
-        [HttpPost("viajes/solicitar")]
+        [HttpPost("viajes/solicitudes")]
         public async Task<IActionResult> SolicitarViaje(SolicitarViajeDTO dto)
         {
+            Servicio servicio;
+            if (!_context.Servicios.Any())
+            {
+                servicio = new Servicio { Nombre = "Flete", Descripcion = "Flete general", Tipo = "F", Estado = "ACTIVO" };
+                _context.Servicios.Add(servicio);
+                _context.SaveChanges();
+            }
+            else
+            {
+                servicio = _context.Servicios.First();
+            }
+
             var viaje = new Viaje()
             {
                 Origen = dto.Origen,
                 Destino = dto.Destino,
                 TipoSolicitud = dto.TipoSolicitud,
                 Estado = "PENDIENTE",
+                EstadoPago= "PENDIENTE",
+                MetodoDePago="EFECTIVO",
                 Fecha = dto.Fecha,
                 Hora = dto.Hora,
                 EquipajeCarga = dto.EquipajeCarga,
+                DetalleCarga= dto.detalleCarga,
                 Monto = dto.Monto,
                 IdSolicitante = dto.IdSolicitante,
                 IdPasajero = dto.IdPasajero,
                 IdUsuario = dto.IdUsuario,
-                IdServicio = dto.IdServicio
+                IdServicio = dto.IdServicio,
+                IdChofer= dto.IdChofer,
+                IdVehiculo= dto. IdVehiculo
             };
 
             _context.Viajes.Add(viaje);

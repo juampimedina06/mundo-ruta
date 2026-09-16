@@ -11,6 +11,7 @@ public class ChoferDTO
     public string Apellido { get; set; }
     public string Licencia { get; set; }
     public string Estado { get; set; }
+    public string Cuit { get; set; }
     public int IdUsuario { get; set; }
 
 }

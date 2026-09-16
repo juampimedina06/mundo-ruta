@@ -22,6 +22,8 @@ public class PrestadorController : ControllerBase
         this.context = context;
     }
 
+    //Get
+    //lista de solicitudes pendientes
     [HttpGet("{prestadorId:int}/solicitudes")]
     public ActionResult GetSolicitudes(int prestadorId)
     {
@@ -58,7 +60,11 @@ public class PrestadorController : ControllerBase
             Email = dto.Email,
             Password = dto.Password,
             Rol = "Chofer",
-            Estado = "APROBADO"
+            Estado = "APROBADO",
+            Cuit = dto.Cuit,
+            RazonSocial="",
+            Telefono= ""
+
         };
 
         var chofer = new Chofer()
@@ -177,6 +183,9 @@ public class PrestadorController : ControllerBase
         return Ok(viaje);
     }
 
+    //Put
+    //Segun el id de viaje, responder a la contra Oferta
+
     [HttpPut("viajes/{id:int}/contraofertar")]
     public async Task<IActionResult> ContraOfertar(int id, ContraOfertaDTO dto)
     {
@@ -210,6 +219,7 @@ public class PrestadorController : ControllerBase
         entidad.CapacidadCarga = DTO.CapacidadCarga;
         entidad.MarcaModelo = DTO.MarcaModelo;
         entidad.IdUsuario = DTO.IdUsuario;
+        entidad.IdChofer = DTO.IdChofer > 0 ? DTO.IdChofer : null;
 
         context.Vehiculos.Add(entidad);
         await context.SaveChangesAsync();
@@ -248,6 +258,9 @@ public class PrestadorController : ControllerBase
         return Ok(vehiculos);
     }
 
+
+    //Put
+    //Finalizar un viaje y actualizarlo
     [HttpPut("viajes/{id:int}/finalizar")]
     public async Task<IActionResult> FinalizarServicio(int id)
     {
