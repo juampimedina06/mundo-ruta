@@ -18,8 +18,9 @@ namespace MundoRuta.Shared.DTO
         public int IdSolicitante { get; set; }
         public int IdPasajero { get; set; }
         public int IdUsuario { get; set; }
+        public int IdChofer { get; set; }
         public int IdServicio { get; set; }
-
+        public int IdVehiculo { get; set; }
 
     }
 }

@@ -12,4 +12,6 @@ namespace MundoRuta.BD.Datos.Entity
         public string Estado { get; set; }
 
     }
+
+
 }

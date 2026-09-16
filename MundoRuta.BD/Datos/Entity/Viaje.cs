@@ -52,7 +52,7 @@ public class Viaje : EntidadBase
 
     public string DetalleCarga { get; set; } //
 
-    public string MotivoCancelacion { get; set; } //
+    public string? MotivoCancelacion { get; set; } //
 
     public int IdVehiculo { get; set; }
 

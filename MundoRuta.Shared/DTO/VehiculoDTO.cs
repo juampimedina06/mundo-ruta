@@ -15,5 +15,6 @@ public class VehiculoDTO
     public string TipoVehiculo { get; set; }
     public int IdUsuario { get; set; }
     public int? IdChofer { get; set; }
+    
 
 }

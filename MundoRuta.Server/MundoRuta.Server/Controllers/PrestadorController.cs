@@ -60,7 +60,11 @@ public class PrestadorController : ControllerBase
             Email = dto.Email,
             Password = dto.Password,
             Rol = "Chofer",
-            Estado = "APROBADO"
+            Estado = "APROBADO",
+            Cuit = dto.Cuit,
+            RazonSocial="",
+            Telefono= ""
+
         };
 
         var chofer = new Chofer()
