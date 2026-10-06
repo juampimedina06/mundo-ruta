@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MundoRuta.BD.Datos; // Asegurate de que este sea el namespace de tu AppDbContext
+using MundoRuta.BD.Datos; 
 using MundoRuta.BD.Datos.Entity;
 using System;
 using System.Threading.Tasks;
@@ -19,7 +19,7 @@ namespace MundoRuta.Server.Controllers
             _context = context;
         }
 
-        // 1. POST: Crear una notificación general
+
         [HttpPost]
         public async Task<IActionResult> CrearNotificacion([FromBody] CrearNotificacionDTO dto)
         {
@@ -40,11 +40,11 @@ namespace MundoRuta.Server.Controllers
             return Ok(new { mensaje = "Notificación creada con éxito" });
         }
 
-        // 2. POST: Trigger automático cuando se asigna un prestador a un viaje
+       
         [HttpPost("viaje/{viajeId}/asignado")]
         public async Task<IActionResult> NotificarViajeAsignado(int viajeId)
         {
-            // Se corrigió pedidoId por viajeId para que coincida con el parámetro
+            
             var viaje = await _context.Viajes.FindAsync(viajeId);
 
             if (viaje == null)
