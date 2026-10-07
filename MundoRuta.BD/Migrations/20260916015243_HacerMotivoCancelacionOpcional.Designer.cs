@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MundoRuta.BD.Datos;
 
@@ -11,9 +12,11 @@ using MundoRuta.BD.Datos;
 namespace MundoRuta.BD.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260916015243_HacerMotivoCancelacionOpcional")]
+    partial class HacerMotivoCancelacionOpcional
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -239,46 +242,6 @@ namespace MundoRuta.BD.Migrations
                     b.HasIndex("EmisorId");
 
                     b.ToTable("Mensajes");
-                });
-
-            modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Notificacion", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("Leida")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Mensaje")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("PrestadorId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Tipo")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Titulo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("UsuarioId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PrestadorId");
-
-                    b.HasIndex("UsuarioId");
-
-                    b.ToTable("Notificaciones");
                 });
 
             modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Pago", b =>
@@ -685,21 +648,6 @@ namespace MundoRuta.BD.Migrations
                     b.Navigation("Destinatario");
 
                     b.Navigation("Emisor");
-                });
-
-            modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Notificacion", b =>
-                {
-                    b.HasOne("MundoRuta.BD.Datos.Entity.PrestadorServicio", "Prestador")
-                        .WithMany()
-                        .HasForeignKey("PrestadorId");
-
-                    b.HasOne("MundoRuta.BD.Datos.Entity.Usuario", "Usuario")
-                        .WithMany()
-                        .HasForeignKey("UsuarioId");
-
-                    b.Navigation("Prestador");
-
-                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Pago", b =>
