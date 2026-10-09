@@ -12,11 +12,15 @@ namespace MundoRuta.Shared.DTO
         public DateTime Fecha { get; set; }
         public TimeSpan Hora { get; set; }
         public bool EquipajeCarga { get; set; }
+
+        public string detalleCarga { get; set; }
         public decimal Monto { get; set; }
         public int IdSolicitante { get; set; }
         public int IdPasajero { get; set; }
         public int IdUsuario { get; set; }
+        public int IdChofer { get; set; }
         public int IdServicio { get; set; }
+        public int IdVehiculo { get; set; }
 
     }
 }

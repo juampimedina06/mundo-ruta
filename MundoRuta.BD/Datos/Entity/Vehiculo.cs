@@ -19,7 +19,7 @@ namespace MundoRuta.BD.Datos.Entity
         public string MarcaModelo { get; set; }
         public int IdUsuario { get; set; }
         public Usuario Usuario { get; set; }
-        public int IdChofer { get; set; }
+        public int? IdChofer { get; set; }
         public Chofer Chofer { get; set; }
 
     }

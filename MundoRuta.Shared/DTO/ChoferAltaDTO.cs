@@ -11,6 +11,8 @@ public class ChoferAltaDTO
     public string Apellido { get; set; }
     public string Licencia { get; set; }
     public required string Estado { get; set; }
+    public required int Telefono { get; set; }
+    public required string Cuit { get; set; }
     public string Email { get; set; }
     public string Password { get; set; }
 }

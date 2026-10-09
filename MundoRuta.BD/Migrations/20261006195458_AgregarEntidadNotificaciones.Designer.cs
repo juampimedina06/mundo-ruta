@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MundoRuta.BD.Datos;
 
@@ -11,9 +12,11 @@ using MundoRuta.BD.Datos;
 namespace MundoRuta.BD.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261006195458_AgregarEntidadNotificaciones")]
+    partial class AgregarEntidadNotificaciones
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -273,8 +276,6 @@ namespace MundoRuta.BD.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PrestadorId");
 
                     b.HasIndex("UsuarioId");
 
@@ -689,15 +690,9 @@ namespace MundoRuta.BD.Migrations
 
             modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Notificacion", b =>
                 {
-                    b.HasOne("MundoRuta.BD.Datos.Entity.PrestadorServicio", "Prestador")
-                        .WithMany()
-                        .HasForeignKey("PrestadorId");
-
                     b.HasOne("MundoRuta.BD.Datos.Entity.Usuario", "Usuario")
                         .WithMany()
                         .HasForeignKey("UsuarioId");
-
-                    b.Navigation("Prestador");
 
                     b.Navigation("Usuario");
                 });

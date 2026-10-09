@@ -21,6 +21,7 @@ namespace MundoRuta.BD.Datos
         public DbSet<Calificacion> Calificaciones { get; set; }
         public DbSet<Chat> Chats { get; set; }
         public DbSet<Mensaje> Mensajes { get; set; }
+        public DbSet<Notificacion> Notificaciones { get; set; }
 
         public AppDbContext(DbContextOptions options) : base(options)
         {
@@ -64,6 +65,20 @@ namespace MundoRuta.BD.Datos
                 .HasOne(c => c.Prestador)
                 .WithMany()
                 .HasForeignKey(c => c.IdPrestador)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Vehiculo>()
+                .HasOne(v => v.Chofer)
+                .WithMany()
+                .HasForeignKey(v => v.IdChofer)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Vehiculo>()
+                .HasOne(v => v.Usuario)
+                .WithMany()
+                .HasForeignKey(v => v.IdUsuario)
+                .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
         }
 
