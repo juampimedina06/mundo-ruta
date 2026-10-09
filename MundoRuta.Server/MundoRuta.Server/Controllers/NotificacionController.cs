@@ -21,7 +21,7 @@ namespace MundoRuta.Server.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> CrearNotificacion([FromBody] CrearNotificacionDTO dto)
+        public async Task<ActionResult> CrearNotificacion([FromBody] CrearNotificacionDTO dto)
         {
             var notificacion = new Notificacion
             {
@@ -42,7 +42,7 @@ namespace MundoRuta.Server.Controllers
 
        
         [HttpPost("viaje/{viajeId}/asignado")]
-        public async Task<IActionResult> NotificarViajeAsignado(int viajeId)
+        public async Task<ActionResult> NotificarViajeAsignado(int viajeId)
         {
             
             var viaje = await _context.Viajes.FindAsync(viajeId);
