@@ -66,5 +66,45 @@ namespace MundoRuta.Server.Controllers
 
             return Ok(new { mensaje = "Notificación de asignación enviada" });
         }
+        // GET: api/notificaciones/usuario/{id}
+        [HttpGet("usuario/{id}")]
+        public async Task<ActionResult> GetNotificacionesUsuario(int id)
+        {
+            var notificaciones = await _context.Notificaciones
+                .Where(n => n.UsuarioId == id)
+                .OrderByDescending(n => n.FechaCreacion)
+                .ToListAsync();
+
+            return Ok(notificaciones);
+        }
+
+        // GET: api/notificaciones/prestador/{id}
+        [HttpGet("prestador/{id}")]
+        public async Task<ActionResult> GetNotificacionesPrestador(int id)
+        {
+            var notificaciones = await _context.Notificaciones
+                .Where(n => n.PrestadorId == id)
+                .OrderByDescending(n => n.FechaCreacion)
+                .ToListAsync();
+
+            return Ok(notificaciones);
+        }
+
+        // PUT: api/notificaciones/{id}/leida
+        [HttpPut("{id}/leida")]
+        public async Task<ActionResult> MarcarComoLeida(int id)
+        {
+            var notificacion = await _context.Notificaciones.FindAsync(id);
+            if (notificacion == null)
+            {
+                return NotFound("Notificación no encontrada.");
+            }
+
+            notificacion.Leida = true;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { mensaje = "Notificación marcada como leída" });
+        }
+
     }
 }
