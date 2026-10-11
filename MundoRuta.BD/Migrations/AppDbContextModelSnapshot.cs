@@ -517,12 +517,18 @@ namespace MundoRuta.BD.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal?>("Peso")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("ServicioId")
                         .HasColumnType("int");
 
                     b.Property<string>("TipoSolicitud")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("Volumen")
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
