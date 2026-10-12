@@ -1,26 +1,25 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MundoRuta.BD.Datos;
+using MundoRuta.Repositorio.Repositorios;
 using MundoRuta.Shared.DTO;
 
 namespace MundoRuta.Server.Controllers
 {
     [ApiController]
     [Route("api/usuario")]
-    
     public class UsuarioController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IUsuarioRepositorio repositorio;
 
-        public UsuarioController(AppDbContext context)
+        public UsuarioController(IUsuarioRepositorio repositorio)
         {
-            _context = context;
+            this.repositorio = repositorio;
         }
 
         [HttpGet("{id:int}")]
+        // Obtiene un usuario por su ID
         public async Task<ActionResult<UsuarioDTO>> GetUsuario(int id)
         {
-            var usuario = await _context.Usuarios.FindAsync(id);
+            var usuario = await repositorio.ObtenerPorId(id);
 
             if (usuario == null)
             {
@@ -54,19 +53,18 @@ namespace MundoRuta.Server.Controllers
             return Ok(dto);
         }
 
-
         [HttpPut("{id:int}")]
+        // Actualiza un usuario existente
         public async Task<ActionResult> UpdateUsuario(int id, UpdateUserRequestDto request)
         {
-            var usuario = await _context.Usuarios.FindAsync(id);
+            var usuario = await repositorio.ObtenerPorId(id);
 
             if (usuario == null)
             {
                 return NotFound(new { mensaje = "El usuario no existe" });
             }
 
-            var emailExiste = await _context.Usuarios
-        .AnyAsync(u => u.Email == request.Email && u.Id != id);
+            var emailExiste = await repositorio.EmailExiste(request.Email, id);
 
             if (emailExiste)
             {
@@ -84,7 +82,7 @@ namespace MundoRuta.Server.Controllers
             usuario.RazonSocial = request.RazonSocial;
             usuario.Cuit = request.Cuit;
 
-            await _context.SaveChangesAsync();
+            await repositorio.Update(usuario);
 
             return Ok(new
             {
