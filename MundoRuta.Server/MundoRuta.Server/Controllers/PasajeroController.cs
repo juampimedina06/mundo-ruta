@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MundoRuta.BD.Datos;
 using MundoRuta.BD.Datos.Entity;
+using MundoRuta.Repositorio.Repositorios;
 using MundoRuta.Shared.DTO;
-using Microsoft.EntityFrameworkCore;
 
 namespace MundoRuta.Server.Controllers
 {
@@ -10,17 +9,17 @@ namespace MundoRuta.Server.Controllers
     [Route("api/pasajero")]
     public class PasajeroController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IViajeRepositorio repositorio;
 
-        public PasajeroController(AppDbContext context)
+        public PasajeroController(IViajeRepositorio repositorio)
         {
-            _context = context;
+            this.repositorio = repositorio;
         }
 
         [HttpPut("viajes/{id:int}/cancelar")]
-        public async Task<IActionResult> CancelarViaje(int id,CancelarViajeDTO dto)
+        public async Task<IActionResult> CancelarViaje(int id, CancelarViajeDTO dto)
         {
-            var viaje = await _context.Viajes.FindAsync(id);
+            var viaje = await repositorio.ObtenerPorId(id);
 
             if (viaje == null)
             {
@@ -43,52 +42,36 @@ namespace MundoRuta.Server.Controllers
             viaje.Estado = "CANCELADO";
             viaje.MotivoCancelacion = dto.Motivo;
 
-            await _context.SaveChangesAsync();
+            await repositorio.Update(viaje);
 
-            return Ok(new
-            {
-                mensaje = "Viaje cancelado con éxito"
-            });
+            return Ok(new { mensaje = "Viaje cancelado con éxito" });
         }
 
         [HttpPost("viajes/solicitudes")]
         public async Task<IActionResult> SolicitarViaje(SolicitarViajeDTO dto)
         {
-            Servicio servicio;
-            if (!_context.Servicios.Any())
-            {
-                servicio = new Servicio { Nombre = "Flete", Descripcion = "Flete general", Tipo = "F", Estado = "ACTIVO" };
-                _context.Servicios.Add(servicio);
-                _context.SaveChanges();
-            }
-            else
-            {
-                servicio = _context.Servicios.First();
-            }
-
             var viaje = new Viaje()
             {
                 Origen = dto.Origen,
                 Destino = dto.Destino,
                 TipoSolicitud = dto.TipoSolicitud,
                 Estado = "PENDIENTE",
-                EstadoPago= "PENDIENTE",
-                MetodoDePago="EFECTIVO",
+                EstadoPago = "PENDIENTE",
+                MetodoDePago = "EFECTIVO",
                 Fecha = dto.Fecha,
                 Hora = dto.Hora,
                 EquipajeCarga = dto.EquipajeCarga,
-                DetalleCarga= dto.detalleCarga,
+                DetalleCarga = dto.detalleCarga,
                 Monto = dto.Monto,
                 IdSolicitante = dto.IdSolicitante,
                 IdPasajero = dto.IdPasajero,
                 IdUsuario = dto.IdUsuario,
                 IdServicio = dto.IdServicio,
-                IdChofer= dto.IdChofer,
-                IdVehiculo= dto. IdVehiculo
+                IdChofer = dto.IdChofer,
+                IdVehiculo = dto.IdVehiculo
             };
 
-            _context.Viajes.Add(viaje);
-            await _context.SaveChangesAsync();
+            await repositorio.InsertarConServicio(viaje); // Insertar el viaje y crear el servicio si no existe
 
             return Ok(new { mensaje = "Solicitud de viaje creada", id = viaje.Id });
         }
@@ -96,7 +79,7 @@ namespace MundoRuta.Server.Controllers
         [HttpPut("viajes/{id:int}/responder-contraoferta")]
         public async Task<IActionResult> ResponderContraOferta(int id, [FromBody] ResponderContraOfertaDTO dto)
         {
-            var viaje = await _context.Viajes.FindAsync(id);
+            var viaje = await repositorio.ObtenerPorId(id);
 
             if (viaje == null)
             {
@@ -112,120 +95,76 @@ namespace MundoRuta.Server.Controllers
                 viaje.Estado = "CANCELADO";
             }
 
-            await _context.SaveChangesAsync();
+            await repositorio.Update(viaje);
 
             return Ok(new
             {
-                mensaje = dto.Aceptar
-                    ? "Contraoferta aceptada"
-                    : "Contraoferta rechazada"
+                mensaje = dto.Aceptar ? "Contraoferta aceptada" : "Contraoferta rechazada"
             });
         }
-
 
         [HttpGet("{usuarioId:int}/viajes")]
         public async Task<ActionResult<List<ListadoViajeDTO>>> ViajesSolicitados(int usuarioId, string? estado = "PENDIENTE")
         {
-            var query = _context.Viajes
-                .Where(v => v.IdUsuario == usuarioId);
+            var lista = await repositorio.ObtenerPorUsuario(usuarioId, estado);
 
-            if (!string.IsNullOrEmpty(estado))
+            var listaDTO = lista.Select(v => new ListadoViajeDTO
             {
-                query = query.Where(v => v.Estado == estado);
-            }
+                Id = v.Id,
+                Origen = v.Origen,
+                Destino = v.Destino,
+                TipoSolicitud = v.TipoSolicitud,
+                Estado = v.Estado,
+                EstadoPago = v.EstadoPago,
+                Fecha = v.Fecha,
+                Hora = v.Hora,
+                Monto = v.Monto,
+                MontoEstimado = v.MontoEstimado,
+                MetodoDePago = v.MetodoDePago,
+                EquipajeCarga = v.EquipajeCarga,
+                FechaHoraReserva = v.FechaHoraReserva
+            }).ToList();
 
-            var viajes = await query
-                .Select(v => new ListadoViajeDTO
-                {
-                    Id = v.Id,
-                    Origen = v.Origen,
-                    Destino = v.Destino,
-                    TipoSolicitud = v.TipoSolicitud,
-                    Estado = v.Estado,
-                    EstadoPago = v.EstadoPago,
-                    Fecha = v.Fecha,
-                    Hora = v.Hora,
-                    Monto = v.Monto,
-                    MontoEstimado = v.MontoEstimado,
-                    MetodoDePago = v.MetodoDePago,
-                    EquipajeCarga = v.EquipajeCarga,
-                    FechaHoraReserva = v.FechaHoraReserva
-                })
-                .ToListAsync();
-
-            return Ok(viajes);
+            return Ok(listaDTO);
         }
 
-        //viaje detallado de un usuario en particular, para mostrarlo en la pantalla de detalle del viaje
-        [HttpGet("{usuarioId:int}/viajes/{viajeId:int}")] //api/pasajero/{usuarioId}/viajes/{viajeId}
+        [HttpGet("{usuarioId:int}/viajes/{viajeId:int}")]
         public async Task<ActionResult<ViajeDetalladoDTO>> GetViajeDetalle(int usuarioId, int viajeId)
         {
-            var usuario = await _context.Usuarios.FindAsync(usuarioId);
-            if (usuario == null)
+            var v = await repositorio.ObtenerDetalle(viajeId, usuarioId, false);
+
+            if (v == null)
             {
-                return NotFound(new
-                {
-                    mensaje = "Usuario no encontrado"
-                });
+                return NotFound(new { mensaje = "Viaje no encontrado" });
             }
 
-            var esAdmin = usuario.Rol == "Admin";
-
-            var viaje = await _context.Viajes
-                .Where(v => v.Id == viajeId)
-                .Where(v =>
-                    esAdmin ||
-                    v.IdPasajero == usuarioId ||
-                    v.IdUsuario == usuarioId ||
-                    (v.IdChofer != 0 && _context.Choferes.Any(c => c.Id == v.IdChofer && c.IdUsuario == usuarioId)) ||
-                    (v.IdChofer != 0 && _context.Choferes.Any(c => c.Id == v.IdChofer && c.IdPrestador == usuarioId))
-                )
-                .Select(v => new ViajeDetalladoDTO
-                {
-                    Id = v.Id,
-
-                    Origen = v.Origen,
-                    Destino = v.Destino,
-                    TipoSolicitud = v.TipoSolicitud,
-
-                    Estado = v.Estado,
-                    EstadoPago = v.EstadoPago,
-
-                    Fecha = v.Fecha,
-                    Hora = v.Hora,
-                    FechaHoraReserva = v.FechaHoraReserva,
-
-                    Monto = v.Monto,
-                    MontoEstimado = v.MontoEstimado,
-                    MetodoDePago = v.MetodoDePago,
-
-                    EquipajeCarga = v.EquipajeCarga,
-                    DetalleCarga = v.DetalleCarga,
-                    MotivoCancelacion = v.MotivoCancelacion,
-
-                    IdPasajero = v.IdPasajero,
-                    NombrePasajero = v.Pasajero.Nombre,
-
-                    IdChofer = v.IdChofer,
-                    NombreChofer = v.Chofer.Nombre,
-
-                    IdVehiculo = v.IdVehiculo,
-                    Patente = v.Vehiculo.Patente,
-                    Marca = v.Vehiculo.Marca
-                })
-                .FirstOrDefaultAsync();
-
-            if (viaje == null)
+            var dto = new ViajeDetalladoDTO
             {
-                return NotFound(new
-                {
-                    mensaje = "Viaje no encontrado"
-                });
-            }
+                Id = v.Id,
+                Origen = v.Origen,
+                Destino = v.Destino,
+                TipoSolicitud = v.TipoSolicitud,
+                Estado = v.Estado,
+                EstadoPago = v.EstadoPago,
+                Fecha = v.Fecha,
+                Hora = v.Hora,
+                FechaHoraReserva = v.FechaHoraReserva,
+                Monto = v.Monto,
+                MontoEstimado = v.MontoEstimado,
+                MetodoDePago = v.MetodoDePago,
+                EquipajeCarga = v.EquipajeCarga,
+                DetalleCarga = v.DetalleCarga,
+                MotivoCancelacion = v.MotivoCancelacion,
+                IdPasajero = v.IdPasajero,
+                NombrePasajero = v.Pasajero?.Nombre,
+                IdChofer = v.IdChofer,
+                NombreChofer = v.Chofer?.Nombre,
+                IdVehiculo = v.IdVehiculo,
+                Patente = v.Vehiculo?.Patente,
+                Marca = v.Vehiculo?.Marca
+            };
 
-            return Ok(viaje);
+            return Ok(dto);
         }
-
-
     }
 }

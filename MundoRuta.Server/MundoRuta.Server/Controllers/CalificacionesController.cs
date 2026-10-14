@@ -1,30 +1,30 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
-using MundoRuta.BD.Datos;
+﻿using Microsoft.AspNetCore.Mvc;
 using MundoRuta.BD.Datos.Entity;
+using MundoRuta.Repositorio.Repositorios;
 using MundoRuta.Shared.DTO;
-using Microsoft.EntityFrameworkCore;
 
 namespace MundoRuta.Server.Controllers
 {
     [ApiController]
-    [Route("api/pasajero")]
+    [Route("api")]
     public class CalificacionesController : ControllerBase
     {
+        private readonly ICalificacionRepositorio _calificacionRepositorio;
+        private readonly IViajeRepositorio _viajeRepositorio;
 
-        private readonly AppDbContext context;
-
-        public CalificacionesController(AppDbContext context)
+        public CalificacionesController(
+            ICalificacionRepositorio calificacionRepositorio,
+            IViajeRepositorio viajeRepositorio)
         {
-            this.context = context;
+            _calificacionRepositorio = calificacionRepositorio;
+            _viajeRepositorio = viajeRepositorio;
         }
 
-        //Post
-        //Calificar viajes
-        [HttpPost("calificaciones")]
+        // POST: Calificar viajes
+        [HttpPost("pasajero/calificaciones")]
         public async Task<ActionResult<CalificacionesResponseDTO>> Puntuacion(CalificacionesDTO dto)
         {
-            var viaje = await context.Viajes.FindAsync(dto.viajeId);
+            var viaje = await _viajeRepositorio.ObtenerPorId(dto.viajeId);
 
             if (viaje == null)
                 return NotFound("Viaje no encontrado");
@@ -41,29 +41,26 @@ namespace MundoRuta.Server.Controllers
                 Comentario = dto.comentario,
             };
 
-            context.Calificaciones.Add(calificacion);
-            await context.SaveChangesAsync();
+            var creada = await _calificacionRepositorio.CrearCalificacion(calificacion);
 
             var response = new CalificacionesResponseDTO
             {
-                id = calificacion.Id,
-                viajeId = calificacion.IdViaje,
-                usuarioId = calificacion.IdUsuario,
-                usuarioPrestadorId = calificacion.IdUsuarioPrestador,
-                puntaje = calificacion.Puntaje,
-                comentario = calificacion.Comentario
+                id = creada.Id,
+                viajeId = creada.IdViaje,
+                usuarioId = creada.IdUsuario,
+                usuarioPrestadorId = creada.IdUsuarioPrestador,
+                puntaje = creada.Puntaje,
+                comentario = creada.Comentario
             };
 
             return Ok(response);
         }
 
-        //Get
-        //Listado de calificaciones
-        [HttpGet("api/prestador/{IdPrestador:int}/calificaciones")]
-
+        // GET: Listado de calificaciones de un prestador
+        [HttpGet("prestador/{IdPrestador:int}/calificaciones")]
         public async Task<ActionResult<ListadoCalificacionesDTO>> ListadoCalificaciones(int IdPrestador)
         {
-            var lista = await context.Calificaciones.Where(c => c.IdUsuarioPrestador == IdPrestador).ToListAsync();
+            var lista = await _calificacionRepositorio.ObtenerPorPrestador(IdPrestador);
 
             var response = new ListadoCalificacionesDTO
             {
@@ -78,8 +75,6 @@ namespace MundoRuta.Server.Controllers
             };
 
             return Ok(response);
-
-
         }
     }
 }
