@@ -1,136 +1,100 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
-using MundoRuta.BD.Datos;
 using MundoRuta.BD.Datos.Entity;
+using MundoRuta.Repositorio.Repositorios;
 using MundoRuta.Shared.DTO;
-using System.ComponentModel;
-
 
 namespace MundoRuta.Server.Controllers;
 
 [ApiController]
 [Route("api/prestador")]
-
 public class PrestadorController : ControllerBase
 {
-    private readonly AppDbContext context;
+    private readonly IUsuarioRepositorio _usuarioRepositorio;
+    private readonly IViajeRepositorio _viajeRepositorio;
+    private readonly IChoferRepositorio _choferRepositorio;
+    private readonly IVehiculoRepositorio _vehiculoRepositorio;
 
-
-    public PrestadorController(AppDbContext context)
+    public PrestadorController(
+        IUsuarioRepositorio usuarioRepositorio,
+        IViajeRepositorio viajeRepositorio,
+        IChoferRepositorio choferRepositorio,
+        IVehiculoRepositorio vehiculoRepositorio)
     {
-        this.context = context;
+        _usuarioRepositorio = usuarioRepositorio;
+        _viajeRepositorio = viajeRepositorio;
+        _choferRepositorio = choferRepositorio;
+        _vehiculoRepositorio = vehiculoRepositorio;
     }
 
+    // GET: lista de solicitudes pendientes
     [HttpGet("{prestadorId:int}/solicitudes")]
-    public ActionResult GetSolicitudes(int prestadorId)
+    public async Task<ActionResult> GetSolicitudes(int prestadorId)
     {
-       
-        var solicitudes = context.Viajes.Where(s => s.IdUsuario == prestadorId && s.Estado == "PENDIENTE").ToList();
-
+        var solicitudes = await _viajeRepositorio.SolicitudesPendientes(prestadorId);
         return Ok(solicitudes);
     }
 
-
-  
-    // POST 
-    // El prestador agrega un nuevo chofer a la empresa.
-    [HttpPost("choferes")]//api/prestador/choferes 
-    public async Task<ActionResult<ChoferAltaDTO>> AltaChofer(ChoferAltaDTO dto)
+    // POST: El prestador agrega un nuevo chofer a la empresa
+    [HttpPost("choferes")] // api/prestador/choferes 
+    public async Task<ActionResult<Chofer>> AltaChofer(ChoferAltaDTO dto)
     {
-        var prestador = await context.Usuarios
-            .FirstOrDefaultAsync(u => u.Id == dto.IdPrestador && u.Rol == "Prestador");
-        if (prestador == null)
+        var prestador = await _usuarioRepositorio.ObtenerPorId(dto.IdPrestador);
+        if (prestador == null || prestador.Rol != "Prestador")
         {
             return NotFound("El prestador indicado no existe.");
         }
 
-        var emailExiste = await context.Usuarios.AnyAsync(u => u.Email == dto.Email);
-        if (emailExiste)
+        var existeEmail = await _usuarioRepositorio.EmailExiste(dto.Email, 0);
+        if (existeEmail)
         {
             return Conflict("El email ya está registrado.");
         }
 
-        var usuarioChofer = new Usuario()
-        {
-            Nombre = dto.Nombre,
-            Apellido = dto.Apellido,
-            Email = dto.Email,
-            Password = dto.Password,
-            Rol = "Chofer",
-            Estado = "APROBADO"
-        };
+        // Le pasamos el DTO directamente al repositorio
+        var choferCreado = await _choferRepositorio.CrearChoferConUsuario(dto);
 
-        var chofer = new Chofer()
-        {
-            Nombre = dto.Nombre,
-            Apellido = dto.Apellido,
-            Licencia = dto.Licencia,
-            Estado = dto.Estado,
-            IdUsuario = usuarioChofer.Id,
-            IdPrestador = dto.IdPrestador
-        };
-
-        using (var transaction = await context.Database.BeginTransactionAsync())
-        {
-            context.Usuarios.Add(usuarioChofer);
-            await context.SaveChangesAsync();
-            chofer.IdUsuario = usuarioChofer.Id;
-            context.Choferes.Add(chofer);
-            await context.SaveChangesAsync();
-            await transaction.CommitAsync();
-        }
-
-        return Ok(chofer);
+        return Ok(choferCreado);
     }
 
-    // GET 
-    // Lista los choferes que tiene ese prestador para que luego los pueda asignar a un flete.
-    [HttpGet("{prestadorId:int}/choferes")]//api/prestador/{prestadorId}/choferes
-    public async Task<ActionResult<ChoferDTO>> GetChoferes(int prestadorId)
+    // GET: Lista los choferes de un prestador
+    [HttpGet("{prestadorId:int}/choferes")] // api/prestador/{prestadorId}/choferes
+    public async Task<ActionResult<List<ChoferDTO>>> GetChoferes(int prestadorId)
     {
-        var choferes = await context.Choferes
-            .Where(c => c.IdPrestador == prestadorId)
-            .Select(c => new ChoferDTO
-            {
-                Id = c.Id,
-                Nombre = c.Nombre,
-                Apellido = c.Apellido,
-                Licencia = c.Licencia,
-                Estado = c.Estado
-            })
-            .ToListAsync();
+        var listaChoferes = await _choferRepositorio.ObtenerPorPrestador(prestadorId);
 
-        return Ok(choferes);
+        var choferesDto = listaChoferes.Select(c => new ChoferDTO
+        {
+            Id = c.Id,
+            Nombre = c.Nombre,
+            Apellido = c.Apellido,
+            Licencia = c.Licencia,
+            Estado = c.Estado
+        }).ToList();
+
+        return Ok(choferesDto);
     }
 
-    // GET 
-    // Muestra la información detallada de un Prestador antes de contratarlo,
-    // incluyendo la lista de vehículos de sus choferes.
-    [HttpGet("{id:int}/perfil-publico")]//api/prestador/{id}/perfil-publico
+    // GET: Información del prestador y vehículos
+    [HttpGet("{id:int}/perfil-publico")] // api/prestador/{id}/perfil-publico
     public async Task<ActionResult<PrestadorPerfilPublicoDTO>> GetPerfilPublico(int id)
     {
+        var prestador = await _usuarioRepositorio.ObtenerPorId(id);
 
-        var prestador = await context.Usuarios
-               .FirstOrDefaultAsync(u => u.Id == id && u.Rol == "Prestador");
-
-        if (prestador == null)
+        if (prestador == null || prestador.Rol != "Prestador")
         {
-            return NotFound("no se encontro el prestador");
+            return NotFound("No se encontró el prestador");
         }
 
-        var vehiculos = await context.Vehiculos
-            .Where(v => context.Choferes
-                .Any(c => c.Id == v.IdChofer && c.IdPrestador == id))
-            .Select(v => new VehiculoDTO
-            {
-                Id = v.Id,
-                Patente = v.Patente,
-                Marca = v.Marca,
-                Licencia = v.Licencia,
-                Estado = v.Estado
-            })
-            .ToListAsync();
+        var listaVehiculos = await _vehiculoRepositorio.ObtenerPorPrestador(id);
+
+        var vehiculosDto = listaVehiculos.Select(v => new VehiculoDTO
+        {
+            Id = v.Id,
+            Patente = v.Patente,
+            Marca = v.Marca,
+            Licencia = v.Licencia,
+            Estado = v.Estado
+        }).ToList();
 
         var perfilPublico = new PrestadorPerfilPublicoDTO
         {
@@ -144,16 +108,17 @@ public class PrestadorController : ControllerBase
             Rol = prestador.Rol,
             RazonSocial = prestador.RazonSocial,
             Cuit = prestador.Cuit,
-            Vehiculos = vehiculos
+            Vehiculos = vehiculosDto
         };
 
         return Ok(perfilPublico);
     }
 
+    // PUT: Responder a solicitud de viaje
     [HttpPut("viajes/{id:int}/responder")]
     public async Task<IActionResult> ResponderSolicitud(int id, ResponderSolicitudDTO dto)
     {
-        var viaje = await context.Viajes.FindAsync(id); // Buscar el viaje por su ID
+        var viaje = await _viajeRepositorio.ObtenerPorId(id);
         if (viaje == null)
         {
             return NotFound("No encontrado");
@@ -171,87 +136,88 @@ public class PrestadorController : ControllerBase
         }
         else
         {
-            return BadRequest("Acción inválida. Debe ser 'ACEPTAR' o 'RECHAZAR'."); // Validación de acción inválida
+            return BadRequest("Acción inválida. Debe ser 'ACEPTAR' o 'RECHAZAR'.");
         }
-        await context.SaveChangesAsync();
+
+        await _viajeRepositorio.Update(viaje);
         return Ok(viaje);
     }
 
+    // PUT: Enviar contraoferta al pasajero
     [HttpPut("viajes/{id:int}/contraofertar")]
     public async Task<IActionResult> ContraOfertar(int id, ContraOfertaDTO dto)
     {
-        var viaje = await context.Viajes.FindAsync(id);
+        var viaje = await _viajeRepositorio.ObtenerPorId(id);
         if (viaje == null)
         {
             return NotFound("No encontrado");
         }
+
         viaje.Estado = "CONTRAOFERTADO";
         viaje.Monto = dto.NuevoMonto;
         viaje.IdChofer = dto.IdChofer;
         viaje.IdVehiculo = dto.IdVehiculo;
-        await context.SaveChangesAsync();
+
+        await _viajeRepositorio.Update(viaje);
         return Ok(new { mensaje = "Contraoferta enviada al pasajero" });
     }
 
-
-
-    [HttpPost("vehiculo")] //api/prestador/vehiculo
-    public async Task<ActionResult<RegistroVehiculoDTO>> Post(RegistroVehiculoDTO DTO)
+    // POST: Registrar un nuevo vehículo
+    [HttpPost("vehiculo")] // api/prestador/vehiculo
+    public async Task<ActionResult<Vehiculo>> Post(RegistroVehiculoDTO dto)
     {
-        Vehiculo entidad = new Vehiculo();
-        entidad.Patente = DTO.Patente;
-        entidad.Marca = DTO.Marca;
-        entidad.Licencia = DTO.Licencia;
-        entidad.Estado = DTO.Estado;
-        entidad.FechaFabricación = DTO.FechaFabricación;
-        entidad.NumeroConductor = DTO.NumeroConductor;
-        entidad.CaracteristicasConductor = DTO.CaracteristicasConductor;
-        entidad.TipoVehiculo = DTO.TipoVehiculo;
-        entidad.CapacidadCarga = DTO.CapacidadCarga;
-        entidad.MarcaModelo = DTO.MarcaModelo;
-        entidad.IdUsuario = DTO.IdUsuario;
+        var entidad = new Vehiculo
+        {
+            Patente = dto.Patente,
+            Marca = dto.Marca,
+            Licencia = dto.Licencia,
+            Estado = dto.Estado,
+            FechaFabricación = dto.FechaFabricación,
+            NumeroConductor = dto.NumeroConductor,
+            CaracteristicasConductor = dto.CaracteristicasConductor,
+            TipoVehiculo = dto.TipoVehiculo,
+            CapacidadCarga = dto.CapacidadCarga,
+            MarcaModelo = dto.MarcaModelo,
+            IdUsuario = dto.IdUsuario,
+            IdChofer = dto.IdChofer > 0 ? dto.IdChofer : null
+        };
 
-        context.Vehiculos.Add(entidad);
-        await context.SaveChangesAsync();
-
-
-        return Ok(entidad);
+        var vehiculoCreado = await _vehiculoRepositorio.Insert(entidad);
+        return Ok(vehiculoCreado);
     }
 
-    //Listado de vehiculos de un prestador
+    // GET: Listado de vehículos de un prestador
     [HttpGet("{id:int}/vehiculos")]
     public async Task<ActionResult<List<VehiculoDTO>>> GetVehiculos(int id)
     {
-        var vehiculos = await context.Vehiculos
-            .Where(v => context.Choferes
-                .Any(c => c.Id == v.IdChofer && c.IdPrestador == id))
-            .Select(v => new VehiculoDTO
-            {
-                Id = v.Id,
-                Patente = v.Patente,
-                Marca = v.Marca,
-                Licencia = v.Licencia,
-                Estado = v.Estado,
-                CapacidadCarga = v.CapacidadCarga,
-                TipoVehiculo = v.TipoVehiculo,
-                IdUsuario = v.IdUsuario,
-                IdChofer = v.IdChofer
-            
-             })
-            .ToListAsync();
+        var listaVehiculos = await _vehiculoRepositorio.ObtenerPorPrestador(id);
 
-        if (!vehiculos.Any())
+        if (listaVehiculos == null || !listaVehiculos.Any())
         {
             return NotFound("No se encontraron vehículos");
         }
 
-        return Ok(vehiculos);
+        var vehiculosDto = listaVehiculos.Select(v => new VehiculoDTO
+        {
+            Id = v.Id,
+            Patente = v.Patente,
+            Marca = v.Marca,
+            Licencia = v.Licencia,
+            Estado = v.Estado,
+            CapacidadCarga = v.CapacidadCarga,
+            TipoVehiculo = v.TipoVehiculo,
+            IdUsuario = v.IdUsuario,
+            IdChofer = v.IdChofer
+        }).ToList();
+
+        return Ok(vehiculosDto);
     }
 
+    // PUT: Finalizar un viaje
     [HttpPut("viajes/{id:int}/finalizar")]
     public async Task<IActionResult> FinalizarServicio(int id)
     {
-        var viaje = await context.Viajes.FindAsync(id);
+        var viaje = await _viajeRepositorio.ObtenerPorId(id);
 
         if (viaje == null)
         {
@@ -262,29 +228,17 @@ public class PrestadorController : ControllerBase
         {
             return BadRequest("El viaje no está en curso, no se puede finalizar");
         }
-           
-        viaje.Estado = "FINALIZADO";
-        viaje.Fecha = DateTime.UtcNow; // Actualizar la fecha de finalización del viaje
-        await context.SaveChangesAsync();
 
-        //liberamos al chofer
-
-        var chofer = await context.Choferes.FindAsync(viaje.IdChofer);
-        if (chofer != null)
-        {
-            chofer.Estado = "DISPONIBLE";
-            await context.SaveChangesAsync();
-        }
+        await _viajeRepositorio.FinalizarViaje(viaje);
 
         return Ok(new { mensaje = "Viaje finalizado correctamente" });
-
-
     }
 
+    // PUT: Registrar pago de un viaje
     [HttpPut("viajes/{id:int}/registrar-pago")]
-    public async Task<ActionResult> RegistrarPago (int id, ConfirmacionPagoDTO dto)
+    public async Task<ActionResult> RegistrarPago(int id, ConfirmacionPagoDTO dto)
     {
-        var viaje = await context.Viajes.FindAsync(id);
+        var viaje = await _viajeRepositorio.ObtenerPorId(id);
 
         if (viaje == null)
         {
@@ -295,12 +249,7 @@ public class PrestadorController : ControllerBase
         viaje.Monto = dto.montoCobrado;
         viaje.MetodoDePago = dto.metodoPago;
 
-        await context.SaveChangesAsync();
+        await _viajeRepositorio.Update(viaje);
         return Ok(new { mensaje = "Pago realizado con exito", viaje });
-
-        
     }
-
-
-
 }

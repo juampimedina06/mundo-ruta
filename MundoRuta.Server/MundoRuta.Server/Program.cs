@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos;
+using MundoRuta.BD.Datos.Entity;
+using MundoRuta.Repositorio;
+using MundoRuta.Repositorio.Repositorios;
 using MundoRuta.Server.Client.Pages;
 using MundoRuta.Server.Components;
 
@@ -32,7 +35,15 @@ builder.Services.AddScoped(sp =>
 
 
 #region Inyeccion de dependencias
-//agregar repositorios e interfaz
+builder.Services.AddScoped<IUsuarioRepositorio, UsuarioRepositorio>();
+builder.Services.AddScoped<IViajeRepositorio, ViajeRepositorio>();
+builder.Services.AddScoped<IChoferRepositorio, ChoferRepositorio>();
+builder.Services.AddScoped<IVehiculoRepositorio, VehiculoRepositorio>();
+builder.Services.AddScoped<IServicioRepositorio, ServicioRepositorio>();
+builder.Services.AddScoped<ICalificacionRepositorio, CalificacionRepositorio>();
+builder.Services.AddScoped<ICargaRepositorio, CargaRepositorio>();
+builder.Services.AddScoped<IChatRepositorio, ChatRepositorio>();
+builder.Services.AddScoped<IMensajeRepositorio, MensajeRepositorio>();
 #endregion
 
 
@@ -77,5 +88,27 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(MundoRuta.Server.Client._Imports).Assembly);
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    if (!db.Usuarios.Any(u => u.Rol == "Admin"))
+    {
+        db.Usuarios.Add(new Usuario
+        {
+            Nombre = "Administrador",
+            Apellido = "Sistema",
+            Email = "admin@mundoruta.com",
+            Password = "Admin123!",
+            Telefono = "",
+            FechaRegistro = DateTime.Now,
+            Estado = "APROBADO",
+            Rol = "Admin",
+            Cuit = "",
+            RazonSocial = ""
+        });
+        db.SaveChanges();
+    }
+}
 
 app.Run();

@@ -401,9 +401,6 @@ namespace MundoRuta.BD.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ChoferId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Estado")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -411,7 +408,7 @@ namespace MundoRuta.BD.Migrations
                     b.Property<DateTime>("FechaFabricación")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("IdChofer")
+                    b.Property<int?>("IdChofer")
                         .HasColumnType("int");
 
                     b.Property<int>("IdUsuario")
@@ -440,14 +437,11 @@ namespace MundoRuta.BD.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("UsuarioId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("ChoferId");
+                    b.HasIndex("IdChofer");
 
-                    b.HasIndex("UsuarioId");
+                    b.HasIndex("IdUsuario");
 
                     b.ToTable("Vehiculos");
                 });
@@ -517,7 +511,6 @@ namespace MundoRuta.BD.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("MotivoCancelacion")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Origen")
@@ -688,14 +681,13 @@ namespace MundoRuta.BD.Migrations
                 {
                     b.HasOne("MundoRuta.BD.Datos.Entity.Chofer", "Chofer")
                         .WithMany()
-                        .HasForeignKey("ChoferId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("IdChofer")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MundoRuta.BD.Datos.Entity.Usuario", "Usuario")
                         .WithMany()
-                        .HasForeignKey("UsuarioId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("IdUsuario")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Chofer");
