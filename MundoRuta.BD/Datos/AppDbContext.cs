@@ -21,6 +21,7 @@ namespace MundoRuta.BD.Datos
         public DbSet<Calificacion> Calificaciones { get; set; }
         public DbSet<Chat> Chats { get; set; }
         public DbSet<Mensaje> Mensajes { get; set; }
+        public DbSet<Notificacion> Notificaciones { get; set; }
 
         public AppDbContext(DbContextOptions options) : base(options)
         {
