@@ -60,7 +60,9 @@ public class Viaje : EntidadBase
     public Vehiculo Vehiculo { get; set; }
 
 
+    public decimal? Volumen { get; set; }
 
+    public decimal? Peso { get; set; }
 
 
 
