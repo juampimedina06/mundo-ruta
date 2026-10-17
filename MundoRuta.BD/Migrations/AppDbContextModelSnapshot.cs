@@ -241,6 +241,46 @@ namespace MundoRuta.BD.Migrations
                     b.ToTable("Mensajes");
                 });
 
+            modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Notificacion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("Leida")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Mensaje")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("PrestadorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Tipo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Titulo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("UsuarioId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PrestadorId");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("Notificaciones");
+                });
+
             modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Pago", b =>
                 {
                     b.Property<int>("Id")
@@ -645,6 +685,21 @@ namespace MundoRuta.BD.Migrations
                     b.Navigation("Destinatario");
 
                     b.Navigation("Emisor");
+                });
+
+            modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Notificacion", b =>
+                {
+                    b.HasOne("MundoRuta.BD.Datos.Entity.PrestadorServicio", "Prestador")
+                        .WithMany()
+                        .HasForeignKey("PrestadorId");
+
+                    b.HasOne("MundoRuta.BD.Datos.Entity.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId");
+
+                    b.Navigation("Prestador");
+
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Pago", b =>
