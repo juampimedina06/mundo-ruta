@@ -17,7 +17,7 @@ namespace MundoRuta.Repositorio.Repositorios
         public async Task<List<VehiculoDTO>> ObtenerPorPrestador(int prestadorId)
         {
             return await context.Vehiculos
-                .Where(v => context.Choferes.Any(c => c.Id == v.IdChofer && c.IdPrestador == prestadorId))
+                .Where(v => v.IdUsuario == prestadorId)
                 .Select(v => new VehiculoDTO
                 {
                     Id = v.Id,
