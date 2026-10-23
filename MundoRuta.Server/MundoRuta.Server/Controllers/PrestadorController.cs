@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MundoRuta.BD.Datos.Entity;
 using MundoRuta.Repositorio.Repositorios;
+using MundoRuta.Shared;
 using MundoRuta.Shared.DTO;
 
 namespace MundoRuta.Server.Controllers;
@@ -126,7 +127,7 @@ public class PrestadorController : ControllerBase
 
         if (dto.Accion == "ACEPTAR")
         {
-            viaje.Estado = "Aceptado";
+            viaje.Estado = EstadosViaje.Asignado; // El viaje queda asignado al aceptar la solicitud.
             viaje.IdChofer = dto.IdChofer;
             viaje.IdVehiculo = dto.IdVehiculo;
         }
@@ -224,7 +225,7 @@ public class PrestadorController : ControllerBase
             return NotFound("No encontrado");
         }
 
-        if (viaje.Estado != "EN_CURSO")
+        if (viaje.Estado != EstadosViaje.EnTransito) // Verifica que el viaje esté en tránsito antes de finalizarlo.
         {
             return BadRequest("El viaje no está en curso, no se puede finalizar");
         }
