@@ -30,8 +30,16 @@ public class PrestadorController : ControllerBase
     [HttpGet("{prestadorId:int}/solicitudes")]
     public async Task<ActionResult> GetSolicitudes(int prestadorId)
     {
-        var solicitudes = await _viajeRepositorio.SolicitudesPendientes(prestadorId);
+        var solicitudes = await _viajeRepositorio.ListadoPorPrestador(prestadorId, "PENDIENTE");
         return Ok(solicitudes);
+    }
+
+    // GET: todos los viajes de la empresa
+    [HttpGet("{prestadorId:int}/viajes")] // api/prestador/{prestadorId}/viajes
+    public async Task<ActionResult<List<ViajePrestadorDTO>>> GetViajes(int prestadorId, string? estado = null)
+    {
+        var viajes = await _viajeRepositorio.ListadoPorPrestador(prestadorId, estado);
+        return Ok(viajes);
     }
 
     // POST: El prestador agrega un nuevo chofer a la empresa
