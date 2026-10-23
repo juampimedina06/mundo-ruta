@@ -28,7 +28,11 @@ namespace MundoRuta.Repositorio.Repositorios
                     CapacidadCarga = v.CapacidadCarga,
                     TipoVehiculo = v.TipoVehiculo,
                     IdUsuario = v.IdUsuario,
-                    IdChofer = v.IdChofer
+                    IdChofer = v.IdChofer,
+                    MarcaModelo = v.MarcaModelo,
+                    FechaFabricación = v.FechaFabricación,
+                    NumeroConductor = v.NumeroConductor,
+                    CaracteristicasConductor = v.CaracteristicasConductor
                 })
                 .ToListAsync();
         }

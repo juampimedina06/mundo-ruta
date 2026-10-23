@@ -191,26 +191,7 @@ public class PrestadorController : ControllerBase
     public async Task<ActionResult<List<VehiculoDTO>>> GetVehiculos(int id)
     {
         var listaVehiculos = await _vehiculoRepositorio.ObtenerPorPrestador(id);
-
-        if (listaVehiculos == null || !listaVehiculos.Any())
-        {
-            return NotFound("No se encontraron vehículos");
-        }
-
-        var vehiculosDto = listaVehiculos.Select(v => new VehiculoDTO
-        {
-            Id = v.Id,
-            Patente = v.Patente,
-            Marca = v.Marca,
-            Licencia = v.Licencia,
-            Estado = v.Estado,
-            CapacidadCarga = v.CapacidadCarga,
-            TipoVehiculo = v.TipoVehiculo,
-            IdUsuario = v.IdUsuario,
-            IdChofer = v.IdChofer
-        }).ToList();
-
-        return Ok(vehiculosDto);
+        return Ok(listaVehiculos);
     }
 
     // PUT: Finalizar un viaje

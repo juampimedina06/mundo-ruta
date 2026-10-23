@@ -1,0 +1,109 @@
+﻿@page "/prestador/{PrestadorId:int}/vehiculos"
+@inject HttpClient Http
+
+<PageTitle>Vehículos</PageTitle>
+
+<h1>Vehículos</h1>
+
+@if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+else if (vehiculos is null)
+{
+    <p><em>Cargando...</em></p>
+}
+else if (!vehiculos.Any())
+{
+    <div class="alert alert-light border">Todavía no registraste vehículos.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Patente - Marca</th>
+                    <th>Nombre</th>
+                    <th>Tipo de Vehículo</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var v in vehiculos)
+                {
+                    <tr>
+                        <td>@v.Patente - @v.Marca</td>
+                        <td>@v.MarcaModelo</td>
+                        <td>@v.TipoVehiculo</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => seleccionado = v">Ver detalle</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (seleccionado is not null)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" @onclick="Cerrar">
+        <div class="modal-dialog modal-dialog-centered" role="document" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@seleccionado.Patente - @seleccionado.Marca</h5>
+                    <button type="button" class="btn-close" aria-label="Cerrar" @onclick="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Nombre / Modelo</dt>
+                        <dd class="col-sm-7">@seleccionado.MarcaModelo</dd>
+                        <dt class="col-sm-5">Tipo de vehículo</dt>
+                        <dd class="col-sm-7">@seleccionado.TipoVehiculo</dd>
+                        <dt class="col-sm-5">Capacidad de carga</dt>
+                        <dd class="col-sm-7">@seleccionado.CapacidadCarga</dd>
+                        <dt class="col-sm-5">Fecha de fabricación</dt>
+                        <dd class="col-sm-7">@seleccionado.FechaFabricación.ToFechaCorta()</dd>
+                        <dt class="col-sm-5">Licencia</dt>
+                        <dd class="col-sm-7">@seleccionado.Licencia</dd>
+                        <dt class="col-sm-5">Estado</dt>
+                        <dd class="col-sm-7">@seleccionado.Estado</dd>
+                        <dt class="col-sm-5">Chofer asignado</dt>
+                        <dd class="col-sm-7">@(seleccionado.IdChofer.HasValue ? $"N° {seleccionado.IdChofer}" : "Sin chofer asignado")</dd>
+                        <dt class="col-sm-5">N° de conductor</dt>
+                        <dd class="col-sm-7">@seleccionado.NumeroConductor</dd>
+                        <dt class="col-sm-5">Características del conductor</dt>
+                        <dd class="col-sm-7">@seleccionado.CaracteristicasConductor</dd>
+                    </dl>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Cerrar">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int PrestadorId { get; set; }
+
+    private List<VehiculoDTO>? vehiculos;
+    private VehiculoDTO? seleccionado;
+    private string? error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            vehiculos = await Http.GetFromJsonAsync<List<VehiculoDTO>>($"api/prestador/{PrestadorId}/vehiculos") ?? new();
+        }
+        catch (Exception ex)
+        {
+            error = $"No se pudieron cargar los vehículos: {ex.Message}";
+        }
+    }
+
+    private void Cerrar() => seleccionado = null;
+}
