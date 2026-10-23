@@ -6,8 +6,8 @@ using MundoRuta.Shared.DTO;
 
 namespace MundoRuta.Server.Controllers
 {
-    [ApiController]
     [Route("api/chofer")]
+    [ApiController]
     public class ChoferController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -17,98 +17,96 @@ namespace MundoRuta.Server.Controllers
             _context = context;
         }
 
+        // GET {choferId}/viaje-activo: devuelve el viaje actual en curso
         [HttpGet("{choferId}/viaje-activo")]
         public async Task<ActionResult> GetViajeActivo(int choferId)
         {
-            var viaje = await _context.Viajes
-                .Include(v => v.Usuario)
-                .Where(v => v.IdChofer == choferId && v.Estado != "finalizado" && v.Estado != "cancelado")
-                .FirstOrDefaultAsync();
+            var estadosActivos = new[] { "Asignado", "Carga-subida", "En-transito", "Llegada-destino" };
 
-            if (viaje == null) return NotFound("El chofer no tiene viajes activos en este momento.");
+            var viaje = await _context.Viajes
+                .FirstOrDefaultAsync(v => v.IdChofer == choferId && estadosActivos.Contains(v.Estado));
+
+            if (viaje == null) return NotFound("No hay ningún viaje activo para este chofer.");
 
             return Ok(viaje);
         }
 
+        // PUT viajes/{id}/avanzar-estado: Máquina de estados secuencial
         [HttpPut("viajes/{id}/avanzar-estado")]
         public async Task<ActionResult> AvanzarEstadoViaje(int id)
         {
             var viaje = await _context.Viajes.FindAsync(id);
             if (viaje == null) return NotFound("Viaje no encontrado.");
 
-            string nuevoEstado = "";
-            switch (viaje.Estado?.ToLower())
+            switch (viaje.Estado)
             {
-                case "asignado":
-                    nuevoEstado = "carga-subida";
+                case "Asignado":
+                    viaje.Estado = "Carga-subida";
                     break;
-                case "carga-subida":
-                    nuevoEstado = "en-transito";
+                case "Carga-subida":
+                    viaje.Estado = "En-transito";
                     break;
-                case "en-transito":
-                    nuevoEstado = "llegada-destino";
+                case "En-transito":
+                    viaje.Estado = "Llegada-destino";
                     break;
-                case "llegada-destino":
-                    return BadRequest("No se puede avanzar el estado. Debe validar el DNI para finalizar la entrega.");
+                case "Llegada-destino":
+                    return BadRequest("El viaje ya llegó a destino. El siguiente paso es validar la entrega.");
                 default:
-                    return BadRequest("El viaje tiene un estado inválido o ya fue finalizado/cancelado.");
+                    return BadRequest($"Estado actual '{viaje.Estado}' no es válido para avanzar.");
             }
 
-            viaje.Estado = nuevoEstado;
             await _context.SaveChangesAsync();
-
-            return Ok(new { mensaje = $"El viaje avanzó exitosamente al estado: {nuevoEstado}" });
+            return Ok(new { mensaje = $"Estado avanzado correctamente a: {viaje.Estado}" });
         }
 
+        // POST viajes/{id}/validar-entrega: Valida DNI y finaliza el viaje
         [HttpPost("viajes/{id}/validar-entrega")]
         public async Task<ActionResult> ValidarEntrega(int id, [FromBody] ValidarEntregaDTO dto)
         {
+
             var viaje = await _context.Viajes
-                .Include(v => v.Usuario)
+                .Include(v => v.Chofer)
+                .Include(v => v.Usuario) 
                 .FirstOrDefaultAsync(v => v.Id == id);
 
             if (viaje == null) return NotFound("Viaje no encontrado.");
 
-            if (viaje.Usuario?.Cuit != dto.CuitIngresado)
+
+            if (viaje.Usuario.Cuit != dto.CuitIngresado)
             {
-                return BadRequest("DNI inválido. No se puede entregar el viaje.");
+                return BadRequest("DNI inválido.");
             }
 
-            viaje.Estado = "finalizado";
 
-            var chofer = await _context.Choferes.FindAsync(viaje.IdChofer);
-            if (chofer != null)
-            {
-                chofer.Estado = "DISPONIBLE";
-            }
+            viaje.Estado = "Finalizado";
+            if (viaje.Chofer != null) viaje.Chofer.Estado = "DISPONIBLE";
+
 
             var calificacion = new Calificacion
             {
                 IdViaje = viaje.Id,
-                IdUsuario = viaje.IdUsuario, 
                 Puntaje = dto.PuntajePasajero,
                 Comentario = dto.Comentario
-               
             };
             _context.Calificaciones.Add(calificacion);
 
             await _context.SaveChangesAsync();
-
-            return Ok(new { mensaje = "DNI validado con éxito. Viaje finalizado." });
+            return Ok(new { mensaje = "Entrega validada exitosamente. Viaje finalizado." });
         }
 
+        // GET {choferId}/historial: lista viajes completados
         [HttpGet("{choferId}/historial")]
         public async Task<ActionResult> GetHistorial(int choferId)
         {
-            var viajes = await _context.Viajes
-                .Where(v => v.IdChofer == choferId && v.Estado == "finalizado")
+            var viajesCompletados = await _context.Viajes
+                .Where(v => v.IdChofer == choferId && v.Estado == "Finalizado")
                 .OrderByDescending(v => v.Id)
                 .ToListAsync();
 
-            return Ok(viajes);
+            return Ok(viajesCompletados);
         }
 
-
+        // GET {choferId}/perfil: obtiene datos, foto y promedio
         [HttpGet("{choferId}/perfil")]
         public async Task<ActionResult> GetPerfil(int choferId)
         {
@@ -125,17 +123,18 @@ namespace MundoRuta.Server.Controllers
 
             return Ok(new
             {
-                Id = chofer.Id,
-                Nombre = chofer.Nombre,
-                Apellido = chofer.Apellido,
-                Licencia = chofer.Licencia,
-                Estado = chofer.Estado,
-                Telefono = chofer.Telefono,
-                FotoPerfil = chofer.FotoPerfil,
-                PromedioCalificacion = Math.Round(promedio, 1) // Redondeado a 1 decimal (ej: 4.5)
+                chofer.Id,
+                chofer.Nombre,
+                chofer.Apellido,
+                chofer.Licencia,
+                chofer.Estado,
+                chofer.Telefono,
+                chofer.FotoPerfil,
+                PromedioCalificacion = Math.Round(promedio, 1)
             });
         }
 
+        // PUT {choferId}/perfil: actualiza datos personales de forma segura
         [HttpPut("{choferId}/perfil")]
         public async Task<ActionResult> ActualizarPerfil(int choferId, [FromBody] ActualizarPerfilDTO dto)
         {
