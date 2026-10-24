@@ -44,6 +44,7 @@ builder.Services.AddScoped<ICalificacionRepositorio, CalificacionRepositorio>();
 builder.Services.AddScoped<ICargaRepositorio, CargaRepositorio>();
 builder.Services.AddScoped<IChatRepositorio, ChatRepositorio>();
 builder.Services.AddScoped<IMensajeRepositorio, MensajeRepositorio>();
+builder.Services.AddScoped<IOfertaViajeRepositorio, OfertaViajeRepositorio>();
 #endregion
 
 

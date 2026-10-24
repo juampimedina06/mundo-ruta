@@ -16,6 +16,7 @@ namespace MundoRuta.BD.Datos
         public DbSet<Chofer> Choferes { get; set; }
         public DbSet<Vehiculo> Vehiculos { get; set; }
         public DbSet<Viaje> Viajes { get; set; }
+        public DbSet<OfertaViaje> OfertasViajes { get; set; }
         public DbSet<Carga> Cargas { get; set; }
         public DbSet<Pago> Pagos { get; set; }
         public DbSet<Calificacion> Calificaciones { get; set; }
@@ -86,6 +87,25 @@ namespace MundoRuta.BD.Datos
                 .WithMany() // No se configura una colección de chats en Viaje.
                 .HasForeignKey(c => c.IdViaje) // Indica la clave foránea del viaje.
                 .OnDelete(DeleteBehavior.Restrict); // Impide eliminar un viaje si tiene chats relacionados.
+
+            modelBuilder.Entity<OfertaViaje>()
+                .HasOne(o => o.Viaje)
+                .WithMany()
+                .HasForeignKey(o => o.IdViaje)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<OfertaViaje>()
+                .HasOne(o => o.Prestador)
+                .WithMany()
+                .HasForeignKey(o => o.IdPrestador)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<OfertaViaje>()
+                .HasOne(o => o.ChoferPropuesto)
+                .WithMany()
+                .HasForeignKey(o => o.IdChoferPropuesto)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
 
