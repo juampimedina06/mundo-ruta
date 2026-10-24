@@ -460,6 +460,9 @@ namespace MundoRuta.BD.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("CalificadoPorPasajero")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Destino")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");

@@ -58,6 +58,7 @@ public class Viaje : EntidadBase
 
     [ForeignKey("IdVehiculo")]
     public Vehiculo Vehiculo { get; set; }
+    public bool CalificadoPorPasajero { get; set; } = false;
 
 
 
