@@ -8,6 +8,7 @@ namespace MundoRuta.BD.Datos.Entity
     public class Vehiculo : EntidadBase
     {
         public string Patente { get; set; }
+        public string Nombre { get; set; } // Nombre identificatorio del vehículo.
         public string Marca { get; set; }
         public string Licencia { get; set; }
         public string Estado { get; set; }

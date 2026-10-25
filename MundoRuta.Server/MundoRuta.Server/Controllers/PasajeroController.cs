@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MundoRuta.BD.Datos.Entity;
 using MundoRuta.Repositorio.Repositorios;
+using MundoRuta.Shared;
 using MundoRuta.Shared.DTO;
 
 namespace MundoRuta.Server.Controllers
@@ -26,7 +27,7 @@ namespace MundoRuta.Server.Controllers
                 return NotFound("El viaje no existe");
             }
 
-            if (viaje.Estado == "CANCELADO")
+            if (viaje.Estado == EstadosViaje.Cancelado) // Verifica si el viaje ya fue cancelado.
             {
                 return BadRequest("El viaje ya está cancelado");
             }
@@ -39,7 +40,7 @@ namespace MundoRuta.Server.Controllers
                     "No se puede cancelar el viaje con menos de 30 minutos de anticipación");
             }
 
-            viaje.Estado = "CANCELADO";
+            viaje.Estado = EstadosViaje.Cancelado; // Cambia el estado del viaje a cancelado.
             viaje.MotivoCancelacion = dto.Motivo;
 
             await repositorio.Update(viaje);
@@ -55,7 +56,7 @@ namespace MundoRuta.Server.Controllers
                 Origen = dto.Origen,
                 Destino = dto.Destino,
                 TipoSolicitud = dto.TipoSolicitud,
-                Estado = "PENDIENTE",
+                Estado = EstadosViaje.Buscando, // El viaje comienza buscando un prestador.
                 EstadoPago = "PENDIENTE",
                 MetodoDePago = "EFECTIVO",
                 Fecha = dto.Fecha,
@@ -88,11 +89,11 @@ namespace MundoRuta.Server.Controllers
 
             if (dto.Aceptar)
             {
-                viaje.Estado = "ACEPTADO";
+                viaje.Estado = EstadosViaje.Asignado; // Si el pasajero acepta, el viaje queda asignado.
             }
             else
             {
-                viaje.Estado = "CANCELADO";
+                viaje.Estado = EstadosViaje.Cancelado;  // Si el pasajero rechaza la contraoferta, se cancela el viaje.
             }
 
             await repositorio.Update(viaje);
@@ -104,7 +105,7 @@ namespace MundoRuta.Server.Controllers
         }
 
         [HttpGet("{usuarioId:int}/viajes")]
-        public async Task<ActionResult<List<ListadoViajeDTO>>> ViajesSolicitados(int usuarioId, string? estado = "PENDIENTE")
+        public async Task<ActionResult<List<ListadoViajeDTO>>> ViajesSolicitados(int usuarioId, string? estado = EstadosViaje.Buscando) // Obtiene los viajes del usuario, filtrando por estado si se indica.
         {
             var lista = await repositorio.ObtenerPorUsuario(usuarioId, estado);
 

@@ -79,6 +79,13 @@ namespace MundoRuta.BD.Datos
                 .HasForeignKey(v => v.IdUsuario)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Configura la relación entre Chat y Viaje.
+            modelBuilder.Entity<Chat>()
+                .HasOne(c => c.Viaje) // Cada chat está relacionado con un viaje.
+                .WithMany() // No se configura una colección de chats en Viaje.
+                .HasForeignKey(c => c.IdViaje) // Indica la clave foránea del viaje.
+                .OnDelete(DeleteBehavior.Restrict); // Impide eliminar un viaje si tiene chats relacionados.
         }
 
 
