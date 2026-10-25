@@ -1,7 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos.Entity;
 using MundoRuta.Repositorio.Repositorios;
+using MundoRuta.Server.Hubs;
+using MundoRuta.Shared;
 using MundoRuta.Shared.DTO;
+using MundoRuta.Shared.DTO.Realtime;
 
 namespace MundoRuta.Server.Controllers;
 
@@ -13,17 +18,26 @@ public class PrestadorController : ControllerBase
     private readonly IViajeRepositorio _viajeRepositorio;
     private readonly IChoferRepositorio _choferRepositorio;
     private readonly IVehiculoRepositorio _vehiculoRepositorio;
+    private readonly IOfertaViajeRepositorio _ofertaViajeRepositorio;
+    private readonly MundoRuta.BD.Datos.AppDbContext _context;
+    private readonly IHubContext<ViajeHub> _hubContext;
 
     public PrestadorController(
         IUsuarioRepositorio usuarioRepositorio,
         IViajeRepositorio viajeRepositorio,
         IChoferRepositorio choferRepositorio,
-        IVehiculoRepositorio vehiculoRepositorio)
+        IVehiculoRepositorio vehiculoRepositorio,
+        IOfertaViajeRepositorio ofertaViajeRepositorio,
+        MundoRuta.BD.Datos.AppDbContext context,
+        IHubContext<ViajeHub> hubContext)
     {
         _usuarioRepositorio = usuarioRepositorio;
         _viajeRepositorio = viajeRepositorio;
         _choferRepositorio = choferRepositorio;
         _vehiculoRepositorio = vehiculoRepositorio;
+        _ofertaViajeRepositorio = ofertaViajeRepositorio;
+        _context = context;
+        _hubContext = hubContext;
     }
 
     // GET: lista de solicitudes pendientes
@@ -114,9 +128,9 @@ public class PrestadorController : ControllerBase
         return Ok(perfilPublico);
     }
 
-    // PUT: Responder a solicitud de viaje
+    // PUT: Responder a solicitud de viaje (crear oferta en subasta)
     [HttpPut("viajes/{id:int}/responder")]
-    public async Task<IActionResult> ResponderSolicitud(int id, ResponderSolicitudDTO dto)
+    public async Task<IActionResult> ResponderSolicitud(int id, ResponderSolicitudDTO dto, [FromQuery] int idPrestador = 0)
     {
         var viaje = await _viajeRepositorio.ObtenerPorId(id);
         if (viaje == null)
@@ -124,28 +138,71 @@ public class PrestadorController : ControllerBase
             return NotFound("No encontrado");
         }
 
-        if (dto.Accion == "ACEPTAR")
+        if (viaje.Estado != EstadosViaje.Buscando)
         {
-            viaje.Estado = "Aceptado";
-            viaje.IdChofer = dto.IdChofer;
-            viaje.IdVehiculo = dto.IdVehiculo;
+            return BadRequest("El viaje no se encuentra en estado BUSCANDO para recibir ofertas");
+        }
+
+        int ofertasActivas = _context.OfertasViajes.Count(o => o.IdViaje == id && o.EstadoOferta == "ACTIVA");
+        if (ofertasActivas >= 5)
+        {
+            return BadRequest("Ya se alcanzó el límite de 5 ofertas para este viaje");
+        }
+
+        if (dto.Accion == "ACEPTAR" || dto.Accion == "ACEPTAR_OFERTA" || dto.Accion == "OFERTAR" || dto.Accion == "POSTULAR")
+        {
+            var prestadorId = idPrestador;
+            if (prestadorId <= 0 && viaje.IdUsuario > 0) prestadorId = viaje.IdUsuario;
+            var oferta = new OfertaViaje
+            {
+                IdViaje = id,
+                IdPrestador = prestadorId,
+                IdChoferPropuesto = dto.IdChofer > 0 ? dto.IdChofer : null,
+                MontoOfertado = dto.MontoEstimado > 0 ? dto.MontoEstimado : viaje.Monto,
+                EsContraoferta = false,
+                EstadoOferta = "ACTIVA",
+                FechaOferta = DateTime.Now
+            };
+            await _context.OfertasViajes.AddAsync(oferta);
+            await _context.SaveChangesAsync();
+
+            var prestador = await _usuarioRepositorio.ObtenerPorId(prestadorId);
+            var ofertaDto = new NuevaOfertaDTO
+            {
+                IdOferta = oferta.Id,
+                IdViaje = oferta.IdViaje,
+                IdPrestador = oferta.IdPrestador,
+                NombrePrestador = prestador != null ? (prestador.RazonSocial ?? (prestador.Nombre + " " + prestador.Apellido)) : string.Empty,
+                MontoOfertado = oferta.MontoOfertado,
+                EsContraoferta = oferta.EsContraoferta,
+                EstadoOferta = oferta.EstadoOferta,
+                FechaOferta = oferta.FechaOferta,
+                IdChoferPropuesto = oferta.IdChoferPropuesto
+            };
+
+            await _hubContext.Clients.Group($"viaje_{id}").SendAsync("NuevaOfertaRecibida", ofertaDto);
+            if (viaje.IdPasajero > 0)
+            {
+                await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("NuevaOfertaRecibida", ofertaDto);
+            }
+
+            return Ok(new { mensaje = "Oferta registrada", idOferta = oferta.Id });
         }
         else if (dto.Accion == "RECHAZAR")
         {
-            viaje.Estado = "Rechazado";
+            viaje.Estado = EstadosViaje.Rechazado;
+            await _viajeRepositorio.Update(viaje);
+            return Ok(viaje);
         }
         else
         {
             return BadRequest("Acción inválida. Debe ser 'ACEPTAR' o 'RECHAZAR'.");
         }
-
-        await _viajeRepositorio.Update(viaje);
-        return Ok(viaje);
     }
 
-    // PUT: Enviar contraoferta al pasajero
+    // PUT: Enviar contraoferta al pasajero (crear oferta en subasta)
     [HttpPut("viajes/{id:int}/contraofertar")]
-    public async Task<IActionResult> ContraOfertar(int id, ContraOfertaDTO dto)
+    public async Task<IActionResult> ContraOfertar(int id, ContraOfertaDTO dto, [FromQuery] int idPrestador = 0)
     {
         var viaje = await _viajeRepositorio.ObtenerPorId(id);
         if (viaje == null)
@@ -153,13 +210,55 @@ public class PrestadorController : ControllerBase
             return NotFound("No encontrado");
         }
 
-        viaje.Estado = "CONTRAOFERTADO";
-        viaje.Monto = dto.NuevoMonto;
-        viaje.IdChofer = dto.IdChofer;
-        viaje.IdVehiculo = dto.IdVehiculo;
+        if (viaje.Estado != EstadosViaje.Buscando && viaje.Estado != EstadosViaje.Contraofertado)
+        {
+            return BadRequest("El viaje no permite contraofertas en este estado");
+        }
 
+        int ofertasActivas2 = _context.OfertasViajes.Count(o => o.IdViaje == id && o.EstadoOferta == "ACTIVA");
+        if (ofertasActivas2 >= 5)
+        {
+            return BadRequest("Ya se alcanzó el límite de 5 ofertas para este viaje");
+        }
+
+        var prestadorId2 = idPrestador;
+        if (prestadorId2 <= 0 && viaje.IdUsuario > 0) prestadorId2 = viaje.IdUsuario;
+        var oferta2 = new OfertaViaje
+        {
+            IdViaje = id,
+            IdPrestador = prestadorId2,
+            IdChoferPropuesto = dto.IdChofer > 0 ? dto.IdChofer : null,
+            MontoOfertado = dto.NuevoMonto,
+            EsContraoferta = true,
+            EstadoOferta = "ACTIVA",
+            FechaOferta = DateTime.Now
+        };
+        await _context.OfertasViajes.AddAsync(oferta2);
+        viaje.Estado = EstadosViaje.Contraofertado;
         await _viajeRepositorio.Update(viaje);
-        return Ok(new { mensaje = "Contraoferta enviada al pasajero" });
+        await _context.SaveChangesAsync();
+
+        var prestador2 = await _usuarioRepositorio.ObtenerPorId(prestadorId2);
+        var ofertaDto2 = new NuevaOfertaDTO
+        {
+            IdOferta = oferta2.Id,
+            IdViaje = oferta2.IdViaje,
+            IdPrestador = oferta2.IdPrestador,
+            NombrePrestador = prestador2 != null ? (prestador2.RazonSocial ?? (prestador2.Nombre + " " + prestador2.Apellido)) : string.Empty,
+            MontoOfertado = oferta2.MontoOfertado,
+            EsContraoferta = oferta2.EsContraoferta,
+            EstadoOferta = oferta2.EstadoOferta,
+            FechaOferta = oferta2.FechaOferta,
+            IdChoferPropuesto = oferta2.IdChoferPropuesto
+        };
+
+        await _hubContext.Clients.Group($"viaje_{id}").SendAsync("NuevaOfertaRecibida", ofertaDto2);
+        if (viaje.IdPasajero > 0)
+        {
+            await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("NuevaOfertaRecibida", ofertaDto2);
+        }
+
+        return Ok(new { mensaje = "Contraoferta enviada al pasajero", idOferta = oferta2.Id });
     }
 
     // POST: Registrar un nuevo vehículo
@@ -224,12 +323,28 @@ public class PrestadorController : ControllerBase
             return NotFound("No encontrado");
         }
 
-        if (viaje.Estado != "EN_CURSO")
+        if (viaje.Estado != EstadosViaje.EnTransito) // Verifica que el viaje esté en tránsito antes de finalizarlo.
         {
             return BadRequest("El viaje no está en curso, no se puede finalizar");
         }
 
         await _viajeRepositorio.FinalizarViaje(viaje);
+
+        var estadoDto = new EstadoViajeActualizadoDTO
+        {
+            IdViaje = viaje.Id,
+            Estado = EstadosViaje.Finalizado,
+            Mensaje = "Viaje finalizado correctamente"
+        };
+        await _hubContext.Clients.Group($"viaje_{viaje.Id}").SendAsync("EstadoViajeActualizado", estadoDto);
+        if (viaje.IdPasajero > 0)
+        {
+            await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("EstadoViajeActualizado", estadoDto);
+        }
+        if (viaje.IdChofer > 0)
+        {
+            await _hubContext.Clients.Group($"chofer_{viaje.IdChofer}").SendAsync("EstadoViajeActualizado", estadoDto);
+        }
 
         return Ok(new { mensaje = "Viaje finalizado correctamente" });
     }
@@ -250,6 +365,34 @@ public class PrestadorController : ControllerBase
         viaje.MetodoDePago = dto.metodoPago;
 
         await _viajeRepositorio.Update(viaje);
+
+        var pagoDto = new EstadoViajeActualizadoDTO
+        {
+            IdViaje = viaje.Id,
+            Estado = viaje.Estado,
+            Mensaje = "Pago registrado"
+        };
+        await _hubContext.Clients.Group($"viaje_{viaje.Id}").SendAsync("EstadoViajeActualizado", pagoDto);
+        if (viaje.IdPasajero > 0)
+        {
+            await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("EstadoViajeActualizado", pagoDto);
+        }
+
         return Ok(new { mensaje = "Pago realizado con exito", viaje });
+    }
+
+    // PUT: Configurar tarifa por km del prestador (opción A)
+    [HttpPut("{id:int}/tarifa-km")]
+    public async Task<IActionResult> ConfigurarTarifaKm(int id, TarifaKmDTO dto)
+    {
+        var prestador = await _usuarioRepositorio.ObtenerPorId(id);
+        if (prestador == null || prestador.Rol != "Prestador")
+        {
+            return NotFound("Prestador no encontrado");
+        }
+
+        prestador.TarifaBaseKm = dto.TarifaBaseKm;
+        await _usuarioRepositorio.Update(prestador);
+        return Ok(new { mensaje = "Tarifa por km actualizada", tarifaBaseKm = prestador.TarifaBaseKm });
     }
 }

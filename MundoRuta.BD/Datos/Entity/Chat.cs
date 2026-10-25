@@ -9,8 +9,8 @@ namespace MundoRuta.BD.Datos.Entity
         public DateTime FechaInicio { get; set; }
 
         public DateTime FechaFin { get; set; }
-
-        public Viaje IdViaje { get; set; }
+        public int IdViaje { get; set; }  // Clave foránea que identifica el viaje asociado al chat.
+        public Viaje Viaje { get; set; } // Propiedad de navegación hacia el viaje asociado.
 
 
     }
