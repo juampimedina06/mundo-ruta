@@ -241,6 +241,47 @@ namespace MundoRuta.BD.Migrations
                     b.ToTable("Mensajes");
                 });
 
+            modelBuilder.Entity("MundoRuta.BD.Datos.Entity.OfertaViaje", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("EsContraoferta")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("EstadoOferta")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("FechaOferta")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("IdChoferPropuesto")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdPrestador")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdViaje")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("MontoOfertado")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdChoferPropuesto");
+
+                    b.HasIndex("IdPrestador");
+
+                    b.HasIndex("IdViaje");
+
+                    b.ToTable("OfertasViajes");
+                });
+
             modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Pago", b =>
                 {
                     b.Property<int>("Id")
@@ -674,6 +715,32 @@ namespace MundoRuta.BD.Migrations
                     b.Navigation("Destinatario");
 
                     b.Navigation("Emisor");
+                });
+
+            modelBuilder.Entity("MundoRuta.BD.Datos.Entity.OfertaViaje", b =>
+                {
+                    b.HasOne("MundoRuta.BD.Datos.Entity.Chofer", "ChoferPropuesto")
+                        .WithMany()
+                        .HasForeignKey("IdChoferPropuesto")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MundoRuta.BD.Datos.Entity.Usuario", "Prestador")
+                        .WithMany()
+                        .HasForeignKey("IdPrestador")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MundoRuta.BD.Datos.Entity.Viaje", "Viaje")
+                        .WithMany()
+                        .HasForeignKey("IdViaje")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ChoferPropuesto");
+
+                    b.Navigation("Prestador");
+
+                    b.Navigation("Viaje");
                 });
 
             modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Pago", b =>
