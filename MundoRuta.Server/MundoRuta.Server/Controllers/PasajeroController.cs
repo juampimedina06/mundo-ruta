@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos;
 using MundoRuta.BD.Datos.Entity;
 using MundoRuta.Repositorio.Repositorios;
+using MundoRuta.Server.Hubs;
 using MundoRuta.Shared;
 using MundoRuta.Shared.DTO;
+using MundoRuta.Shared.DTO.Realtime;
 
 namespace MundoRuta.Server.Controllers
 {
@@ -14,11 +17,13 @@ namespace MundoRuta.Server.Controllers
     {
         private readonly IViajeRepositorio repositorio;
         private readonly AppDbContext _context;
+        private readonly IHubContext<ViajeHub> _hubContext;
 
-        public PasajeroController(IViajeRepositorio repositorio, AppDbContext context)
+        public PasajeroController(IViajeRepositorio repositorio, AppDbContext context, IHubContext<ViajeHub> hubContext)
         {
             this.repositorio = repositorio;
             _context = context;
+            _hubContext = hubContext;
         }
 
         [HttpPut("viajes/{id:int}/cancelar")]
@@ -292,6 +297,25 @@ namespace MundoRuta.Server.Controllers
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                var asignadoDto = new ViajeAsignadoDTO
+                {
+                    IdViaje = viaje.Id,
+                    IdPrestador = ofertaSeleccionada.IdPrestador,
+                    IdChofer = viaje.IdChofer > 0 ? viaje.IdChofer : ofertaSeleccionada.IdChoferPropuesto,
+                    Monto = viaje.Monto,
+                    Estado = viaje.Estado
+                };
+                await _hubContext.Clients.Group($"viaje_{viaje.Id}").SendAsync("ViajeAsignado", asignadoDto);
+                await _hubContext.Clients.Group($"prestador_{ofertaSeleccionada.IdPrestador}").SendAsync("ViajeAsignado", asignadoDto);
+                if (viaje.IdChofer > 0)
+                {
+                    await _hubContext.Clients.Group($"chofer_{viaje.IdChofer}").SendAsync("ViajeAsignado", asignadoDto);
+                }
+                if (viaje.IdPasajero > 0)
+                {
+                    await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("ViajeAsignado", asignadoDto);
+                }
 
                 return Ok(new { mensaje = "OFERTA SELECCIONADA CORRECTAMENTE", idViaje = viaje.Id, monto = viaje.Monto });
             }
