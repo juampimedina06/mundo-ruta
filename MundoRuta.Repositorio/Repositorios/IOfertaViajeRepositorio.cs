@@ -7,5 +7,7 @@ namespace MundoRuta.Repositorio.Repositorios
 {
     public interface IOfertaViajeRepositorio : IRepositorio<OfertaViaje>
     {
+        Task<int> CountActivasPorViaje(int idViaje);
+        Task<List<OfertaViaje>> GetActivasPorViaje(int idViaje);
     }
 }
