@@ -41,7 +41,7 @@ namespace MundoRuta.Server.Controllers
             var chat = await _chatRepo.ObtenerPorViajeId(viajeId);
             if (chat == null)
             {
-                var nuevoChat = new Chat { IdViaje = viaje, FechaInicio = DateTime.Now };
+                var nuevoChat = new Chat { IdViaje = viajeId, Viaje = viaje, FechaInicio = DateTime.Now };
                 await _chatRepo.CrearChat(nuevoChat);
                 chat = nuevoChat;
             }
