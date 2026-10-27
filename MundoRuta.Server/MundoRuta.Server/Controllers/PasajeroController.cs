@@ -171,6 +171,17 @@ namespace MundoRuta.Server.Controllers
                 return NotFound(new { mensaje = "Viaje no encontrado" });
             }
 
+            // 1. EL BLOQUEO QUE PIDE EL TICKET: 
+            // Si el viaje está finalizado y todavía no lo calificó, le cortamos el paso.
+            if (v.Estado == "FINALIZADO" && !v.CalificadoPorPasajero)
+            {
+                return StatusCode(403, new
+                {
+                    mensaje = "Acceso denegado. Debe calificar el viaje para ver el detalle.",
+                    requiereCalificacion = true
+                });
+            }
+
             var dto = new ViajeDetalladoDTO
             {
                 Id = v.Id,

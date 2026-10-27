@@ -138,6 +138,9 @@ namespace MundoRuta.BD.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("FotoPerfil")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("IdPrestador")
                         .HasColumnType("int");
 
@@ -150,6 +153,9 @@ namespace MundoRuta.BD.Migrations
 
                     b.Property<string>("Nombre")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Telefono")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
