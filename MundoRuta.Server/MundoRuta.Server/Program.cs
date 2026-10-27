@@ -68,10 +68,6 @@ else
     app.UseHsts();
 }
 
-#region Middlewares
-app.MapControllers();// Mapear los controladores a las rutas correspondientes
-#endregion
-
 app.MapHub<MundoRuta.Server.Hubs.ViajeHub>("/hubs/viaje");
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
@@ -84,7 +80,7 @@ app.UseRouting();// Habilitar el enrutamiento de la aplicación
 app.UseAntiforgery();
 
 app.MapRazorPages();
-app.MapControllers();
+app.MapControllers();// Mapear los controladores a las rutas correspondientes
 app.MapFallbackToFile("index.html");
 //todo esto es el mapeo de los componentes de Razor y Blazor, para que se puedan renderizar en el navegador
 
