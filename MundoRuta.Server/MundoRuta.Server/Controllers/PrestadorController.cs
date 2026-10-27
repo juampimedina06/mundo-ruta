@@ -312,6 +312,57 @@ public class PrestadorController : ControllerBase
         return Ok(vehiculosDto);
     }
 
+    // PUT: Iniciar un viaje (api/prestador/viajes/{id}/iniciar)
+    [HttpPut("viajes/{id:int}/iniciar")]
+    public async Task<IActionResult> IniciarServicio(int id)
+    {
+        var viaje = await _viajeRepositorio.ObtenerPorId(id);
+
+        if (viaje == null)
+        {
+            return NotFound("No encontrado");
+        }
+
+        // 1. REQUERIMIENTO: Verificar que el viaje tenga un chofer asignado
+        if (viaje.IdChofer <= 0)
+        {
+            return BadRequest("No se puede iniciar el viaje porque aún no tiene un chofer asignado.");
+        }
+
+        // 2. Verificar que no esté iniciado o finalizado previamente
+        if (viaje.Estado == EstadosViaje.EnTransito || viaje.Estado == EstadosViaje.Finalizado)
+        {
+            return BadRequest("El viaje ya fue iniciado o finalizado");
+        }
+
+        // Cambiar estado a EnTransito
+        viaje.Estado = EstadosViaje.EnTransito;
+        await _viajeRepositorio.Update(viaje);
+
+        // DTO para la notificación en tiempo real
+        var estadoDto = new EstadoViajeActualizadoDTO
+        {
+            IdViaje = viaje.Id,
+            Estado = EstadosViaje.EnTransito,
+            Mensaje = "El viaje ha sido iniciado y está en curso"
+        };
+
+        // Notificaciones vía SignalR
+        await _hubContext.Clients.Group($"viaje_{viaje.Id}").SendAsync("EstadoViajeActualizado", estadoDto);
+        if (viaje.IdPasajero > 0)
+        {
+            await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("EstadoViajeActualizado", estadoDto);
+        }
+        if (viaje.IdChofer > 0)
+        {
+            await _hubContext.Clients.Group($"chofer_{viaje.IdChofer}").SendAsync("EstadoViajeActualizado", estadoDto);
+        }
+
+        return Ok(new { mensaje = "Viaje iniciado correctamente" });
+    }
+
+
+
     // PUT: Finalizar un viaje
     [HttpPut("viajes/{id:int}/finalizar")]
     public async Task<IActionResult> FinalizarServicio(int id)

@@ -102,6 +102,12 @@ namespace MundoRuta.Repositorio.Repositorios
             return true;
         }
 
+        public async Task IniciarViaje(Viaje viaje)
+        {
+            context.Viajes.Update(viaje);
+            await context.SaveChangesAsync();
+        }
+
         public async Task FinalizarViaje(Viaje viaje)
         {
             viaje.Estado = EstadosViaje.Finalizado;
