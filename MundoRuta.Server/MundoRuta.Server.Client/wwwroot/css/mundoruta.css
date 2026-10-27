@@ -1,0 +1,132 @@
+﻿:root {
+  --mr-navy: #0f1f3d;
+  --mr-orange: #ff5a1f;
+  --mr-bg: #f7f9fc;
+  --mr-text: #1f2937;
+  --mr-border: #d9e2ec;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  background: var(--mr-bg);
+  color: var(--mr-text);
+}
+
+a { color: var(--mr-navy); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.btn {
+  display: inline-block;
+  padding: .6rem 1rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--mr-orange);
+  border-color: var(--mr-orange);
+  color: #fff;
+}
+
+.btn-primary:hover { filter: brightness(0.95); }
+
+.btn-link {
+  background: transparent;
+  border: none;
+  color: var(--mr-navy);
+  padding: 0;
+}
+
+.input {
+  width: 100%;
+  padding: .6rem .7rem;
+  border: 1px solid var(--mr-border);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.form-group { margin-bottom: 1rem; }
+.form-label { display: block; margin-bottom: .4rem; font-weight: 600; }
+
+.auth-card {
+  max-width: 380px;
+  margin: 4rem auto;
+  background: #fff;
+  border: 1px solid var(--mr-border);
+  border-radius: 6px;
+  padding: 2rem;
+}
+
+.auth-title {
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+  color: var(--mr-navy);
+}
+
+.mr-header {
+  background: #fff;
+  border-bottom: 1px solid var(--mr-border);
+}
+
+.mr-header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .8rem 1rem;
+}
+
+.mr-brand {
+  font-weight: 700;
+  color: var(--mr-navy);
+}
+
+.mr-nav {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.mr-footer {
+  background: var(--mr-navy);
+  color: #fff;
+  padding: 2rem 1rem;
+  margin-top: 3rem;
+}
+
+.mr-footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.mr-footer h4 {
+  margin: 0 0 .8rem 0;
+}
+
+.mr-footer ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mr-footer li { margin: .4rem 0; }
+
+.mr-footer a { color: #fff; }
+
+.page-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
