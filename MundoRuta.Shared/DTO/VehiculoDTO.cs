@@ -15,6 +15,10 @@ public class VehiculoDTO
     public string TipoVehiculo { get; set; }
     public int IdUsuario { get; set; }
     public int? IdChofer { get; set; }
-    
+    public string MarcaModelo { get; set; }
+    public DateTime FechaFabricación { get; set; }
+    public int NumeroConductor { get; set; }
+    public string CaracteristicasConductor { get; set; }
+
 
 }

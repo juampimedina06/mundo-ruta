@@ -44,8 +44,16 @@ public class PrestadorController : ControllerBase
     [HttpGet("{prestadorId:int}/solicitudes")]
     public async Task<ActionResult> GetSolicitudes(int prestadorId)
     {
-        var solicitudes = await _viajeRepositorio.SolicitudesPendientes(prestadorId);
+        var solicitudes = await _viajeRepositorio.ListadoPorPrestador(prestadorId, "PENDIENTE");
         return Ok(solicitudes);
+    }
+
+    // GET: todos los viajes de la empresa
+    [HttpGet("{prestadorId:int}/viajes")] // api/prestador/{prestadorId}/viajes
+    public async Task<ActionResult<List<ViajePrestadorDTO>>> GetViajes(int prestadorId, string? estado = null)
+    {
+        var viajes = await _viajeRepositorio.ListadoPorPrestador(prestadorId, estado);
+        return Ok(viajes);
     }
 
     // POST: El prestador agrega un nuevo chofer a la empresa
@@ -290,26 +298,7 @@ public class PrestadorController : ControllerBase
     public async Task<ActionResult<List<VehiculoDTO>>> GetVehiculos(int id)
     {
         var listaVehiculos = await _vehiculoRepositorio.ObtenerPorPrestador(id);
-
-        if (listaVehiculos == null || !listaVehiculos.Any())
-        {
-            return NotFound("No se encontraron vehículos");
-        }
-
-        var vehiculosDto = listaVehiculos.Select(v => new VehiculoDTO
-        {
-            Id = v.Id,
-            Patente = v.Patente,
-            Marca = v.Marca,
-            Licencia = v.Licencia,
-            Estado = v.Estado,
-            CapacidadCarga = v.CapacidadCarga,
-            TipoVehiculo = v.TipoVehiculo,
-            IdUsuario = v.IdUsuario,
-            IdChofer = v.IdChofer
-        }).ToList();
-
-        return Ok(vehiculosDto);
+        return Ok(listaVehiculos);
     }
 
     // PUT: Iniciar un viaje (api/prestador/viajes/{id}/iniciar)

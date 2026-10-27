@@ -64,6 +64,34 @@ namespace MundoRuta.Repositorio.Repositorios
                 .ToListAsync();
         }
 
+        public async Task<List<ViajePrestadorDTO>> ListadoPorPrestador(int prestadorId, string? estado = null)
+        {
+            var query = context.Viajes.Where(v => v.IdUsuario == prestadorId);
+
+            if (!string.IsNullOrEmpty(estado))
+            {
+                query = query.Where(v => v.Estado == estado);
+            }
+
+            return await query
+                .OrderByDescending(v => v.Fecha)
+                .Select(v => new ViajePrestadorDTO
+                {
+                    Id = v.Id,
+                    Origen = v.Origen,
+                    Destino = v.Destino,
+                    TipoSolicitud = v.TipoSolicitud,
+                    Estado = v.Estado,
+                    EstadoPago = v.EstadoPago,
+                    Fecha = v.Fecha,
+                    Hora = v.Hora,
+                    Monto = v.Monto,
+                    MontoEstimado = v.MontoEstimado,
+                    IdPasajero = v.IdPasajero,
+                    NombrePasajero = v.Pasajero.Nombre + " " + v.Pasajero.Apellido
+                })
+                .ToListAsync();
+        }
         public async Task<bool> ResponderSolicitud(int viajeId, ResponderSolicitudDTO dto)
         {
             var viaje = await context.Viajes.FindAsync(viajeId);
