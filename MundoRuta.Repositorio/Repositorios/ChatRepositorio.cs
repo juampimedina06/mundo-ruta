@@ -30,7 +30,7 @@ public class ChatRepositorio : Repositorio<Chat>, IChatRepositorio
     public async Task<Chat?> ObtenerPorId(int idChat)
     {
         return await context.Chats
-            .Include(c => c.IdViaje)
+            .Include(c => c.Viaje)
             .FirstOrDefaultAsync(c => c.Id == idChat);
     }
 
@@ -38,8 +38,8 @@ public class ChatRepositorio : Repositorio<Chat>, IChatRepositorio
     public async Task<Chat?> ObtenerPorViajeId(int idViaje)
     {
         return await context.Chats
-            .Include(c => c.IdViaje)
-            .FirstOrDefaultAsync(c => c.IdViaje != null && c.IdViaje.Id == idViaje);
+            .Include(c => c.Viaje)
+            .FirstOrDefaultAsync(c => c.IdViaje == idViaje);
     }
 
     // Obtener todos los chats en los que participa un usuario (donde haya sido emisor o destinatario)
@@ -49,7 +49,7 @@ public class ChatRepositorio : Repositorio<Chat>, IChatRepositorio
             .Where(m => m.IdEmisor == idUsuario || m.IdDestinatario == idUsuario)
             .Select(m => m.Chat)
             .Distinct()
-            .Include(c => c.IdViaje)
+            .Include(c => c.Viaje)
             .ToListAsync();
     }
 

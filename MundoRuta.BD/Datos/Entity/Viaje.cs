@@ -23,6 +23,23 @@ public class Viaje : EntidadBase
 
     public bool EquipajeCarga { get; set; }
 
+    // Características y condiciones del servicio de flete
+    public bool EsCubierto { get; set; }
+
+    public bool UsaBaulera { get; set; }
+
+    public bool LlevaAcompanante { get; set; }
+
+    // DNI de la persona que recibe la carga.
+    public string DniReceptor { get; set; } 
+
+    // Indica si cada parte calificó el viaje.
+    public bool CalificadoPorPasajero { get; set; } = false;
+
+    public bool CalificadoPorChofer { get; set; } = false;
+
+
+
     public decimal Monto { get; set; }
 
     public string MetodoDePago { get; set; }
@@ -45,7 +62,7 @@ public class Viaje : EntidadBase
     public Chofer Chofer { get; set; }
 
     public int IdServicio { get; set; }
-
+    [ForeignKey("IdServicio")]
     public Servicio Servicio { get; set; }
 
     public DateTime FechaHoraReserva { get; set; } //

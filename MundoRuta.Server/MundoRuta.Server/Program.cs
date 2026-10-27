@@ -20,6 +20,8 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 
+builder.Services.AddSignalR();
+
 #region Servicios
 builder.Services.AddSwaggerGen(); //esto es para documentar la API
 builder.Services.AddControllersWithViews();// Agregar servicios para controladores y vistas
@@ -44,6 +46,8 @@ builder.Services.AddScoped<ICalificacionRepositorio, CalificacionRepositorio>();
 builder.Services.AddScoped<ICargaRepositorio, CargaRepositorio>();
 builder.Services.AddScoped<IChatRepositorio, ChatRepositorio>();
 builder.Services.AddScoped<IMensajeRepositorio, MensajeRepositorio>();
+builder.Services.AddScoped<IOfertaViajeRepositorio, OfertaViajeRepositorio>();
+builder.Services.AddScoped<IConfiguracionSistemaRepositorio, ConfiguracionSistemaRepositorio>();
 #endregion
 
 
@@ -68,6 +72,7 @@ else
 app.MapControllers();// Mapear los controladores a las rutas correspondientes
 #endregion
 
+app.MapHub<MundoRuta.Server.Hubs.ViajeHub>("/hubs/viaje");
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();

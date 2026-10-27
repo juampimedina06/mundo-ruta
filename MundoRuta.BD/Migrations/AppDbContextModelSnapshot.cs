@@ -17,7 +17,7 @@ namespace MundoRuta.BD.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.5")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -112,12 +112,12 @@ namespace MundoRuta.BD.Migrations
                     b.Property<DateTime>("FechaInicio")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("IdViajeId")
+                    b.Property<int>("IdViaje")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IdViajeId");
+                    b.HasIndex("IdViaje");
 
                     b.ToTable("Chats");
                 });
@@ -159,6 +159,31 @@ namespace MundoRuta.BD.Migrations
                     b.HasIndex("IdUsuario");
 
                     b.ToTable("Choferes");
+                });
+
+            modelBuilder.Entity("MundoRuta.BD.Datos.Entity.ConfiguracionSistema", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Clave")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Valor")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ConfiguracionesSistema");
                 });
 
             modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Liquidacion", b =>
@@ -239,6 +264,47 @@ namespace MundoRuta.BD.Migrations
                     b.HasIndex("EmisorId");
 
                     b.ToTable("Mensajes");
+                });
+
+            modelBuilder.Entity("MundoRuta.BD.Datos.Entity.OfertaViaje", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("EsContraoferta")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("EstadoOferta")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("FechaOferta")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("IdChoferPropuesto")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdPrestador")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdViaje")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("MontoOfertado")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdChoferPropuesto");
+
+                    b.HasIndex("IdPrestador");
+
+                    b.HasIndex("IdViaje");
+
+                    b.ToTable("OfertasViajes");
                 });
 
             modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Pago", b =>
@@ -360,6 +426,9 @@ namespace MundoRuta.BD.Migrations
                     b.Property<DateTime>("FechaRegistro")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("FotoPerfilUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -375,6 +444,9 @@ namespace MundoRuta.BD.Migrations
                     b.Property<string>("Rol")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("TarifaBaseKm")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Telefono")
                         .IsRequired()
@@ -426,6 +498,9 @@ namespace MundoRuta.BD.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Nombre")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("NumeroConductor")
                         .HasColumnType("int");
 
@@ -454,6 +529,12 @@ namespace MundoRuta.BD.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("CalificadoPorChofer")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CalificadoPorPasajero")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Destino")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -462,7 +543,14 @@ namespace MundoRuta.BD.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("DniReceptor")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("EquipajeCarga")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EsCubierto")
                         .HasColumnType("bit");
 
                     b.Property<string>("Estado")
@@ -500,6 +588,9 @@ namespace MundoRuta.BD.Migrations
                     b.Property<int>("IdVehiculo")
                         .HasColumnType("int");
 
+                    b.Property<bool>("LlevaAcompanante")
+                        .HasColumnType("bit");
+
                     b.Property<string>("MetodoDePago")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -517,12 +608,12 @@ namespace MundoRuta.BD.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ServicioId")
-                        .HasColumnType("int");
-
                     b.Property<string>("TipoSolicitud")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("UsaBaulera")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
@@ -530,13 +621,13 @@ namespace MundoRuta.BD.Migrations
 
                     b.HasIndex("IdPasajero");
 
+                    b.HasIndex("IdServicio");
+
                     b.HasIndex("IdSolicitante");
 
                     b.HasIndex("IdUsuario");
 
                     b.HasIndex("IdVehiculo");
-
-                    b.HasIndex("ServicioId");
 
                     b.ToTable("Viajes");
                 });
@@ -581,13 +672,13 @@ namespace MundoRuta.BD.Migrations
 
             modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Chat", b =>
                 {
-                    b.HasOne("MundoRuta.BD.Datos.Entity.Viaje", "IdViaje")
+                    b.HasOne("MundoRuta.BD.Datos.Entity.Viaje", "Viaje")
                         .WithMany()
-                        .HasForeignKey("IdViajeId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("IdViaje")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("IdViaje");
+                    b.Navigation("Viaje");
                 });
 
             modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Chofer", b =>
@@ -645,6 +736,32 @@ namespace MundoRuta.BD.Migrations
                     b.Navigation("Destinatario");
 
                     b.Navigation("Emisor");
+                });
+
+            modelBuilder.Entity("MundoRuta.BD.Datos.Entity.OfertaViaje", b =>
+                {
+                    b.HasOne("MundoRuta.BD.Datos.Entity.Chofer", "ChoferPropuesto")
+                        .WithMany()
+                        .HasForeignKey("IdChoferPropuesto")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MundoRuta.BD.Datos.Entity.Usuario", "Prestador")
+                        .WithMany()
+                        .HasForeignKey("IdPrestador")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MundoRuta.BD.Datos.Entity.Viaje", "Viaje")
+                        .WithMany()
+                        .HasForeignKey("IdViaje")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ChoferPropuesto");
+
+                    b.Navigation("Prestador");
+
+                    b.Navigation("Viaje");
                 });
 
             modelBuilder.Entity("MundoRuta.BD.Datos.Entity.Pago", b =>
@@ -709,6 +826,12 @@ namespace MundoRuta.BD.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("MundoRuta.BD.Datos.Entity.Servicio", "Servicio")
+                        .WithMany()
+                        .HasForeignKey("IdServicio")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("MundoRuta.BD.Datos.Entity.Usuario", "Solicitante")
                         .WithMany()
                         .HasForeignKey("IdSolicitante")
@@ -724,12 +847,6 @@ namespace MundoRuta.BD.Migrations
                     b.HasOne("MundoRuta.BD.Datos.Entity.Vehiculo", "Vehiculo")
                         .WithMany()
                         .HasForeignKey("IdVehiculo")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MundoRuta.BD.Datos.Entity.Servicio", "Servicio")
-                        .WithMany()
-                        .HasForeignKey("ServicioId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

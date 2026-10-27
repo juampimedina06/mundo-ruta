@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos;
 using MundoRuta.BD.Datos.Entity;
+using MundoRuta.Shared;
 using MundoRuta.Shared.DTO;
 
 namespace MundoRuta.Repositorio.Repositorios
@@ -56,10 +57,10 @@ namespace MundoRuta.Repositorio.Repositorios
                 .FirstOrDefaultAsync(v => v.Id == viajeId);
         }
 
-        public async Task<List<Viaje>> SolicitudesPendientes(int prestadorId)
+        public async Task<List<Viaje>> SolicitudesPendientes(int prestadorId) // Obtiene las solicitudes de viaje que todavía están buscando un prestador.
         {
-            return await context.Viajes
-                .Where(s => s.IdUsuario == prestadorId && s.Estado == "PENDIENTE")
+            return await context.Viajes  // Filtra los viajes del prestador indicado, y que estén en estado "buscando".
+                .Where(s => s.IdUsuario == prestadorId && s.Estado == EstadosViaje.Buscando)
                 .ToListAsync();
         }
 
@@ -98,7 +99,7 @@ namespace MundoRuta.Repositorio.Repositorios
 
             if (dto.Accion == "ACEPTAR")
             {
-                viaje.Estado = "Aceptado";
+                viaje.Estado = EstadosViaje.Asignado;
                 viaje.IdChofer = dto.IdChofer;
                 viaje.IdVehiculo = dto.IdVehiculo;
             }
@@ -129,9 +130,15 @@ namespace MundoRuta.Repositorio.Repositorios
             return true;
         }
 
+        public async Task IniciarViaje(Viaje viaje)
+        {
+            context.Viajes.Update(viaje);
+            await context.SaveChangesAsync();
+        }
+
         public async Task FinalizarViaje(Viaje viaje)
         {
-            viaje.Estado = "FINALIZADO";
+            viaje.Estado = EstadosViaje.Finalizado;
             viaje.Fecha = DateTime.UtcNow;
             await context.SaveChangesAsync();
 
@@ -161,7 +168,7 @@ namespace MundoRuta.Repositorio.Repositorios
 
         public async Task<int> ContarViajesFinalizados()
         {
-            return await context.Viajes.CountAsync(v => v.Estado == "FINALIZADO");
+            return await context.Viajes.CountAsync(v => v.Estado == EstadosViaje.Finalizado);
         }
     }
 }

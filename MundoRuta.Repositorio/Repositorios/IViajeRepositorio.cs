@@ -14,7 +14,10 @@ namespace MundoRuta.Repositorio.Repositorios
         Task<bool> ResponderSolicitud(int viajeId, ResponderSolicitudDTO dto);
         Task<bool> ContraOfertar(int viajeId, ContraOfertaDTO dto);
         Task FinalizarViaje(Viaje viaje);
+        Task IniciarViaje(Viaje viaje);
         Task<bool> RegistrarPago(int viajeId, ConfirmacionPagoDTO dto);
         Task<int> ContarViajesFinalizados();
+
+        
     }
 }
