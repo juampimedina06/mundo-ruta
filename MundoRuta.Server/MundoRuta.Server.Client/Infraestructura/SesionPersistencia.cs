@@ -2,7 +2,7 @@ using System.Text.Json;
 using Microsoft.JSInterop;
 using MundoRuta.Servicios.Sesion;
 
-namespace MundoRuta.Server.Client.Servicios
+namespace MundoRuta.Server.Client.Infraestructura
 {
     // Guarda y restaura la sesión del usuario en el almacenamiento local del navegador.
     public sealed class SesionPersistencia : IAsyncDisposable

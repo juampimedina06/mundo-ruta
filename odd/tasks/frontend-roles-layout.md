@@ -43,6 +43,7 @@ El ticket `MundoRuta.Shared/prompt.cs` pide el layout institucional con navbar d
 - **Guardas**: `RoleGuard` envuelve el contenido de cada página de rol. Sin sesión redirige a `/login?redirect=...`; rol incorrecto a `/acceso-denegado`.
 - **Logo**: SVG placeholder en `wwwroot/img/logo-mundo-ruta.svg` hasta recibir el asset de Figma.
 - **Seguridad**: la sesión en `localStorage` es solo estado de UI. El backend sigue sin autorización real.
+- **Capas del cliente**: `HttpRespExtensiones` vive en `MundoRuta.Servicios/ServiciosHTTP` porque es lógica HTTP genérica; `SesionPersistencia` vive en `MundoRuta.Server.Client/Infraestructura` porque depende de `IJSRuntime`. La carpeta `Client/Servicios` se eliminó para no chocar con el nombre de la librería.
 
 ## Design tokens
 ```
@@ -120,6 +121,7 @@ Menús por rol (labels exactos):
 - TASK-06 completada: 8 páginas placeholder (5 de Usuario, 3 de Chofer) con `RoleGuard`; `.mr-card--enlace` agregado a `app.css`.
 - TASK-07 completada: 9 páginas placeholder (6 de Prestador, 3 de Admin) con `RoleGuard`.
 - TASK-08 completada: clean build sin errores, inventario de 24 rutas, sin restos de la plantilla; `SesionPersistencia` tolera JSON corrupto.
+- Refactor de capas: `HttpRespExtensiones` movida a `MundoRuta.Servicios/ServiciosHTTP`, `SesionPersistencia` a `Client/Infraestructura`, eliminada la carpeta `Client/Servicios` y el registro duplicado de `IHttpServices` en `Program.cs`.
 - Pendiente: prueba manual end-to-end en navegador (login por rol, refresh y logout requieren LocalDB con usuarios).
 - Siguiente: correr la app, validar los flujos y abrir el PR.
 
@@ -127,6 +129,7 @@ Menús por rol (labels exactos):
 - `dotnet build MundoRuta.slnx`: compilación correcta, 0 errores (TASK-01/02 y TASK-03/04).
 - `dotnet build MundoRuta.slnx`: compilación correcta, 0 advertencias, 0 errores (TASK-05).
 - `dotnet clean` + `dotnet build MundoRuta.slnx`: 0 errores, 148 advertencias preexistentes (ninguna del cliente) (TASK-08).
+- `dotnet build MundoRuta.slnx` tras el refactor de capas: 0 errores, 148 advertencias preexistentes.
 - Nota: `MundoRuta.Shared/prompt.cs` rompía el build por la extensión; se excluyó de compilación en el csproj sin tocar el archivo.
 
 ## Next step

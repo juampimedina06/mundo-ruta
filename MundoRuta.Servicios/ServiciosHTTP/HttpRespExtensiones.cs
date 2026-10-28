@@ -1,6 +1,4 @@
-using MundoRuta.Servicios.ServiciosHTTP;
-
-namespace MundoRuta.Server.Client.Servicios
+namespace MundoRuta.Servicios.ServiciosHTTP
 {
     // Utilidades para presentar los mensajes de las respuestas HTTP.
     public static class HttpRespExtensiones
