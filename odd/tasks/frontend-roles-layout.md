@@ -86,7 +86,7 @@ Menús por rol (labels exactos):
 - [x] TASK-03: Configuración de menús por rol, `RoleGuard` y componentes compartidos (`PageHeader`, `EmptyState`, `EstadoBadge`).
 - [x] TASK-04: Reemplazar `MainLayout` por navbar + contenido + footer institucional; eliminar `NavMenu`.
 - [x] TASK-05: Páginas públicas con login y registro funcionales; eliminar páginas de plantilla.
-- [ ] TASK-06: Páginas de Usuario y Chofer.
+- [x] TASK-06: Páginas de Usuario y Chofer.
 - [ ] TASK-07: Páginas de Prestador y Admin.
 - [ ] TASK-08: Build completo y verificación manual de rutas por rol.
 
@@ -114,7 +114,8 @@ Menús por rol (labels exactos):
 - TASK-05 completada: Home, Servicios, Prestadores, Login, Registro y Acceso denegado en `Pages/Public`; `Counter`, `Weather` y la Home de plantilla eliminadas; `NotFound` localizada.
 - Exploración del cliente, servicios y controladores completada.
 - Detectado intento previo en `feature/frontend-auth-roles-structure`; se reutiliza solo la paleta y el contenido del footer, no su estructura.
-- Siguiente: TASK-06 (páginas de Usuario y Chofer).
+- TASK-06 completada: 8 páginas placeholder (5 de Usuario, 3 de Chofer) con `RoleGuard`; `.mr-card--enlace` agregado a `app.css`.
+- Siguiente: TASK-07 (páginas de Prestador y Admin).
 
 ## Verification evidence
 - `dotnet build MundoRuta.slnx`: compilación correcta, 0 errores (TASK-01/02 y TASK-03/04).

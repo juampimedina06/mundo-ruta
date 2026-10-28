@@ -1,0 +1,32 @@
+@page "/usuario"
+
+<PageTitle>Mi panel | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="Roles.Usuario">
+    <div class="mr-page">
+        <div class="mr-container">
+            <PageHeader Titulo="Mi panel"
+                        Descripcion="Gestioná tus viajes y tus datos desde un solo lugar." />
+
+            <div class="mr-grid">
+                <a class="mr-card mr-card--enlace" href="/usuario/solicitar">
+                    <h2 class="mr-card__title">Solicitar viaje</h2>
+                    <p class="mr-muted">Pedí un flete o traslado en pocos pasos.</p>
+                    <span class="small fw-semibold">Ir a la sección</span>
+                </a>
+
+                <a class="mr-card mr-card--enlace" href="/usuario/viajes">
+                    <h2 class="mr-card__title">Mis viajes</h2>
+                    <p class="mr-muted">Seguí el estado de tus solicitudes.</p>
+                    <span class="small fw-semibold">Ir a la sección</span>
+                </a>
+
+                <a class="mr-card mr-card--enlace" href="/usuario/perfil">
+                    <h2 class="mr-card__title">Mi perfil</h2>
+                    <p class="mr-muted">Actualizá tus datos de contacto.</p>
+                    <span class="small fw-semibold">Ir a la sección</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</RoleGuard>

@@ -1,0 +1,22 @@
+@page "/usuario/viajes/{ViajeId:int}"
+
+<PageTitle>Detalle del viaje | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="Roles.Usuario">
+    <div class="mr-page">
+        <div class="mr-container">
+            <PageHeader Titulo="@("Viaje #" + ViajeId)"
+                        Descripcion="Detalle, chofer y estado del servicio." />
+
+            <EmptyState Titulo="Detalle en preparación"
+                        Descripcion="Acá vas a ver origen, destino, chofer asignado, vehículo, estado y pago.">
+                <a class="btn btn-outline-primary" href="/usuario/viajes">Volver a mis viajes</a>
+            </EmptyState>
+        </div>
+    </div>
+</RoleGuard>
+
+@code {
+    [Parameter]
+    public int ViajeId { get; set; }
+}

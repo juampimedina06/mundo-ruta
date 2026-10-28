@@ -1,0 +1,15 @@
+@page "/chofer/historial"
+
+<PageTitle>Historial | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="Roles.Chofer">
+    <div class="mr-page">
+        <div class="mr-container">
+            <PageHeader Titulo="Historial"
+                        Descripcion="Viajes finalizados y calificaciones." />
+
+            <EmptyState Titulo="Todavía no hay viajes en tu historial"
+                        Descripcion="Los servicios que completes van a quedar registrados acá." />
+        </div>
+    </div>
+</RoleGuard>
