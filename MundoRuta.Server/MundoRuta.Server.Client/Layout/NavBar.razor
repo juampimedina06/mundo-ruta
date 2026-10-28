@@ -1,0 +1,80 @@
+@inject SesionEstado Sesion
+@inject NavigationManager Navegacion
+@implements IDisposable
+
+<header class="mr-navbar">
+    <div class="mr-container mr-navbar__inner">
+        <a class="mr-navbar__brand" href="/">
+            <img src="img/logo-mundo-ruta.svg" alt="Mundo Ruta" />
+        </a>
+
+        <button type="button" class="mr-navbar__toggle" aria-label="Abrir menú" @onclick="AlternarMenu">
+            <span class="mr-navbar__toggle-linea"></span>
+            <span class="mr-navbar__toggle-linea"></span>
+            <span class="mr-navbar__toggle-linea"></span>
+        </button>
+
+        <nav class="mr-navbar__nav @(_menuAbierto ? "mr-navbar__nav--abierto" : string.Empty)">
+            @foreach (MenuItem item in MenuPorRol.Obtener(Sesion.Rol))
+            {
+                <NavLink class="mr-navbar__link" href="@item.Href" Match="@ObtenerCoincidencia(item.Href)" @onclick="CerrarMenu">
+                    @item.Texto
+                </NavLink>
+            }
+        </nav>
+
+        <div class="mr-navbar__acciones">
+            @if (Sesion.EstaLogueado)
+            {
+                <span class="mr-navbar__usuario">@Sesion.Nombre</span>
+                <span class="mr-badge mr-badge--naranja">@Sesion.Rol</span>
+                <button type="button" class="btn btn-outline-primary btn-sm" @onclick="CerrarSesion">Cerrar sesión</button>
+            }
+            else
+            {
+                <a class="btn btn-outline-primary btn-sm" href="/login">Iniciar sesión</a>
+                <a class="btn btn-primary btn-sm" href="/registro">Registrarse</a>
+            }
+        </div>
+    </div>
+</header>
+
+@code {
+    private bool _menuAbierto;
+
+    protected override void OnInitialized()
+    {
+        Sesion.CambioSesion += AlCambiarSesion;
+    }
+
+    public void Dispose()
+    {
+        Sesion.CambioSesion -= AlCambiarSesion;
+    }
+
+    private void AlCambiarSesion()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void AlternarMenu()
+    {
+        _menuAbierto = !_menuAbierto;
+    }
+
+    private void CerrarMenu()
+    {
+        _menuAbierto = false;
+    }
+
+    private void CerrarSesion()
+    {
+        Sesion.Cerrar();
+        Navegacion.NavigateTo("/");
+    }
+
+    private static NavLinkMatch ObtenerCoincidencia(string href)
+    {
+        return href == "/" ? NavLinkMatch.All : NavLinkMatch.Prefix;
+    }
+}

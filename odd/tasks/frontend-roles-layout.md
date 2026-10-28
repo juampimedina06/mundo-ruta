@@ -83,8 +83,8 @@ Menús por rol (labels exactos):
 ## Tasks
 - [x] TASK-01: Constantes de rol, estado de restauración y persistencia de sesión en `localStorage`; render mode WASM sin prerender.
 - [x] TASK-02: Tokens de identidad visual, estilos base y logo placeholder.
-- [ ] TASK-03: Configuración de menús por rol, `RoleGuard` y componentes compartidos (`PageHeader`, `EmptyState`, `EstadoBadge`).
-- [ ] TASK-04: Reemplazar `MainLayout` por navbar + contenido + footer institucional; eliminar `NavMenu`.
+- [x] TASK-03: Configuración de menús por rol, `RoleGuard` y componentes compartidos (`PageHeader`, `EmptyState`, `EstadoBadge`).
+- [x] TASK-04: Reemplazar `MainLayout` por navbar + contenido + footer institucional; eliminar `NavMenu`.
 - [ ] TASK-05: Páginas públicas con login y registro funcionales; eliminar páginas de plantilla.
 - [ ] TASK-06: Páginas de Usuario y Chofer.
 - [ ] TASK-07: Páginas de Prestador y Admin.
@@ -110,13 +110,14 @@ Menús por rol (labels exactos):
 
 ## Progress
 - TASK-01 y TASK-02 completadas: Roles, SesionPersistencia, render WASM sin prerender, tokens CSS y logo.
+- TASK-03 y TASK-04 completadas: menús por rol, `RoleGuard`, componentes compartidos, navbar y footer. `NavMenu` eliminado.
 - Exploración del cliente, servicios y controladores completada.
 - Detectado intento previo en `feature/frontend-auth-roles-structure`; se reutiliza solo la paleta y el contenido del footer, no su estructura.
-- Siguiente: TASK-03 y TASK-04 (navegación, guardas y layout).
+- Siguiente: TASK-05 (páginas públicas y auth).
 
 ## Verification evidence
-- `dotnet build MundoRuta.slnx`: compilación correcta, 0 errores.
+- `dotnet build MundoRuta.slnx`: compilación correcta, 0 errores (TASK-01/02 y TASK-03/04).
 - Nota: `MundoRuta.Shared/prompt.cs` rompía el build por la extensión; se excluyó de compilación en el csproj sin tocar el archivo.
 
 ## Next step
-TASK-03.
+TASK-05.
