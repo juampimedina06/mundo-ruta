@@ -47,8 +47,9 @@ namespace MundoRuta.Server.Client.Servicios
                     }
                 }
             }
-            catch (JSException)
+            catch (Exception ex) when (ex is JSException or JsonException)
             {
+                // El almacenamiento no está disponible o el dato guardado quedó corrupto.
                 await EliminarAlmacenadoAsync();
             }
             finally

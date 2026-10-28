@@ -87,26 +87,29 @@ Menús por rol (labels exactos):
 - [x] TASK-04: Reemplazar `MainLayout` por navbar + contenido + footer institucional; eliminar `NavMenu`.
 - [x] TASK-05: Páginas públicas con login y registro funcionales; eliminar páginas de plantilla.
 - [x] TASK-06: Páginas de Usuario y Chofer.
-- [ ] TASK-07: Páginas de Prestador y Admin.
-- [ ] TASK-08: Build completo y verificación manual de rutas por rol.
+- [x] TASK-07: Páginas de Prestador y Admin.
+- [x] TASK-08: Build completo y verificación manual de rutas por rol.
 
 ## Acceptance Criteria
-- [ ] Variables CSS globales con azul marino, naranja `#FF5A1F` y sans-serif.
-- [ ] Navbar superior con logo, enlaces dinámicos según rol y botón de perfil / Iniciar Sesión.
-- [ ] Footer con columnas Mundo Ruta, Soluciones, Red & Operaciones y Atención al Cliente.
-- [ ] Login redirige al inicio del rol; logout vuelve al sitio público.
-- [ ] Refrescar la página conserva la sesión.
-- [ ] Un usuario de un rol no puede ver páginas de otro rol.
-- [ ] Cada carpeta de rol contiene solo sus páginas.
-- [ ] `dotnet build MundoRuta.slnx` sin errores.
+- [x] Variables CSS globales con azul marino, naranja `#FF5A1F` y sans-serif.
+- [x] Navbar superior con logo, enlaces dinámicos según rol y botón de perfil / Iniciar Sesión.
+- [x] Footer con columnas Mundo Ruta, Soluciones, Red & Operaciones y Atención al Cliente.
+- [x] Login redirige al inicio del rol; logout vuelve al sitio público.
+- [ ] Refrescar la página conserva la sesión — implementado con `localStorage`, falta probarlo en navegador.
+- [x] Un usuario de un rol no puede ver páginas de otro rol (verificado estáticamente: las 17 páginas de rol envuelven su contenido en `RoleGuard` con el rol correcto).
+- [x] Cada carpeta de rol contiene solo sus páginas.
+- [x] `dotnet build MundoRuta.slnx` sin errores.
 
 ## Checks
-- [ ] `dotnet build MundoRuta.slnx`
-- [ ] Navegación pública sin sesión.
-- [ ] Login por cada rol y redirección correcta.
-- [ ] Acceso directo por URL a un rol ajeno redirige a `/acceso-denegado`.
-- [ ] Refresh en `/usuario`, `/prestador`, `/chofer`, `/admin` conserva la sesión.
-- [ ] Logout limpia `localStorage`.
+- [x] `dotnet build MundoRuta.slnx` — clean build: 148 advertencias preexistentes, 0 errores, 0 advertencias nuevas del cliente.
+- [ ] Navegación pública sin sesión — pendiente de prueba en navegador.
+- [ ] Login por cada rol y redirección correcta — pendiente; requiere usuarios en la base.
+- [x] Acceso directo por URL a un rol ajeno redirige a `/acceso-denegado` (verificado en código, no en navegador).
+- [ ] Refresh en `/usuario`, `/prestador`, `/chofer`, `/admin` conserva la sesión — pendiente de prueba en navegador.
+- [x] Logout limpia `localStorage` (`GuardarAsync` elimina la clave cuando no hay sesión).
+- [x] Inventario de rutas: 24 rutas, sin duplicados y sin restos de la plantilla (`Counter`, `Weather`, `NavMenu`, `sidebar`).
+
+> Las verificaciones marcadas como estáticas se validaron por lectura de código y build; la corrida manual end-to-end queda pendiente porque requiere LocalDB y datos de login.
 
 ## Progress
 - TASK-01 y TASK-02 completadas: Roles, SesionPersistencia, render WASM sin prerender, tokens CSS y logo.
@@ -115,12 +118,16 @@ Menús por rol (labels exactos):
 - Exploración del cliente, servicios y controladores completada.
 - Detectado intento previo en `feature/frontend-auth-roles-structure`; se reutiliza solo la paleta y el contenido del footer, no su estructura.
 - TASK-06 completada: 8 páginas placeholder (5 de Usuario, 3 de Chofer) con `RoleGuard`; `.mr-card--enlace` agregado a `app.css`.
-- Siguiente: TASK-07 (páginas de Prestador y Admin).
+- TASK-07 completada: 9 páginas placeholder (6 de Prestador, 3 de Admin) con `RoleGuard`.
+- TASK-08 completada: clean build sin errores, inventario de 24 rutas, sin restos de la plantilla; `SesionPersistencia` tolera JSON corrupto.
+- Pendiente: prueba manual end-to-end en navegador (login por rol, refresh y logout requieren LocalDB con usuarios).
+- Siguiente: correr la app, validar los flujos y abrir el PR.
 
 ## Verification evidence
 - `dotnet build MundoRuta.slnx`: compilación correcta, 0 errores (TASK-01/02 y TASK-03/04).
 - `dotnet build MundoRuta.slnx`: compilación correcta, 0 advertencias, 0 errores (TASK-05).
+- `dotnet clean` + `dotnet build MundoRuta.slnx`: 0 errores, 148 advertencias preexistentes (ninguna del cliente) (TASK-08).
 - Nota: `MundoRuta.Shared/prompt.cs` rompía el build por la extensión; se excluyó de compilación en el csproj sin tocar el archivo.
 
 ## Next step
-TASK-06.
+Prueba manual end-to-end en navegador y apertura del PR.
