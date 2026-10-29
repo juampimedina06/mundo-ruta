@@ -1,0 +1,68 @@
+@page "/prestadores"
+@using MundoRuta.Shared.DTO
+@inject IHttpServices Http
+
+<PageTitle>Prestadores | Mundo Ruta</PageTitle>
+
+<div class="mr-page">
+    <div class="mr-container">
+        <PageHeader Titulo="Prestadores"
+                    Descripcion="Empresas de transporte aprobadas para operar en Mundo Ruta." />
+
+        @if (_cargando)
+        {
+            <div class="mr-loading">Cargando prestadores...</div>
+        }
+        else if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <div class="mr-alert mr-alert--error">@_error</div>
+        }
+        else if (_prestadores is null || _prestadores.Count == 0)
+        {
+            <EmptyState Titulo="Todavía no hay prestadores disponibles"
+                        Descripcion="Estamos sumando empresas. Volvé a intentar más adelante." />
+        }
+        else
+        {
+            <div class="mr-grid">
+                @foreach (PrestadorListadoDTO prestador in _prestadores)
+                {
+                    <article class="mr-card">
+                        <h2 class="mr-card__title">Prestador verificado</h2>
+                        <p>
+                            <EstadoBadge Estado="@prestador.Estado" />
+                        </p>
+                        <p class="mb-1">
+                            <a href="mailto:@prestador.Email">@prestador.Email</a>
+                        </p>
+                        <p class="mb-0">
+                            <a href="tel:@prestador.Telefono">@prestador.Telefono</a>
+                        </p>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<PrestadorListadoDTO>? _prestadores;
+    private bool _cargando = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        HttpResp<List<PrestadorListadoDTO>> respuesta = await Http.GetAsync<List<PrestadorListadoDTO>>("api/servicios/fletes");
+
+        if (respuesta.Error)
+        {
+            _error = await respuesta.ObtenerMensajeAsync("No pudimos cargar los prestadores.");
+        }
+        else
+        {
+            _prestadores = respuesta.Respuesta;
+        }
+
+        _cargando = false;
+    }
+}

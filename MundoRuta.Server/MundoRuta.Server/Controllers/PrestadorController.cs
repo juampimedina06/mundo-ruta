@@ -44,8 +44,16 @@ public class PrestadorController : ControllerBase
     [HttpGet("{prestadorId:int}/solicitudes")]
     public async Task<ActionResult> GetSolicitudes(int prestadorId)
     {
-        var solicitudes = await _viajeRepositorio.SolicitudesPendientes(prestadorId);
+        var solicitudes = await _viajeRepositorio.ListadoPorPrestador(prestadorId, "PENDIENTE");
         return Ok(solicitudes);
+    }
+
+    // GET: todos los viajes de la empresa
+    [HttpGet("{prestadorId:int}/viajes")] // api/prestador/{prestadorId}/viajes
+    public async Task<ActionResult<List<ViajePrestadorDTO>>> GetViajes(int prestadorId, string? estado = null)
+    {
+        var viajes = await _viajeRepositorio.ListadoPorPrestador(prestadorId, estado);
+        return Ok(viajes);
     }
 
     // POST: El prestador agrega un nuevo chofer a la empresa
@@ -290,27 +298,59 @@ public class PrestadorController : ControllerBase
     public async Task<ActionResult<List<VehiculoDTO>>> GetVehiculos(int id)
     {
         var listaVehiculos = await _vehiculoRepositorio.ObtenerPorPrestador(id);
+        return Ok(listaVehiculos);
+    }
 
-        if (listaVehiculos == null || !listaVehiculos.Any())
+    // PUT: Iniciar un viaje (api/prestador/viajes/{id}/iniciar)
+    [HttpPut("viajes/{id:int}/iniciar")]
+    public async Task<IActionResult> IniciarServicio(int id)
+    {
+        var viaje = await _viajeRepositorio.ObtenerPorId(id);
+
+        if (viaje == null)
         {
-            return NotFound("No se encontraron vehículos");
+            return NotFound("No encontrado");
         }
 
-        var vehiculosDto = listaVehiculos.Select(v => new VehiculoDTO
+        // 1. REQUERIMIENTO: Verificar que el viaje tenga un chofer asignado
+        if (viaje.IdChofer <= 0)
         {
-            Id = v.Id,
-            Patente = v.Patente,
-            Marca = v.Marca,
-            Licencia = v.Licencia,
-            Estado = v.Estado,
-            CapacidadCarga = v.CapacidadCarga,
-            TipoVehiculo = v.TipoVehiculo,
-            IdUsuario = v.IdUsuario,
-            IdChofer = v.IdChofer
-        }).ToList();
+            return BadRequest("No se puede iniciar el viaje porque aún no tiene un chofer asignado.");
+        }
 
-        return Ok(vehiculosDto);
+        // 2. Verificar que no esté iniciado o finalizado previamente
+        if (viaje.Estado == EstadosViaje.EnTransito || viaje.Estado == EstadosViaje.Finalizado)
+        {
+            return BadRequest("El viaje ya fue iniciado o finalizado");
+        }
+
+        // Cambiar estado a EnTransito
+        viaje.Estado = EstadosViaje.EnTransito;
+        await _viajeRepositorio.Update(viaje);
+
+        // DTO para la notificación en tiempo real
+        var estadoDto = new EstadoViajeActualizadoDTO
+        {
+            IdViaje = viaje.Id,
+            Estado = EstadosViaje.EnTransito,
+            Mensaje = "El viaje ha sido iniciado y está en curso"
+        };
+
+        // Notificaciones vía SignalR
+        await _hubContext.Clients.Group($"viaje_{viaje.Id}").SendAsync("EstadoViajeActualizado", estadoDto);
+        if (viaje.IdPasajero > 0)
+        {
+            await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("EstadoViajeActualizado", estadoDto);
+        }
+        if (viaje.IdChofer > 0)
+        {
+            await _hubContext.Clients.Group($"chofer_{viaje.IdChofer}").SendAsync("EstadoViajeActualizado", estadoDto);
+        }
+
+        return Ok(new { mensaje = "Viaje iniciado correctamente" });
     }
+
+
 
     // PUT: Finalizar un viaje
     [HttpPut("viajes/{id:int}/finalizar")]

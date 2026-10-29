@@ -1,0 +1,38 @@
+@page "/prestador"
+
+<PageTitle>Panel del prestador | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="Roles.Prestador">
+    <div class="mr-page">
+        <div class="mr-container">
+            <PageHeader Titulo="Panel del prestador"
+                        Descripcion="Gestioná solicitudes, viajes, choferes y vehículos." />
+
+            <div class="mr-grid">
+                <a class="mr-card mr-card--enlace" href="/prestador/solicitudes">
+                    <h2 class="mr-card__title">Solicitudes</h2>
+                    <p class="mr-muted">Pedidos pendientes de respuesta.</p>
+                    <span class="small fw-semibold">Ir a la sección</span>
+                </a>
+
+                <a class="mr-card mr-card--enlace" href="/prestador/viajes">
+                    <h2 class="mr-card__title">Viajes</h2>
+                    <p class="mr-muted">Servicios asignados y en curso.</p>
+                    <span class="small fw-semibold">Ir a la sección</span>
+                </a>
+
+                <a class="mr-card mr-card--enlace" href="/prestador/choferes">
+                    <h2 class="mr-card__title">Choferes</h2>
+                    <p class="mr-muted">Tu equipo de conducción.</p>
+                    <span class="small fw-semibold">Ir a la sección</span>
+                </a>
+
+                <a class="mr-card mr-card--enlace" href="/prestador/vehiculos">
+                    <h2 class="mr-card__title">Vehículos</h2>
+                    <p class="mr-muted">Flota disponible para operar.</p>
+                    <span class="small fw-semibold">Ir a la sección</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</RoleGuard>

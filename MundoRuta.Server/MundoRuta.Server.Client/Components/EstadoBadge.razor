@@ -1,0 +1,16 @@
+@* Muestra el estado de un viaje o solicitud con el color que le corresponde. *@
+<span class="mr-badge @ClaseEstado">@Estado</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Estado { get; set; } = string.Empty;
+
+    private string ClaseEstado
+    {
+        get
+        {
+            string normalizado = (Estado ?? string.Empty).Replace('_', '-').ToLowerInvariant();
+            return "mr-badge--" + normalizado;
+        }
+    }
+}

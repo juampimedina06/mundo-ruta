@@ -62,7 +62,7 @@ public class Viaje : EntidadBase
     public Chofer Chofer { get; set; }
 
     public int IdServicio { get; set; }
-
+    [ForeignKey("IdServicio")]
     public Servicio Servicio { get; set; }
 
     public DateTime FechaHoraReserva { get; set; } //
@@ -75,10 +75,4 @@ public class Viaje : EntidadBase
 
     [ForeignKey("IdVehiculo")]
     public Vehiculo Vehiculo { get; set; }
-
-
-
-
-
-
 }

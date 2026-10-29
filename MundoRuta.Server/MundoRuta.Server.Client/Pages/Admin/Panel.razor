@@ -1,0 +1,26 @@
+@page "/admin"
+
+<PageTitle>Administración | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="Roles.Admin">
+    <div class="mr-page">
+        <div class="mr-container">
+            <PageHeader Titulo="Panel de administración"
+                        Descripcion="Estado general de la plataforma." />
+
+            <div class="mr-grid">
+                <a class="mr-card mr-card--enlace" href="/admin/prestadores">
+                    <h2 class="mr-card__title">Prestadores pendientes</h2>
+                    <p class="mr-muted">Altas que esperan aprobación.</p>
+                    <span class="small fw-semibold">Ir a la sección</span>
+                </a>
+
+                <a class="mr-card mr-card--enlace" href="/admin/configuracion">
+                    <h2 class="mr-card__title">Configuración</h2>
+                    <p class="mr-muted">Parámetros generales del sistema.</p>
+                    <span class="small fw-semibold">Ir a la sección</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</RoleGuard>
