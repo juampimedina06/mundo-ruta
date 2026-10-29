@@ -1,0 +1,121 @@
+.mr-home {
+    padding-top: 0;
+}
+
+.mr-hero {
+    background-color: var(--mr-azul-marino);
+    color: #fff;
+    padding: 4rem 0;
+}
+
+.mr-hero__etiqueta {
+    display: inline-block;
+    margin: 0 0 1rem;
+    padding: .25rem .75rem;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #fff;
+    background-color: rgba(255, 90, 31, .18);
+    border: 1px solid var(--mr-naranja);
+    border-radius: 999px;
+}
+
+.mr-hero h1 {
+    max-width: 720px;
+    margin: 0 0 1rem;
+    font-size: clamp(2rem, 4vw, 2.9rem);
+    line-height: 1.15;
+    color: #fff;
+}
+
+.mr-hero__texto {
+    max-width: 640px;
+    margin: 0 0 1.75rem;
+    font-size: 1.05rem;
+    color: rgba(255, 255, 255, .82);
+}
+
+.mr-hero__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+}
+
+.mr-btn-claro {
+    color: #fff;
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, .65);
+}
+
+.mr-btn-claro:hover,
+.mr-btn-claro:focus {
+    color: var(--mr-azul-marino);
+    background-color: #fff;
+    border-color: #fff;
+}
+
+.mr-home__seccion {
+    padding: 3.5rem 0;
+}
+
+.mr-pasos {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.mr-paso {
+    padding: 1.5rem;
+    background-color: #fff;
+    border: 1px solid var(--mr-borde);
+    border-radius: var(--mr-radio);
+}
+
+.mr-paso__numero {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin-bottom: .85rem;
+    font-weight: 700;
+    color: #fff;
+    background-color: var(--mr-naranja);
+    border-radius: 50%;
+}
+
+.mr-paso h3 {
+    margin: 0 0 .5rem;
+    font-size: 1.1rem;
+    color: var(--mr-azul-marino);
+}
+
+.mr-paso p {
+    margin: 0;
+    color: var(--mr-texto-suave);
+}
+
+.mr-cta {
+    background-color: var(--mr-azul-marino);
+    color: #fff;
+    padding: 3rem 0;
+}
+
+.mr-cta h2 {
+    margin: 0 0 .5rem;
+    font-size: 1.75rem;
+    color: #fff;
+}
+
+.mr-cta p {
+    margin: 0 0 1.5rem;
+    color: rgba(255, 255, 255, .82);
+}
+
+.mr-cta__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+}

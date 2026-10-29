@@ -68,21 +68,16 @@ else
     app.UseHsts();
 }
 
-app.MapHub<MundoRuta.Server.Hubs.ViajeHub>("/hubs/viaje");
-
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
-app.UseBlazorFrameworkFiles();
-app.UseStaticFiles();
 
 app.UseRouting();// Habilitar el enrutamiento de la aplicación
 
 app.UseAntiforgery();
 
+app.MapHub<MundoRuta.Server.Hubs.ViajeHub>("/hubs/viaje");
 app.MapRazorPages();
 app.MapControllers();// Mapear los controladores a las rutas correspondientes
-app.MapFallbackToFile("index.html");
-//todo esto es el mapeo de los componentes de Razor y Blazor, para que se puedan renderizar en el navegador
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

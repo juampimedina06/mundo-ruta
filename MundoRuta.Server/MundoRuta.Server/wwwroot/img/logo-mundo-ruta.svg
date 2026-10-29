@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48" width="220" height="48" role="img" aria-label="Mundo Ruta">
+  <title>Mundo Ruta</title>
+  <path d="M2 42 12 6h14L16 42Z" fill="#FF5A1F"/>
+  <path d="M12.5 9h3.2l-1 8h-3.2Zm-2 15h3.2l-1 8h-3.2Z" fill="#FFFFFF"/>
+  <text x="40" y="32" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="700" fill="#0F1F3D">Mundo Ruta</text>
+</svg>

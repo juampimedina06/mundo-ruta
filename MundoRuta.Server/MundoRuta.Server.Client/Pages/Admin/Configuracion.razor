@@ -1,0 +1,17 @@
+@page "/admin/configuracion"
+
+<PageTitle>Configuración | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="Roles.Admin">
+    <div class="mr-page">
+        <div class="mr-container">
+            <PageHeader Titulo="Configuración"
+                        Descripcion="Parámetros generales del sistema." />
+
+            <EmptyState Titulo="Configuración en preparación"
+                        Descripcion="Acá vas a poder ajustar tarifas, recargos y parámetros de la plataforma.">
+                <a class="btn btn-outline-primary" href="/admin">Volver al panel</a>
+            </EmptyState>
+        </div>
+    </div>
+</RoleGuard>

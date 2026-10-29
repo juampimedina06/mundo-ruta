@@ -1,0 +1,27 @@
+@* Encabezado reutilizable para las páginas internas. *@
+<div class="mr-page-header">
+    <div class="mr-page-header__info">
+        <h1>@Titulo</h1>
+        @if (!string.IsNullOrWhiteSpace(Descripcion))
+        {
+            <p class="mr-muted">@Descripcion</p>
+        }
+    </div>
+    @if (Acciones is not null)
+    {
+        <div class="mr-page-header__acciones">
+            @Acciones
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Titulo { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Descripcion { get; set; }
+
+    [Parameter]
+    public RenderFragment? Acciones { get; set; }
+}
