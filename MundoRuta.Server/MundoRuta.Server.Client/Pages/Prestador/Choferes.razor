@@ -1,0 +1,239 @@
+@page "/prestador/choferes"
+@inject HttpClient Http
+
+<PageTitle>Choferes</PageTitle>
+
+<h1>Choferes</h1>
+
+@if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+@if (mensajeExito is not null)
+{
+    <div class="alert alert-success">@mensajeExito</div>
+}
+
+<div class="card mb-4">
+    <div class="card-header">Nuevo chofer</div>
+    <div class="card-body">
+        <form @onsubmit="CrearChofer" @onsubmit:preventDefault>
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="nombre">Nombre</label>
+                    <input id="nombre" class="form-control" @bind="nuevoChofer.Nombre" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="apellido">Apellido</label>
+                    <input id="apellido" class="form-control" @bind="nuevoChofer.Apellido" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="licencia">Licencia</label>
+                    <input id="licencia" class="form-control" @bind="nuevoChofer.Licencia" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="estado">Estado</label>
+                    <select id="estado" class="form-select" @bind="nuevoChofer.Estado">
+                        <option value="DISPONIBLE">DISPONIBLE</option>
+                        <option value="OCUPADO">OCUPADO</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="email">Email</label>
+                    <input id="email" class="form-control" type="email" @bind="nuevoChofer.Email" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="password">Contraseña</label>
+                    <input id="password" class="form-control" type="password" @bind="nuevoChofer.Password" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="telefono">Teléfono</label>
+                    <input id="telefono" class="form-control" type="number" @bind="nuevoChofer.Telefono" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="cuit">CUIT</label>
+                    <input id="cuit" class="form-control" @bind="nuevoChofer.Cuit" />
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3" disabled="@(enviando || !TienePrestador)">
+                @(enviando ? "Guardando..." : "Dar de alta")
+            </button>
+        </form>
+    </div>
+</div>
+
+@if (!TienePrestador)
+{
+    @* El mensaje de error de arriba indica qué falta. *@
+}
+else if (choferes is null)
+{
+    <p><em>Cargando...</em></p>
+}
+else if (!choferes.Any())
+{
+    <div class="alert alert-light border">Todavía no registraste choferes.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Licencia</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var chofer in choferes)
+                {
+                    <tr>
+                        <td>@chofer.Nombre</td>
+                        <td>@chofer.Apellido</td>
+                        <td>@chofer.Licencia</td>
+                        <td><span class="badge @ClaseEstado(chofer.Estado)">@chofer.Estado</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    // Lo completa ChoferesPorPrestador; en /prestador/choferes queda en 0.
+    [Parameter] public int PrestadorId { get; set; }
+    [SupplyParameterFromQuery(Name = "prestadorId")] public string? PrestadorIdQuery { get; set; }
+
+    // PrestadorId (ruta con segmento) tiene prioridad sobre ?prestadorId=.
+    private int PrestadorIdEfectivo =>
+        PrestadorId > 0
+            ? PrestadorId
+            : int.TryParse(PrestadorIdQuery, out int id) ? id : 0;
+
+    private bool TienePrestador => PrestadorIdEfectivo > 0;
+
+    private List<ChoferDTO>? choferes;
+    private ChoferAltaDTO nuevoChofer = CrearFormularioVacio();
+    private bool enviando;
+    private string? error;
+    private string? mensajeExito;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        error = null;
+        mensajeExito = null;
+
+        if (!TienePrestador)
+        {
+            choferes = new();
+            error = "No se indicó el prestador. Ingresá a /prestador/choferes?prestadorId=<id>.";
+            return;
+        }
+
+        nuevoChofer.IdPrestador = PrestadorIdEfectivo;
+        await CargarChoferes();
+    }
+
+    private async Task CargarChoferes()
+    {
+        error = null;
+        try
+        {
+            choferes = await Http.GetFromJsonAsync<List<ChoferDTO>>($"api/prestador/{PrestadorIdEfectivo}/choferes") ?? new();
+        }
+        catch (Exception ex)
+        {
+            error = $"No se pudieron cargar los choferes: {ex.Message}";
+        }
+    }
+
+    private async Task CrearChofer()
+    {
+        error = null;
+        mensajeExito = null;
+
+        if (!TienePrestador)
+        {
+            error = "No se indicó el prestador. Ingresá a /prestador/choferes?prestadorId=<id>.";
+            return;
+        }
+
+        string? validacion = ValidarFormulario();
+        if (validacion is not null)
+        {
+            error = validacion;
+            return;
+        }
+
+        enviando = true;
+        try
+        {
+            nuevoChofer.IdPrestador = PrestadorIdEfectivo;
+            HttpResponseMessage response = await Http.PostAsJsonAsync("api/prestador/choferes", nuevoChofer);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                string detalle = (await response.Content.ReadAsStringAsync()).Trim('"');
+                error = string.IsNullOrWhiteSpace(detalle)
+                    ? "No se pudo registrar el chofer."
+                    : detalle;
+                return;
+            }
+
+            mensajeExito = "Chofer registrado correctamente.";
+            nuevoChofer = CrearFormularioVacio();
+            nuevoChofer.IdPrestador = PrestadorIdEfectivo;
+            await CargarChoferes();
+        }
+        catch (Exception ex)
+        {
+            error = $"No se pudo registrar el chofer: {ex.Message}";
+        }
+        finally
+        {
+            enviando = false;
+        }
+    }
+
+    private string? ValidarFormulario()
+    {
+        if (string.IsNullOrWhiteSpace(nuevoChofer.Nombre))
+            return "El nombre es obligatorio.";
+        if (string.IsNullOrWhiteSpace(nuevoChofer.Apellido))
+            return "El apellido es obligatorio.";
+        if (string.IsNullOrWhiteSpace(nuevoChofer.Licencia))
+            return "La licencia es obligatoria.";
+        if (string.IsNullOrWhiteSpace(nuevoChofer.Email) || !nuevoChofer.Email.Contains('@'))
+            return "El email es obligatorio y debe ser válido.";
+        if (string.IsNullOrWhiteSpace(nuevoChofer.Password))
+            return "La contraseña es obligatoria.";
+        if (nuevoChofer.Telefono <= 0)
+            return "El teléfono es obligatorio.";
+        if (string.IsNullOrWhiteSpace(nuevoChofer.Cuit))
+            return "El CUIT es obligatorio.";
+        return null;
+    }
+
+    private static ChoferAltaDTO CrearFormularioVacio() => new()
+    {
+        IdPrestador = 0,
+        Nombre = string.Empty,
+        Apellido = string.Empty,
+        Licencia = string.Empty,
+        Estado = "DISPONIBLE",
+        Telefono = 0,
+        Cuit = string.Empty,
+        Email = string.Empty,
+        Password = string.Empty
+    };
+
+    private static string ClaseEstado(string estado) => estado?.ToUpperInvariant() switch
+    {
+        "DISPONIBLE" => "bg-success",
+        "OCUPADO" => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
+}

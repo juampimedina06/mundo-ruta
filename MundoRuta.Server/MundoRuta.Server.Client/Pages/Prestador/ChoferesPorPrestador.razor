@@ -1,0 +1,7 @@
+@page "/prestador/{PrestadorId:int}/choferes"
+
+<Choferes PrestadorId="@PrestadorId" />
+
+@code {
+    [Parameter] public int PrestadorId { get; set; }
+}
