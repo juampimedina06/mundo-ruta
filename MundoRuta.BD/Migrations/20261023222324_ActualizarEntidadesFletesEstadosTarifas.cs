@@ -31,12 +31,12 @@ namespace MundoRuta.BD.Migrations
                 nullable: false,
                 defaultValue: false);
 
-            migrationBuilder.AddColumn<bool>(
+            /*migrationBuilder.AddColumn<bool>(
                 name: "CalificadoPorPasajero",
                 table: "Viajes",
                 type: "bit",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: false); */
 
             migrationBuilder.AddColumn<string>(
                 name: "DniReceptor",
