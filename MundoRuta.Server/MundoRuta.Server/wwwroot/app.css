@@ -233,3 +233,57 @@ h1:focus {
     box-shadow: var(--mr-sombra);
     transform: translateY(-2px);
 }
+
+.mr-kpi {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    background-color: #fff;
+    border: 1px solid var(--mr-borde);
+    border-radius: var(--mr-radio);
+    padding: 1.5rem;
+    box-shadow: var(--mr-sombra);
+}
+
+.mr-kpi__label {
+    margin: 0;
+    font-size: .8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--mr-texto-suave);
+}
+
+.mr-kpi__value {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--mr-azul-marino);
+}
+
+.mr-kpi__detail {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: .9rem;
+    color: var(--mr-texto-suave);
+}
+
+.mr-kpi__link {
+    font-weight: 600;
+    color: var(--mr-naranja);
+}
+
+.mr-kpi__footer {
+    margin: 1.5rem 0 0;
+    font-size: .85rem;
+    color: var(--mr-texto-suave);
+}
+
+.mr-kpi--alerta .mr-kpi__value {
+    color: var(--mr-naranja);
+}
