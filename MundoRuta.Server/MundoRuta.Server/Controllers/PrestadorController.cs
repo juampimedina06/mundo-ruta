@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos.Entity;
@@ -434,5 +435,79 @@ public class PrestadorController : ControllerBase
         prestador.TarifaBaseKm = dto.TarifaBaseKm;
         await _usuarioRepositorio.Update(prestador);
         return Ok(new { mensaje = "Tarifa por km actualizada", tarifaBaseKm = prestador.TarifaBaseKm });
+    }
+    [HttpGet("choferes/{choferId}")]
+    [Authorize(Roles = "Prestador")]
+    public async Task<IActionResult> ObtenerChoferPorId(int choferId)
+    {
+        try
+        {
+            var chofer = await _choferRepositorio.ObtenerPorIdAsync(choferId);
+
+            if (chofer == null)
+            {
+                return NotFound(new { mensaje = "El chofer solicitado no existe." });
+            }
+
+            return Ok(chofer);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { mensaje = "Error interno del servidor", detalle = ex.Message });
+        }
+    }
+
+    [HttpPut("choferes/{choferId}")]
+    [Authorize(Roles = "Prestador")]
+    public async Task<IActionResult> ModificarChofer(int choferId, [FromBody] ChoferUpdateDto dto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var actualizado = await _choferRepositorio.ActualizarChoferAsync(choferId, dto);
+
+            if (!actualizado)
+            {
+                return NotFound(new { mensaje = "No se pudo actualizar. El chofer no existe." });
+            }
+
+            return Ok(new { mensaje = "Datos del chofer actualizados correctamente." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { mensaje = "Error al actualizar el chofer", detalle = ex.Message });
+        }
+    }
+
+    [HttpDelete("choferes/{choferId}")]
+    [Authorize(Roles = "Prestador")]
+    public async Task<IActionResult> BajaChofer(int choferId)
+    {
+        try
+        {
+            var tieneViajesPendientes = await _choferRepositorio.TieneViajesEnTransitoAsync(choferId);
+
+            if (tieneViajesPendientes)
+            {
+                return BadRequest(new { mensaje = "No se puede dar de baja. El chofer tiene viajes en tránsito asignados." });
+            }
+
+            var bajaExitosa = await _choferRepositorio.BajaLogicaAsync(choferId);
+
+            if (!bajaExitosa)
+            {
+                return NotFound(new { mensaje = "No se pudo dar de baja. El chofer no existe o ya está inactivo." });
+            }
+
+            return Ok(new { mensaje = "Chofer dado de baja exitosamente." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { mensaje = "Error al intentar dar de baja al chofer", detalle = ex.Message });
+        }
     }
 }
