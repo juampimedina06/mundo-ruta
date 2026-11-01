@@ -17,7 +17,8 @@ namespace MundoRuta.Repositorio.Repositorios
         Task IniciarViaje(Viaje viaje);
         Task<bool> RegistrarPago(int viajeId, ConfirmacionPagoDTO dto);
         Task<int> ContarViajesFinalizados();
-
-        
+        Task<int> ContarTodos();
+        Task<int> ContarActivos();
+        Task<decimal> SumarMontoTransaccionado();
     }
 }

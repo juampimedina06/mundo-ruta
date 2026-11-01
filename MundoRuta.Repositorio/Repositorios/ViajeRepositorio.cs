@@ -170,5 +170,31 @@ namespace MundoRuta.Repositorio.Repositorios
         {
             return await context.Viajes.CountAsync(v => v.Estado == EstadosViaje.Finalizado);
         }
+
+        public async Task<int> ContarTodos()
+        {
+            return await context.Viajes.CountAsync();
+        }
+
+        public async Task<int> ContarActivos() // Cuenta los viajes que se encuentran en alguno de los estados operativos.
+        {
+            string[] estadosActivos =
+            {
+                EstadosViaje.Buscando,
+                EstadosViaje.Asignado,
+                EstadosViaje.CargaSubida,
+                EstadosViaje.EnTransito,
+                EstadosViaje.LlegadaDestino
+            };
+
+            return await context.Viajes.CountAsync(v => estadosActivos.Contains(v.Estado));
+        }
+
+        public async Task<decimal> SumarMontoTransaccionado() // Suma los montos de los viajes finalizados; devuelve 0 si no hay registros.
+        {
+            return await context.Viajes
+                .Where(v => v.Estado == EstadosViaje.Finalizado)
+                .SumAsync(v => (decimal?)v.Monto) ?? 0m;
+        }
     }
 }
