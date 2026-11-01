@@ -1,0 +1,9 @@
+.mr-empty h2 {
+    margin: 0 0 .5rem;
+    font-size: 1.1rem;
+    color: var(--mr-azul-marino);
+}
+
+.mr-empty p {
+    margin: 0 0 1rem;
+}

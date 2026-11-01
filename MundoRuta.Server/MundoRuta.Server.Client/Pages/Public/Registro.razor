@@ -1,0 +1,178 @@
+@page "/registro"
+@using MundoRuta.Shared.DTO
+@inject IAuthServicio Auth
+@inject NavigationManager Navegacion
+
+<PageTitle>Crear cuenta | Mundo Ruta</PageTitle>
+
+<div class="mr-page">
+    <div class="mr-container mr-auth">
+        <div class="mr-card mr-auth__card">
+            <h1 class="mr-auth__titulo">Crear cuenta</h1>
+            <p class="mr-muted">Elegí cómo vas a usar Mundo Ruta.</p>
+
+            <div class="mr-auth__tipos" role="group" aria-label="Tipo de cuenta">
+                <button type="button" class="btn @ClaseTipoUsuario" @onclick="SeleccionarUsuario">
+                    Quiero viajar
+                </button>
+                <button type="button" class="btn @ClaseTipoPrestador" @onclick="SeleccionarPrestador">
+                    Soy empresa de transporte
+                </button>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_error))
+            {
+                <div class="mr-alert mr-alert--error mb-3">@_error</div>
+            }
+
+            <EditForm Model="_modelo" OnSubmit="RegistrarAsync">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="nombre">Nombre</label>
+                        <InputText id="nombre" class="form-control" autocomplete="given-name" @bind-Value="_modelo.Nombre" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="apellido">Apellido</label>
+                        <InputText id="apellido" class="form-control" autocomplete="family-name" @bind-Value="_modelo.Apellido" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="email">Email</label>
+                        <InputText id="email" class="form-control" type="email" autocomplete="email" @bind-Value="_modelo.Email" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="telefono">Teléfono</label>
+                        <InputText id="telefono" class="form-control" type="tel" autocomplete="tel" @bind-Value="_modelo.Telefono" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="password">Contraseña</label>
+                        <InputText id="password" class="form-control" type="password" autocomplete="new-password" @bind-Value="_modelo.Password" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="confirmar">Confirmar contraseña</label>
+                        <InputText id="confirmar" class="form-control" type="password" autocomplete="new-password" @bind-Value="_modelo.ConfirmarPassword" />
+                    </div>
+
+                    @if (_esPrestador)
+                    {
+                        <div class="col-md-6">
+                            <label class="form-label" for="razon-social">Razón social</label>
+                            <InputText id="razon-social" class="form-control" @bind-Value="_modelo.RazonSocial" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="cuit">CUIT</label>
+                            <InputText id="cuit" class="form-control" @bind-Value="_modelo.Cuit" />
+                        </div>
+                    }
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 mt-4" disabled="@_cargando">
+                    @(_cargando ? "Creando cuenta..." : "Crear cuenta")
+                </button>
+            </EditForm>
+
+            <p class="mr-auth__pie">
+                <a href="/login">Ya tengo cuenta</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly RegistroModelo _modelo = new RegistroModelo();
+    private bool _esPrestador;
+    private bool _cargando;
+    private string? _error;
+
+    private string ClaseTipoUsuario => _esPrestador ? "btn-outline-primary" : "btn-primary";
+
+    private string ClaseTipoPrestador => _esPrestador ? "btn-primary" : "btn-outline-primary";
+
+    private void SeleccionarUsuario()
+    {
+        _esPrestador = false;
+    }
+
+    private void SeleccionarPrestador()
+    {
+        _esPrestador = true;
+    }
+
+    private async Task RegistrarAsync()
+    {
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_modelo.Nombre)
+            || string.IsNullOrWhiteSpace(_modelo.Apellido)
+            || string.IsNullOrWhiteSpace(_modelo.Email)
+            || string.IsNullOrWhiteSpace(_modelo.Telefono)
+            || string.IsNullOrWhiteSpace(_modelo.Password))
+        {
+            _error = "Completá todos los campos obligatorios.";
+            return;
+        }
+
+        if (_modelo.Password.Length < 6)
+        {
+            _error = "La contraseña debe tener al menos 6 caracteres.";
+            return;
+        }
+
+        if (!string.Equals(_modelo.Password, _modelo.ConfirmarPassword, StringComparison.Ordinal))
+        {
+            _error = "Las contraseñas no coinciden.";
+            return;
+        }
+
+        if (_esPrestador
+            && (string.IsNullOrWhiteSpace(_modelo.RazonSocial) || string.IsNullOrWhiteSpace(_modelo.Cuit)))
+        {
+            _error = "Completá la razón social y el CUIT.";
+            return;
+        }
+
+        RegisterRequestDto dto = new RegisterRequestDto
+        {
+            Nombre = _modelo.Nombre.Trim(),
+            Apellido = _modelo.Apellido.Trim(),
+            Email = _modelo.Email.Trim(),
+            Telefono = _modelo.Telefono.Trim(),
+            Password = _modelo.Password,
+            Rol = _esPrestador ? Roles.Prestador : Roles.Usuario,
+            RazonSocial = _esPrestador ? _modelo.RazonSocial.Trim() : string.Empty,
+            Cuit = _esPrestador ? _modelo.Cuit.Trim() : string.Empty
+        };
+
+        _cargando = true;
+
+        HttpResp<int> respuesta = await Auth.RegistrarAsync(dto);
+
+        if (respuesta.Error)
+        {
+            _error = await respuesta.ObtenerMensajeAsync("No pudimos crear la cuenta.");
+            _cargando = false;
+            return;
+        }
+
+        string registrado = _esPrestador ? "2" : "1";
+        _cargando = false;
+        Navegacion.NavigateTo("/login?registrado=" + registrado);
+    }
+
+    private sealed class RegistroModelo
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public string Apellido { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Telefono { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string ConfirmarPassword { get; set; } = string.Empty;
+        public string RazonSocial { get; set; } = string.Empty;
+        public string Cuit { get; set; } = string.Empty;
+    }
+}

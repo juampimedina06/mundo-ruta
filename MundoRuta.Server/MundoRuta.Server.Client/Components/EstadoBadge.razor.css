@@ -1,0 +1,34 @@
+.mr-badge--buscando {
+    background-color: var(--mr-azul-marino);
+}
+
+.mr-badge--asignado {
+    background-color: #1D4ED8;
+}
+
+.mr-badge--en-transito {
+    background-color: #0E7490;
+}
+
+.mr-badge--carga-subida {
+    background-color: #0369A1;
+}
+
+.mr-badge--llegada-destino {
+    background-color: #6D28D9;
+}
+
+.mr-badge--finalizado,
+.mr-badge--aprobado {
+    background-color: var(--mr-exito);
+}
+
+.mr-badge--cancelado,
+.mr-badge--rechazado {
+    background-color: var(--mr-error);
+}
+
+.mr-badge--contraofertado,
+.mr-badge--pendiente {
+    background-color: var(--mr-naranja);
+}

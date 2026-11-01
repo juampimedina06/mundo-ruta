@@ -6,6 +6,7 @@ namespace MundoRuta.Servicios.Sesion
         public string? Nombre { get; private set; }
         public string? Rol { get; private set; }
         public bool EstaLogueado => Id > 0;
+        public bool Restaurada { get; private set; }
 
         public event Action? CambioSesion;
 
@@ -29,6 +30,18 @@ namespace MundoRuta.Servicios.Sesion
         {
             return !string.IsNullOrWhiteSpace(Rol)
                 && string.Equals(Rol, rol, StringComparison.OrdinalIgnoreCase);
+        }
+
+        // Marca la sesión como restaurada una sola vez y notifica el cambio.
+        public void MarcarRestaurada()
+        {
+            if (Restaurada)
+            {
+                return;
+            }
+
+            Restaurada = true;
+            CambioSesion?.Invoke();
         }
     }
 }

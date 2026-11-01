@@ -1,0 +1,131 @@
+.mr-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: #fff;
+    border-bottom: 1px solid var(--mr-borde);
+}
+
+.mr-navbar__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    min-height: 68px;
+}
+
+.mr-navbar__brand {
+    order: 1;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.mr-navbar__brand img {
+    display: block;
+    height: 38px;
+    width: auto;
+}
+
+.mr-navbar__toggle {
+    order: 3;
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 42px;
+    height: 38px;
+    padding: 0 .5rem;
+    background-color: transparent;
+    border: 1px solid var(--mr-borde);
+    border-radius: var(--mr-radio);
+    cursor: pointer;
+}
+
+.mr-navbar__toggle-linea {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background-color: var(--mr-azul-marino);
+}
+
+.mr-navbar__nav {
+    display: none;
+}
+
+.mr-navbar__nav--abierto {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    padding: .5rem 1rem 1rem;
+    background-color: #fff;
+    border-bottom: 1px solid var(--mr-borde);
+    box-shadow: var(--mr-sombra);
+}
+
+/* ::deep porque los enlaces los renderiza NavLink como componente hijo. */
+.mr-navbar__nav ::deep .mr-navbar__link {
+    display: block;
+    padding: .6rem 0;
+    color: var(--mr-azul-marino);
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+}
+
+.mr-navbar__nav ::deep .mr-navbar__link:hover {
+    color: var(--mr-naranja);
+    text-decoration: none;
+}
+
+.mr-navbar__nav ::deep .mr-navbar__link.active {
+    color: var(--mr-naranja);
+    border-bottom-color: var(--mr-naranja);
+}
+
+.mr-navbar__acciones {
+    order: 2;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-left: auto;
+}
+
+.mr-navbar__usuario {
+    font-weight: 700;
+}
+
+@media (min-width: 992px) {
+    .mr-navbar__inner {
+        flex-wrap: nowrap;
+        gap: 2rem;
+    }
+
+    .mr-navbar__toggle {
+        display: none;
+    }
+
+    .mr-navbar__nav,
+    .mr-navbar__nav--abierto {
+        order: 2;
+        display: flex;
+        flex-direction: row;
+        position: static;
+        align-items: stretch;
+        gap: 1.5rem;
+        padding: 0;
+        background-color: transparent;
+        border-bottom: 0;
+        box-shadow: none;
+    }
+
+    .mr-navbar__nav ::deep .mr-navbar__link {
+        padding: 1.35rem 0;
+    }
+
+    .mr-navbar__acciones {
+        order: 3;
+    }
+}

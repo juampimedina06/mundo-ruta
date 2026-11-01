@@ -1,0 +1,40 @@
+@page "/acceso-denegado"
+@inject SesionEstado Sesion
+@inject NavigationManager Navegacion
+
+<PageTitle>Acceso denegado | Mundo Ruta</PageTitle>
+
+<div class="mr-page">
+    <div class="mr-container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="mr-card text-center">
+                    <h1 class="mr-card__title">No tenés acceso a esta sección</h1>
+                    <p class="mr-muted">
+                        Tu rol actual (@Sesion.Rol) no tiene permiso para ver esta página.
+                    </p>
+
+                    <div class="d-flex flex-wrap gap-2 justify-content-center">
+                        @if (Sesion.EstaLogueado)
+                        {
+                            <a class="btn btn-primary" href="@RutaInicioPorRol.Obtener(Sesion.Rol)">Ir a mi panel</a>
+                        }
+                        <button type="button" class="btn btn-outline-primary" @onclick="CerrarSesion">Cerrar sesión</button>
+                    </div>
+
+                    <p class="mt-3 mb-0">
+                        <a href="/">Volver al inicio</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private void CerrarSesion()
+    {
+        Sesion.Cerrar();
+        Navegacion.NavigateTo("/");
+    }
+}
