@@ -42,7 +42,6 @@ namespace MundoRuta.Server.Client.Navigation
         {
             new MenuItem("Dashboard", "/admin/dashboard"),
             new MenuItem("Panel", "/admin"),
-            new MenuItem("Prestadores", "/admin/prestadores"),
             new MenuItem("Configuración", "/admin/configuracion")
         };
 
