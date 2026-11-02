@@ -52,7 +52,9 @@ namespace MundoRuta.Repositorio.Repositorios
         {
             return await context.Viajes
                 .Include(v => v.Pasajero)
+                .Include(v => v.Usuario)
                 .Include(v => v.Chofer)
+                .ThenInclude(c => c.Usuario)
                 .Include(v => v.Vehiculo)
                 .FirstOrDefaultAsync(v => v.Id == viajeId);
         }
