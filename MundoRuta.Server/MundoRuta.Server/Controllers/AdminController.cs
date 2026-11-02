@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos;
 using MundoRuta.BD.Datos.Entity;
 using MundoRuta.Repositorio.Repositorios;
+using MundoRuta.Shared;
 using MundoRuta.Shared.DTO;
 using System.Globalization;
 
@@ -53,6 +54,40 @@ namespace MundoRuta.Server.Controllers
             await _usuarioRepositorio.Update(prestador);
 
             return Ok(new { mensaje = "Prestador aprobado correctamente" });
+        }
+
+        [HttpGet("prestadores/solicitudes")] // api/admin/prestadores/solicitudes
+        public async Task<ActionResult<List<PrestadorSolicitudDTO>>> ListaSolicitudesPrestadores()
+        {
+            List<PrestadorSolicitudDTO> solicitudes = await _usuarioRepositorio.ListarSolicitudesPrestador();
+
+            // Se devuelve 200 con lista vacía para que el cliente distinga "sin datos" de "error".
+            return Ok(solicitudes);
+        }
+
+        [HttpPut("prestadores/{id:int}/estado")] // api/admin/prestadores/{id}/estado
+        public async Task<IActionResult> ActualizarEstadoPrestador(int id, [FromBody] ActualizarEstadoPrestadorDTO dto)
+        {
+            if (!EstadosPrestador.EsAsignable(dto.Estado))
+            {
+                return BadRequest(new { mensaje = "Estado inválido. Valores permitidos: APROBADO, RECHAZADO o SUSPENDIDO." });
+            }
+
+            Usuario? prestador = await _usuarioRepositorio.ObtenerPorId(id);
+
+            if (prestador == null || prestador.Rol != Roles.Prestador)
+            {
+                return NotFound(new { mensaje = "Prestador no encontrado" });
+            }
+
+            bool actualizado = await _usuarioRepositorio.CambiarEstado(id, dto.Estado);
+
+            if (!actualizado)
+            {
+                return NotFound(new { mensaje = "Prestador no encontrado" });
+            }
+
+            return Ok(new { mensaje = "Estado actualizado correctamente", id, estado = dto.Estado });
         }
 
         [HttpGet("dashboard")] // api/admin/dashboard
