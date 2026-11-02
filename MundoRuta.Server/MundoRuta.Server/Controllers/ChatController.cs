@@ -17,11 +17,26 @@ namespace MundoRuta.Server.Controllers
         private readonly IMensajeRepositorio _mensajeRepo;
         private readonly IChatRepositorio _chatRepo; 
 
+        // Estados en los que el viaje está en curso y el chat queda habilitado.
+        private static readonly string[] EstadosActivos = { "asignado", "carga-subida", "en-transito", "llegada-destino" };
+
         public ChatController(AppDbContext context, IMensajeRepositorio mensajeRepo, IChatRepositorio chatRepo)
         {
             _context = context;
             _mensajeRepo = mensajeRepo;
             _chatRepo = chatRepo;
+        }
+
+        // La BD guarda los estados en dos formatos ("ASIGNADO" y "Carga-subida"), por eso se normalizan antes de comparar.
+        private static bool EstadoPermiteChat(string? estado)
+        {
+            if (string.IsNullOrWhiteSpace(estado))
+            {
+                return false;
+            }
+
+            string normalizado = estado.Trim().Replace('_', '-').ToLowerInvariant();
+            return EstadosActivos.Contains(normalizado);
         }
 
         [HttpPost("viajes/{viajeId}/mensajes")]
@@ -31,8 +46,7 @@ namespace MundoRuta.Server.Controllers
             if (viaje == null) return NotFound("Viaje no encontrado.");
 
 
-            var estadosActivos = new[] { "Asignado", "Carga-subida", "En-transito", "Llegada-destino" };
-            if (!estadosActivos.Contains(viaje.Estado))
+            if (!EstadoPermiteChat(viaje.Estado))
             {
                 return BadRequest(new { mensaje = "El chat está deshabilitado. El viaje no se encuentra en curso." });
             }
@@ -71,8 +85,7 @@ namespace MundoRuta.Server.Controllers
             var viaje = await _context.Viajes.FindAsync(viajeId);
             if (viaje == null) return NotFound();
 
-            var estadosActivos = new[] { "Asignado", "Carga-subida", "En-transito", "Llegada-destino" };
-            if (!estadosActivos.Contains(viaje.Estado))
+            if (!EstadoPermiteChat(viaje.Estado))
             {
                 return BadRequest("No se pueden leer los mensajes de un viaje inactivo o cerrado.");
             }

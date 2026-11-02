@@ -3,6 +3,7 @@ using MundoRuta.Servicios.Auth;
 using MundoRuta.Servicios.Realtime;
 using MundoRuta.Servicios.ServiciosHTTP;
 using MundoRuta.Servicios.Sesion;
+using MundoRuta.Servicios.Viajes;
 
 namespace MundoRuta.Servicios.Extensions
 {
@@ -24,6 +25,7 @@ namespace MundoRuta.Servicios.Extensions
             services.AddScoped<SesionEstado>();
             services.AddScoped<IAuthServicio, AuthServicio>();
             services.AddScoped<IViajeHubService, ViajeHubService>();
+            services.AddScoped<IViajePasajeroServicio, ViajePasajeroServicio>();
 
             return services;
         }
