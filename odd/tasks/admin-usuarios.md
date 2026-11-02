@@ -67,10 +67,10 @@ The ticket in `MundoRuta.Shared/ticketEliminar.cs` is the spec. The user selecte
 
 ## Acceptance Criteria
 
-- [ ] `dotnet build MundoRuta.slnx` passes with 0 errors.
-- [ ] `GET api/admin/usuarios` returns every user ordered by `FechaRegistro` desc with Id, Nombre, Apellido, Email, Rol, Estado and FechaRegistro, and never exposes Password.
-- [ ] `GET api/admin/usuarios/{id}` returns contact data, both rating aggregates and the trip count; 404 for an unknown id.
-- [ ] For a `Prestador`, the detail includes vehicles and drivers (flota asociada).
+- [x] `dotnet build MundoRuta.slnx` passes with 0 errors.
+- [x] `GET api/admin/usuarios` returns every user ordered by `FechaRegistro` desc with Id, Nombre, Apellido, Email, Rol, Estado and FechaRegistro, and never exposes Password.
+- [x] `GET api/admin/usuarios/{id}` returns contact data, both rating aggregates and the trip count; 404 for an unknown id.
+- [x] For a `Prestador`, the detail includes vehicles and drivers (flota asociada).
 - [ ] `/admin/usuarios` renders the table under `RoleGuard` for admin only.
 - [ ] Search by name or email and filters by role and state narrow the table without network traffic.
 - [ ] "Ver detalle" opens the modal with the full profile and closes without a page reload.
@@ -103,7 +103,7 @@ Not configured. No test project, no runner. Checks are compilation-based plus en
 
 ## Delivery Strategy
 
-`ask-on-risk`. Forecast from the task list: ~620 authored changed lines, above the 400-line review budget. Two natural slices are recorded: backend (TASK-02..TASK-06) and client (TASK-07..TASK-08). No push and no PR have been made; the delivery and chain decisions stay with the user.
+`ask-on-risk`. Actual volume: 855 insertions, 3 deletions in code (`*.cs`, `*.razor`, `*.css`) — 858 authored changed lines, above the 400-line review budget. The two recorded slices are backend (TASK-02..TASK-06, 232 lines) and client (TASK-07..TASK-08, 626 lines). No push and no PR have been made; the delivery and chain decisions stay with the user.
 
 ## Progress
 
@@ -181,14 +181,6 @@ The EF log confirms the projection: `SELECT [u].[Id], [u].[Nombre], [u].[Apellid
 
 `gentle-ai review assess --base-ref 26923b4 --committed-only` after the backend batch returned `risk: medium`, `review_due: false`, `review_due_reason: under_budget` (263 changed lines). Receipt-driven development is enabled by global mode, so the assess was re-run once the client batch pushed the slice past the budget; its outcome is recorded in the session reply and honoured before anything is delivered.
 
-### Notes
-
-(pending)
-
-### Review
-
-(pending)
-
 ## Next Step
 
-TASK-02: unblock the build, then the backend batch.
+Manual browser pass of `/admin/usuarios`: confirm the directory renders for an admin, that search matches by name and email, that the role chips and the state select narrow the table without network traffic, that "Ver detalle" opens the modal with both rating figures and the fleet sections for a `Prestador`, and that the overlay closes from the backdrop, the `×` and the footer button. Then decide the delivery shape: one PR with `size:exception` (~858 authored lines) or the two recorded slices (backend 232, client 626).
