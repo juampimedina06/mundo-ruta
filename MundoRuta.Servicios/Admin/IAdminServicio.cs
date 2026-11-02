@@ -6,5 +6,9 @@ namespace MundoRuta.Servicios.Admin
     public interface IAdminServicio
     {
         Task<HttpResp<AdminDashboardDTO>> ObtenerDashboardAsync();
+
+        Task<HttpResp<List<PrestadorSolicitudDTO>>> ObtenerSolicitudesPrestadoresAsync();
+
+        Task<HttpResp<object>> ActualizarEstadoPrestadorAsync(int id, string estado);
     }
 }
