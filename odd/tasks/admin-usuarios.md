@@ -89,12 +89,13 @@ The ticket in `MundoRuta.Shared/ticketEliminar.cs` is the spec. The user selecte
 
 ## Checks
 
-- [ ] `dotnet build MundoRuta.slnx` — 0 errors.
-- [ ] `GET api/admin/usuarios` — 200 with the seeded admin and the registered test users.
-- [ ] `GET api/admin/usuarios/{id}` for each of the four roles — 200 with role-appropriate detail.
-- [ ] `GET api/admin/usuarios/999999` — 404.
-- [ ] Response payload scan — no `password` field anywhere.
-- [ ] `/admin/usuarios` browser smoke — table, search, both filters, modal open and close.
+- [x] `dotnet build MundoRuta.slnx` — 0 errors, 150 warnings (pre-existing baseline).
+- [x] `GET api/admin/usuarios` — 200 with 3 users, ordered by `FechaRegistro` desc.
+- [x] `GET api/admin/usuarios/{id}` for `Admin`, `Prestador` and `Usuario` — 200 with role-appropriate detail.
+- [ ] `GET api/admin/usuarios/{id}` for a `Chofer` user — not exercised, no `Chofer` user exists in the local database. The branch is covered only by compilation.
+- [x] `GET api/admin/usuarios/999999` — 404.
+- [x] Response payload scan — no `password` field in either endpoint.
+- [ ] `/admin/usuarios` browser smoke — not exercised. The page and modal were verified by compilation only; table, search, both filters and modal open/close still need a manual pass.
 
 ## TDD
 
@@ -112,9 +113,9 @@ Not configured. No test project, no runner. Checks are compilation-based plus en
 - [x] TASK-04
 - [x] TASK-05
 - [x] TASK-06
-- [ ] TASK-07
-- [ ] TASK-08
-- [ ] TASK-09
+- [x] TASK-07
+- [x] TASK-08
+- [x] TASK-09 (endpoint smoke green; browser smoke pending)
 
 ## Evidence
 
@@ -135,6 +136,12 @@ Modified:
 - `MundoRuta.Repositorio/Repositorios/IChoferRepositorio.cs`, `ChoferRepositorio.cs` — `ObtenerPorUsuario(int)`.
 - `MundoRuta.Server/MundoRuta.Server/Controllers/AdminController.cs` — `GET usuarios`, `GET usuarios/{id:int}`, role-aware detail composition.
 - `MundoRuta.Servicios/Admin/IAdminServicio.cs`, `AdminServicio.cs` — `ObtenerUsuariosAsync()`, `ObtenerUsuarioAsync(int)`.
+- `MundoRuta.Server/MundoRuta.Server.Client/Pages/Admin/Usuarios.razor` — directory page: loading/error/empty, search by name or email, role chips, state select, table, row action.
+- `MundoRuta.Server/MundoRuta.Server.Client/Components/DetalleUsuarioModal.razor` — JS-free overlay with contact grid, both rating aggregates, trip count and, for `Prestador`, fleet and drivers.
+- `MundoRuta.Server/MundoRuta.Server/wwwroot/app.css` — `.mr-modal*`, `.mr-detalle__*`, `.mr-filtro` and role badge variants (`--usuario`, `--chofer`, `--admin`, `--inactivo`).
+- `MundoRuta.Server/MundoRuta.Server.Client/Navigation/MenuPorRol.cs` — admin `Usuarios` entry.
+- `MundoRuta.Server/MundoRuta.Server.Client/Pages/Admin/Panel.razor` — third card linking to `/admin/usuarios`, plus `RoleGuard` fix.
+- `MundoRuta.Server/MundoRuta.Server.Client/Pages/Admin/Configuracion.razor` — `RoleGuard` fix.
 
 Deleted:
 
@@ -148,6 +155,31 @@ Deleted:
 - `98ee290` — `feat(repositorio): consultar usuarios, viajes y calificaciones para el admin`
 - `12a6efa` — `feat(api): exponer el directorio de usuarios admin`
 - `02983d9` — `feat(servicios): consultar usuarios desde el cliente`
+- `aecdbb7` — `feat(client): crear el directorio de usuarios del admin`
+- `9d8d090` — `feat(client): enlazar usuarios en el panel admin`
+
+### Notes
+
+Endpoint smoke against `http://localhost:5099` (LocalDB, Development). No test data was created; the database was only read.
+
+```
+01 GET /api/admin/usuarios            -> 200, 3 usuarios, orden fechaRegistro DESC
+   campos: id, nombre, apellido, email, rol, estado, fechaRegistro
+02 GET /api/admin/usuarios/1          -> 200 Admin, sin Password, ambos agregados en null
+03 GET /api/admin/usuarios/2003       -> 200 Prestador (razonSocial y cuit presentes),
+                                         vehiculos=0 choferes=0 viajes=0
+04 GET /api/admin/usuarios/2          -> 200 Usuario, viajes=0, agregados en null
+05 GET /api/admin/usuarios/999999     -> 404
+06 escaneo de payloads                -> "password" ausente en lista y detalle
+```
+
+The EF log confirms the projection: `SELECT [u].[Id], [u].[Nombre], [u].[Apellido], [u].[Email], [u].[Rol], [u].[Estado], [u].[FechaRegistro] FROM [Usuarios] AS [u] ORDER BY [u].[FechaRegistro] DESC` — `Password` is never selected.
+
+`dotnet build MundoRuta.slnx` — 0 errors, 150 warnings, the same count as before the feature.
+
+### Review
+
+`gentle-ai review assess --base-ref 26923b4 --committed-only` after the backend batch returned `risk: medium`, `review_due: false`, `review_due_reason: under_budget` (263 changed lines). Receipt-driven development is enabled by global mode, so the assess was re-run once the client batch pushed the slice past the budget; its outcome is recorded in the session reply and honoured before anything is delivered.
 
 ### Notes
 
