@@ -13,5 +13,6 @@ namespace MundoRuta.Shared.DTO.Realtime
         public string EstadoOferta { get; set; } = string.Empty;
         public DateTime FechaOferta { get; set; }
         public int? IdChoferPropuesto { get; set; }
+        public int? IdVehiculoPropuesto { get; set; }
     }
 }

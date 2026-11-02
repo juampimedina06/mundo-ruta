@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos;
 using MundoRuta.BD.Datos.Entity;
 using MundoRuta.Shared;
@@ -8,6 +9,25 @@ namespace MundoRuta.Repositorio.Repositorios
 {
     public class ViajeRepositorio : Repositorio<Viaje>, IViajeRepositorio
     {
+        private static readonly Expression<Func<Viaje, ViajePrestadorDTO>> ProyeccionListado = v => new ViajePrestadorDTO
+        {
+            Id = v.Id,
+            Origen = v.Origen,
+            Destino = v.Destino,
+            TipoSolicitud = v.TipoSolicitud,
+            EsCubierto = v.EsCubierto,
+            UsaBaulera = v.UsaBaulera,
+            LlevaAcompanante = v.LlevaAcompanante,
+            Estado = v.Estado,
+            EstadoPago = v.EstadoPago,
+            Fecha = v.Fecha,
+            Hora = v.Hora,
+            Monto = v.Monto,
+            MontoEstimado = v.MontoEstimado,
+            IdPasajero = v.IdPasajero,
+            NombrePasajero = v.Pasajero.Nombre + " " + v.Pasajero.Apellido
+        };
+
         private readonly AppDbContext context;
 
         public ViajeRepositorio(AppDbContext context) : base(context)
@@ -66,7 +86,7 @@ namespace MundoRuta.Repositorio.Repositorios
 
         public async Task<List<ViajePrestadorDTO>> ListadoPorPrestador(int prestadorId, string? estado = null)
         {
-            var query = context.Viajes.Where(v => v.IdUsuario == prestadorId);
+            IQueryable<Viaje> query = context.Viajes.Where(v => v.IdUsuario == prestadorId);
 
             if (!string.IsNullOrEmpty(estado))
             {
@@ -75,21 +95,26 @@ namespace MundoRuta.Repositorio.Repositorios
 
             return await query
                 .OrderByDescending(v => v.Fecha)
-                .Select(v => new ViajePrestadorDTO
-                {
-                    Id = v.Id,
-                    Origen = v.Origen,
-                    Destino = v.Destino,
-                    TipoSolicitud = v.TipoSolicitud,
-                    Estado = v.Estado,
-                    EstadoPago = v.EstadoPago,
-                    Fecha = v.Fecha,
-                    Hora = v.Hora,
-                    Monto = v.Monto,
-                    MontoEstimado = v.MontoEstimado,
-                    IdPasajero = v.IdPasajero,
-                    NombrePasajero = v.Pasajero.Nombre + " " + v.Pasajero.Apellido
-                })
+                .Select(ProyeccionListado)
+                .ToListAsync();
+        }
+
+        public async Task<List<ViajePrestadorDTO>> ListadoSolicitudesDisponibles(string? estado = null)
+        {
+            IQueryable<Viaje> query = context.Viajes;
+
+            if (!string.IsNullOrEmpty(estado))
+            {
+                query = query.Where(v => v.Estado == estado);
+            }
+            else
+            {
+                query = query.Where(v => v.Estado == EstadosViaje.Buscando || v.Estado == EstadosViaje.Contraofertado);
+            }
+
+            return await query
+                .OrderByDescending(v => v.Fecha)
+                .Select(ProyeccionListado)
                 .ToListAsync();
         }
         public async Task<bool> ResponderSolicitud(int viajeId, ResponderSolicitudDTO dto)

@@ -293,6 +293,10 @@ namespace MundoRuta.Server.Controllers
                 {
                     viaje.IdChofer = ofertaSeleccionada.IdChoferPropuesto.Value;
                 }
+                if (ofertaSeleccionada.IdVehiculoPropuesto.HasValue && ofertaSeleccionada.IdVehiculoPropuesto.Value > 0)
+                {
+                    viaje.IdVehiculo = ofertaSeleccionada.IdVehiculoPropuesto.Value;
+                }
                 viaje.Monto = ofertaSeleccionada.MontoOfertado;
 
                 ofertaSeleccionada.EstadoOferta = "ACEPTADA";

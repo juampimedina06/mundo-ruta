@@ -40,11 +40,11 @@ public class PrestadorController : ControllerBase
         _hubContext = hubContext;
     }
 
-    // GET: lista de solicitudes pendientes
+    // GET: lista de solicitudes abiertas para recibir ofertas
     [HttpGet("{prestadorId:int}/solicitudes")]
-    public async Task<ActionResult> GetSolicitudes(int prestadorId)
+    public async Task<ActionResult<List<ViajePrestadorDTO>>> GetSolicitudes(int prestadorId, string? estado = null)
     {
-        var solicitudes = await _viajeRepositorio.ListadoPorPrestador(prestadorId, "PENDIENTE");
+        List<ViajePrestadorDTO> solicitudes = await _viajeRepositorio.ListadoSolicitudesDisponibles(estado);
         return Ok(solicitudes);
     }
 
@@ -146,9 +146,9 @@ public class PrestadorController : ControllerBase
             return NotFound("No encontrado");
         }
 
-        if (viaje.Estado != EstadosViaje.Buscando)
+        if (viaje.Estado != EstadosViaje.Buscando && viaje.Estado != EstadosViaje.Contraofertado)
         {
-            return BadRequest("El viaje no se encuentra en estado BUSCANDO para recibir ofertas");
+            return BadRequest("El viaje no se encuentra disponible para recibir ofertas");
         }
 
         int ofertasActivas = _context.OfertasViajes.Count(o => o.IdViaje == id && o.EstadoOferta == "ACTIVA");
@@ -159,13 +159,24 @@ public class PrestadorController : ControllerBase
 
         if (dto.Accion == "ACEPTAR" || dto.Accion == "ACEPTAR_OFERTA" || dto.Accion == "OFERTAR" || dto.Accion == "POSTULAR")
         {
+            if (dto.IdChofer <= 0)
+            {
+                return BadRequest("Seleccioná un chofer para postularte.");
+            }
+
+            if (dto.IdVehiculo <= 0)
+            {
+                return BadRequest("Seleccioná un vehículo para postularte.");
+            }
+
             var prestadorId = idPrestador;
             if (prestadorId <= 0 && viaje.IdUsuario > 0) prestadorId = viaje.IdUsuario;
             var oferta = new OfertaViaje
             {
                 IdViaje = id,
                 IdPrestador = prestadorId,
-                IdChoferPropuesto = dto.IdChofer > 0 ? dto.IdChofer : null,
+                IdChoferPropuesto = dto.IdChofer,
+                IdVehiculoPropuesto = dto.IdVehiculo,
                 MontoOfertado = dto.MontoEstimado > 0 ? dto.MontoEstimado : viaje.Monto,
                 EsContraoferta = false,
                 EstadoOferta = "ACTIVA",
@@ -185,7 +196,8 @@ public class PrestadorController : ControllerBase
                 EsContraoferta = oferta.EsContraoferta,
                 EstadoOferta = oferta.EstadoOferta,
                 FechaOferta = oferta.FechaOferta,
-                IdChoferPropuesto = oferta.IdChoferPropuesto
+                IdChoferPropuesto = oferta.IdChoferPropuesto,
+                IdVehiculoPropuesto = oferta.IdVehiculoPropuesto
             };
 
             await _hubContext.Clients.Group($"viaje_{id}").SendAsync("NuevaOfertaRecibida", ofertaDto);
@@ -229,13 +241,29 @@ public class PrestadorController : ControllerBase
             return BadRequest("Ya se alcanzó el límite de 5 ofertas para este viaje");
         }
 
+        if (dto.IdChofer <= 0)
+        {
+            return BadRequest("Seleccioná un chofer para enviar la contraoferta.");
+        }
+
+        if (dto.IdVehiculo <= 0)
+        {
+            return BadRequest("Seleccioná un vehículo para enviar la contraoferta.");
+        }
+
+        if (dto.NuevoMonto <= 0)
+        {
+            return BadRequest("Ingresá un monto mayor a cero.");
+        }
+
         var prestadorId2 = idPrestador;
         if (prestadorId2 <= 0 && viaje.IdUsuario > 0) prestadorId2 = viaje.IdUsuario;
         var oferta2 = new OfertaViaje
         {
             IdViaje = id,
             IdPrestador = prestadorId2,
-            IdChoferPropuesto = dto.IdChofer > 0 ? dto.IdChofer : null,
+            IdChoferPropuesto = dto.IdChofer,
+            IdVehiculoPropuesto = dto.IdVehiculo,
             MontoOfertado = dto.NuevoMonto,
             EsContraoferta = true,
             EstadoOferta = "ACTIVA",
@@ -257,7 +285,8 @@ public class PrestadorController : ControllerBase
             EsContraoferta = oferta2.EsContraoferta,
             EstadoOferta = oferta2.EstadoOferta,
             FechaOferta = oferta2.FechaOferta,
-            IdChoferPropuesto = oferta2.IdChoferPropuesto
+            IdChoferPropuesto = oferta2.IdChoferPropuesto,
+            IdVehiculoPropuesto = oferta2.IdVehiculoPropuesto
         };
 
         await _hubContext.Clients.Group($"viaje_{id}").SendAsync("NuevaOfertaRecibida", ofertaDto2);
