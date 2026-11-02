@@ -10,5 +10,9 @@ namespace MundoRuta.Servicios.Admin
         Task<HttpResp<List<PrestadorSolicitudDTO>>> ObtenerSolicitudesPrestadoresAsync();
 
         Task<HttpResp<object>> ActualizarEstadoPrestadorAsync(int id, string estado);
+
+        Task<HttpResp<List<AdminUsuarioListadoDTO>>> ObtenerUsuariosAsync();
+
+        Task<HttpResp<AdminUsuarioDetalleDTO>> ObtenerUsuarioAsync(int id);
     }
 }
