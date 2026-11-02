@@ -179,7 +179,7 @@ The EF log confirms the projection: `SELECT [u].[Id], [u].[Nombre], [u].[Apellid
 
 ### Review
 
-`gentle-ai review assess --base-ref 26923b4 --committed-only` after the backend batch returned `risk: medium`, `review_due: false`, `review_due_reason: under_budget` (263 changed lines). Receipt-driven development is enabled by global mode, so the assess was re-run once the client batch pushed the slice past the budget; its outcome is recorded in the session reply and honoured before anything is delivered.
+`gentle-ai review assess --base-ref 26923b4 --committed-only` after the backend batch returned `risk: medium`, `review_due: false`, `review_due_reason: under_budget` (263 changed lines). Receipt-driven development is enabled by global mode, so the slice stayed pending until the client batch pushed it to `review_due: true` / `slice_budget_reached` (968 changed lines). The native preflight ran and returned a `gentle-ai.review-integration.consent/v3` envelope, which was relayed unchanged; the user chose **declined**. The exact decline invocation returned `action: declined`, `consent: declined_this_candidate`, with the target identity matching, so no review record was created and reviews stay enabled for later changes. No push and no PR were made; delivery follows ordinary repository policy.
 
 ## Next Step
 
