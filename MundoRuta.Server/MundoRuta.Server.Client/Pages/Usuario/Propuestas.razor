@@ -1,0 +1,22 @@
+@page "/viajes/{ViajeId:int}/propuestas"
+
+<PageTitle>Propuestas del viaje | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="@Roles.Usuario">
+    <div class="mr-page">
+        <div class="mr-container">
+            <PageHeader Titulo="@("Propuestas del viaje #" + ViajeId)"
+                        Descripcion="Los prestadores interesados envían sus ofertas para este flete." />
+
+            <EmptyState Titulo="Subasta en curso"
+                        Descripcion="Tu solicitud ya está publicada y busca prestador. Cuando lleguen ofertas vas a poder ver el monto y elegir la que prefieras.">
+                <a class="btn btn-outline-primary" href="@("/usuario/viajes/" + ViajeId)">Ver el detalle del viaje</a>
+            </EmptyState>
+        </div>
+    </div>
+</RoleGuard>
+
+@code {
+    [Parameter]
+    public int ViajeId { get; set; }
+}
