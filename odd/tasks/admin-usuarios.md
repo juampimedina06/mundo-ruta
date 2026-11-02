@@ -106,12 +106,12 @@ Not configured. No test project, no runner. Checks are compilation-based plus en
 
 ## Progress
 
-- [ ] TASK-01
-- [ ] TASK-02
-- [ ] TASK-03
-- [ ] TASK-04
-- [ ] TASK-05
-- [ ] TASK-06
+- [x] TASK-01
+- [x] TASK-02
+- [x] TASK-03
+- [x] TASK-04
+- [x] TASK-05
+- [x] TASK-06
 - [ ] TASK-07
 - [ ] TASK-08
 - [ ] TASK-09
@@ -124,18 +124,30 @@ Added:
 
 - `docs/tickets/admin-usuarios.md` — preserved ticket text.
 - `odd/tasks/admin-usuarios.md` — this document.
+- `MundoRuta.Shared/DTO/AdminUsuarioListadoDTO.cs` — row contract.
+- `MundoRuta.Shared/DTO/AdminUsuarioDetalleDTO.cs` — detail contract with both rating aggregates.
 
 Modified:
 
-- (recorded as tasks close)
+- `MundoRuta.Repositorio/Repositorios/IUsuarioRepositorio.cs`, `UsuarioRepositorio.cs` — `ListarUsuarios()`: explicit projection (no Password), `AsNoTracking`, ordered by `FechaRegistro` desc, UTC-stamped.
+- `MundoRuta.Repositorio/Repositorios/IViajeRepositorio.cs`, `ViajeRepositorio.cs` — `ContarViajesDeUsuario(int)`, `ContarViajesDeChofer(int)`.
+- `MundoRuta.Repositorio/Repositorios/ICalificacionRepositorio.cs`, `CalificacionRepositorio.cs` — `ObtenerPromedioRecibido(int)`, `ObtenerPromedioOtorgado(int)`, both returning `(double? Promedio, int Total)`.
+- `MundoRuta.Repositorio/Repositorios/IChoferRepositorio.cs`, `ChoferRepositorio.cs` — `ObtenerPorUsuario(int)`.
+- `MundoRuta.Server/MundoRuta.Server/Controllers/AdminController.cs` — `GET usuarios`, `GET usuarios/{id:int}`, role-aware detail composition.
+- `MundoRuta.Servicios/Admin/IAdminServicio.cs`, `AdminServicio.cs` — `ObtenerUsuariosAsync()`, `ObtenerUsuarioAsync(int)`.
 
 Deleted:
 
-- `MundoRuta.Shared/ticketEliminar.cs` — plain text in a `.cs` file, broke the build.
+- `MundoRuta.Shared/ticketEliminar.cs` — plain text in a `.cs` file, broke the build with 33 errors. It was untracked, so the deletion does not appear in any commit diff.
 
 ### Commits
 
-- (recorded as tasks close)
+- `26923b4` — `docs(odd): planificar el directorio de usuarios del admin`
+- `813bb5d` — `chore: mover el ticket de usuarios a docs y desbloquear el build`
+- `ba5dfb5` — `feat(shared): agregar DTOs del directorio de usuarios admin`
+- `98ee290` — `feat(repositorio): consultar usuarios, viajes y calificaciones para el admin`
+- `12a6efa` — `feat(api): exponer el directorio de usuarios admin`
+- `02983d9` — `feat(servicios): consultar usuarios desde el cliente`
 
 ### Notes
 
