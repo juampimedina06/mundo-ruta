@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos;
 using MundoRuta.BD.Datos.Entity;
+using MundoRuta.Shared;
 using MundoRuta.Shared.DTO;
 
 namespace MundoRuta.Repositorio.Repositorios
@@ -47,6 +48,32 @@ namespace MundoRuta.Repositorio.Repositorios
                     Rol = u.Rol
                 })
                 .ToListAsync();
+        }
+
+        public async Task<List<PrestadorSolicitudDTO>> ListarSolicitudesPrestador()
+        {
+            // FechaRegistro se guarda en UTC. SQL Server la devuelve con Kind = Unspecified, así que se
+            // materializa primero y se marca explícitamente como UTC para que el cliente pueda pasarla
+            // a hora local antes de mostrarla (de lo contrario se mostraría la fecha UTC tal cual).
+            List<Usuario> prestadores = await context.Usuarios
+                .AsNoTracking()
+                .Where(u => u.Rol == Roles.Prestador)
+                .OrderByDescending(u => u.FechaRegistro)
+                .ToListAsync();
+
+            return prestadores
+                .Select(u => new PrestadorSolicitudDTO
+                {
+                    Id = u.Id,
+                    RazonSocial = u.RazonSocial,
+                    NombreCompleto = (u.Nombre + " " + u.Apellido).Trim(),
+                    Cuit = u.Cuit,
+                    Email = u.Email,
+                    Telefono = u.Telefono,
+                    FechaRegistro = DateTime.SpecifyKind(u.FechaRegistro, DateTimeKind.Utc),
+                    Estado = u.Estado
+                })
+                .ToList();
         }
 
         public async Task<bool> CambiarEstado(int id, string nuevoEstado)
