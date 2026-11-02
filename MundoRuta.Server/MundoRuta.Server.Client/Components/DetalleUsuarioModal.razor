@@ -1,0 +1,255 @@
+@* Detalle de un usuario del directorio, en una capa modal sin JavaScript. *@
+@if (Visible)
+{
+    <div class="mr-modal-overlay" @onclick="CerrarAsync">
+        <div class="mr-modal" role="dialog" aria-modal="true" @onclick:stopPropagation="true">
+            <div class="mr-modal__header">
+                <h2 class="mr-modal__titulo">@TituloUsuario</h2>
+
+                @if (Detalle is not null)
+                {
+                    <EstadoBadge Estado="@Detalle.Rol" />
+                    <EstadoBadge Estado="@Detalle.Estado" />
+                }
+
+                <button type="button"
+                        class="mr-modal__cerrar"
+                        aria-label="Cerrar"
+                        @onclick="CerrarAsync">×</button>
+            </div>
+
+            <div class="mr-modal__body">
+                @if (Cargando)
+                {
+                    <div class="mr-loading">Cargando detalle...</div>
+                }
+                else if (Error is not null)
+                {
+                    <div class="mr-alert mr-alert--error">@Error</div>
+                }
+                else if (Detalle is null)
+                {
+                    <EmptyState Titulo="Sin datos"
+                                Descripcion="No se pudo obtener la información del usuario." />
+                }
+                else
+                {
+                    <section class="mr-detalle__bloque">
+                        <div class="mr-detalle__grid">
+                            <div>
+                                <span class="mr-detalle__etiqueta">Email</span>
+                                <span class="mr-detalle__valor">@ValorODefecto(Detalle.Email)</span>
+                            </div>
+                            <div>
+                                <span class="mr-detalle__etiqueta">Teléfono</span>
+                                <span class="mr-detalle__valor">@ValorODefecto(Detalle.Telefono)</span>
+                            </div>
+                            <div>
+                                <span class="mr-detalle__etiqueta">Rol</span>
+                                <span class="mr-detalle__valor">@ValorODefecto(Detalle.Rol)</span>
+                            </div>
+                            <div>
+                                <span class="mr-detalle__etiqueta">Estado</span>
+                                <span class="mr-detalle__valor">@ValorODefecto(Detalle.Estado)</span>
+                            </div>
+                            <div>
+                                <span class="mr-detalle__etiqueta">Fecha de alta</span>
+                                <span class="mr-detalle__valor">@FormatoPanel.Fecha(Detalle.FechaRegistro)</span>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(Detalle.RazonSocial))
+                            {
+                                <div>
+                                    <span class="mr-detalle__etiqueta">Razón social</span>
+                                    <span class="mr-detalle__valor">@Detalle.RazonSocial</span>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(Detalle.Cuit))
+                            {
+                                <div>
+                                    <span class="mr-detalle__etiqueta">CUIT</span>
+                                    <span class="mr-detalle__valor">@Detalle.Cuit</span>
+                                </div>
+                            }
+
+                            @if (Detalle.TarifaBaseKm.HasValue)
+                            {
+                                <div>
+                                    <span class="mr-detalle__etiqueta">Tarifa base por km</span>
+                                    <span class="mr-detalle__valor">@Detalle.TarifaBaseKm.Value.ToString("0.##")</span>
+                                </div>
+                            }
+                        </div>
+                    </section>
+
+                    <section class="mr-detalle__bloque">
+                        <h3 class="mr-card__title">Calificaciones</h3>
+
+                        <div class="mr-detalle__grid">
+                            <div>
+                                <span class="mr-detalle__etiqueta">Calificaciones recibidas</span>
+                                <span class="mr-detalle__valor">@FormatearPromedio(Detalle.PromedioRecibido) (@Detalle.TotalRecibidas)</span>
+                            </div>
+                            <div>
+                                <span class="mr-detalle__etiqueta">Calificaciones otorgadas</span>
+                                <span class="mr-detalle__valor">@FormatearPromedio(Detalle.PromedioOtorgado) (@Detalle.TotalOtorgadas)</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="mr-detalle__bloque">
+                        <h3 class="mr-card__title">Actividad</h3>
+
+                        <div class="mr-detalle__grid">
+                            <div>
+                                <span class="mr-detalle__etiqueta">Viajes</span>
+                                <span class="mr-detalle__valor">@Detalle.CantidadViajes</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    @if (Detalle.Rol == Roles.Prestador)
+                    {
+                        <section class="mr-detalle__bloque">
+                            <h3 class="mr-card__title">Flota</h3>
+
+                            @if (Detalle.Vehiculos.Count == 0)
+                            {
+                                <EmptyState Titulo="Sin vehículos"
+                                            Descripcion="El prestador no tiene vehículos registrados." />
+                            }
+                            else
+                            {
+                                <div class="mr-tabla-contenedor">
+                                    <table class="mr-tabla">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Patente</th>
+                                                <th scope="col">Marca</th>
+                                                <th scope="col">Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (VehiculoDTO vehiculo in Detalle.Vehiculos)
+                                            {
+                                                <tr @key="vehiculo.Id">
+                                                    <td>@ValorODefecto(vehiculo.Patente)</td>
+                                                    <td>@ValorODefecto(vehiculo.Marca)</td>
+                                                    <td>
+                                                        @if (string.IsNullOrWhiteSpace(vehiculo.Estado))
+                                                        {
+                                                            <span>—</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <EstadoBadge Estado="@vehiculo.Estado" />
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </section>
+
+                        <section class="mr-detalle__bloque">
+                            <h3 class="mr-card__title">Choferes</h3>
+
+                            @if (Detalle.Choferes.Count == 0)
+                            {
+                                <EmptyState Titulo="Sin choferes"
+                                            Descripcion="El prestador no tiene choferes registrados." />
+                            }
+                            else
+                            {
+                                <div class="mr-tabla-contenedor">
+                                    <table class="mr-tabla">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Chofer</th>
+                                                <th scope="col">Licencia</th>
+                                                <th scope="col">Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (ChoferDTO chofer in Detalle.Choferes)
+                                            {
+                                                <tr @key="chofer.Id">
+                                                    <td>@ValorODefecto(chofer.Nombre) @ValorODefecto(chofer.Apellido)</td>
+                                                    <td>@ValorODefecto(chofer.Licencia)</td>
+                                                    <td>
+                                                        @if (string.IsNullOrWhiteSpace(chofer.Estado))
+                                                        {
+                                                            <span>—</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <EstadoBadge Estado="@chofer.Estado" />
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </section>
+                    }
+                }
+            </div>
+
+            <div class="mr-modal__footer">
+                <button type="button" class="btn btn-outline-secondary" @onclick="CerrarAsync">Cerrar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; }
+
+    [Parameter]
+    public bool Cargando { get; set; }
+
+    [Parameter]
+    public string? Error { get; set; }
+
+    [Parameter]
+    public AdminUsuarioDetalleDTO? Detalle { get; set; }
+
+    [Parameter]
+    public EventCallback OnCerrar { get; set; }
+
+    private string TituloUsuario
+    {
+        get
+        {
+            if (Detalle is null)
+            {
+                return "Detalle del usuario";
+            }
+
+            string nombreCompleto = (Detalle.Nombre + " " + Detalle.Apellido).Trim();
+
+            return string.IsNullOrWhiteSpace(nombreCompleto) ? "Detalle del usuario" : nombreCompleto;
+        }
+    }
+
+    private async Task CerrarAsync()
+    {
+        await OnCerrar.InvokeAsync();
+    }
+
+    private static string FormatearPromedio(double? promedio)
+    {
+        return promedio.HasValue ? promedio.Value.ToString("0.0") : "—";
+    }
+
+    private static string ValorODefecto(string? valor)
+    {
+        return string.IsNullOrWhiteSpace(valor) ? "—" : valor;
+    }
+}

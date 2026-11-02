@@ -1,0 +1,249 @@
+@page "/admin/usuarios"
+@inject IAdminServicio Admin
+
+<PageTitle>Usuarios | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="@Roles.Admin">
+    <div class="mr-page">
+        <div class="mr-container">
+            <PageHeader Titulo="Usuarios"
+                        Descripcion="Directorio centralizado de usuarios registrados." />
+
+            @if (_cargando)
+            {
+                <div class="mr-loading">Cargando usuarios...</div>
+            }
+            else if (_error is not null)
+            {
+                <div class="mr-alert mr-alert--error">@_error</div>
+            }
+            else if (_usuarios.Count == 0)
+            {
+                <EmptyState Titulo="Sin usuarios"
+                            Descripcion="Todavía no hay usuarios registrados en la plataforma." />
+            }
+            else
+            {
+                <div class="mr-toolbar">
+                    <input type="search"
+                           class="form-control mr-busqueda"
+                           placeholder="Buscar por nombre o correo"
+                           @bind="_busqueda"
+                           @bind:event="oninput" />
+
+                    <div class="mr-chips">
+                        <button type="button"
+                                class="mr-chip @(_filtroRol is null ? "mr-chip--activo" : string.Empty)"
+                                @onclick="LimpiarFiltroRol">Todos</button>
+                        <button type="button"
+                                class="mr-chip @(_filtroRol == Roles.Usuario ? "mr-chip--activo" : string.Empty)"
+                                @onclick="() => FiltrarPorRol(Roles.Usuario)">Usuarios</button>
+                        <button type="button"
+                                class="mr-chip @(_filtroRol == Roles.Prestador ? "mr-chip--activo" : string.Empty)"
+                                @onclick="() => FiltrarPorRol(Roles.Prestador)">Prestadores</button>
+                        <button type="button"
+                                class="mr-chip @(_filtroRol == Roles.Chofer ? "mr-chip--activo" : string.Empty)"
+                                @onclick="() => FiltrarPorRol(Roles.Chofer)">Choferes</button>
+                        <button type="button"
+                                class="mr-chip @(_filtroRol == Roles.Admin ? "mr-chip--activo" : string.Empty)"
+                                @onclick="() => FiltrarPorRol(Roles.Admin)">Administradores</button>
+                    </div>
+
+                    <select class="form-select mr-filtro" @bind="_filtroEstado">
+                        <option value="">Todos los estados</option>
+                        @foreach (string estado in Estados)
+                        {
+                            <option value="@estado">@estado</option>
+                        }
+                    </select>
+                </div>
+
+                @if (UsuariosFiltrados.Count == 0)
+                {
+                    <EmptyState Titulo="Sin coincidencias"
+                                Descripcion="Ningún usuario coincide con la búsqueda o los filtros elegidos.">
+                        <button type="button" class="btn btn-outline-primary" @onclick="LimpiarFiltros">Limpiar filtros</button>
+                    </EmptyState>
+                }
+                else
+                {
+                    <div class="mr-tabla-contenedor">
+                        <table class="mr-tabla">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Usuario</th>
+                                    <th scope="col">Email</th>
+                                    <th scope="col">Rol</th>
+                                    <th scope="col">Estado</th>
+                                    <th scope="col">Fecha de alta</th>
+                                    <th scope="col">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (AdminUsuarioListadoDTO usuario in UsuariosFiltrados)
+                                {
+                                    <tr @key="usuario.Id">
+                                        <td>
+                                            <span class="mr-tabla__principal">@usuario.Nombre @usuario.Apellido</span>
+                                        </td>
+                                        <td>@usuario.Email</td>
+                                        <td><EstadoBadge Estado="@usuario.Rol" /></td>
+                                        <td><EstadoBadge Estado="@usuario.Estado" /></td>
+                                        <td>@FormatoPanel.Fecha(usuario.FechaRegistro)</td>
+                                        <td>
+                                            <div class="mr-acciones">
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-primary"
+                                                        @onclick="() => AbrirDetalleAsync(usuario.Id)">Ver detalle</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <DetalleUsuarioModal Visible="_mostrarDetalle"
+                         Cargando="_cargandoDetalle"
+                         Error="_errorDetalle"
+                         Detalle="_detalle"
+                         OnCerrar="CerrarDetalle" />
+</RoleGuard>
+
+@code {
+    private List<AdminUsuarioListadoDTO> _usuarios = new List<AdminUsuarioListadoDTO>();
+    private bool _cargando = true;
+    private string? _error;
+
+    private string _busqueda = string.Empty;
+    private string? _filtroRol;
+    private string? _filtroEstado;
+
+    private bool _mostrarDetalle;
+    private bool _cargandoDetalle;
+    private string? _errorDetalle;
+    private AdminUsuarioDetalleDTO? _detalle;
+
+    // Aplica la búsqueda y los filtros sobre la lista ya cargada.
+    private List<AdminUsuarioListadoDTO> UsuariosFiltrados
+    {
+        get
+        {
+            string texto = _busqueda.Trim();
+
+            return _usuarios
+                .Where(u => string.IsNullOrEmpty(_filtroRol) || u.Rol == _filtroRol)
+                .Where(u => string.IsNullOrEmpty(_filtroEstado) || u.Estado == _filtroEstado)
+                .Where(u => texto.Length == 0 || CoincideBusqueda(u, texto))
+                .ToList();
+        }
+    }
+
+    // Estados presentes en el listado, para no ofrecer filtros que no devuelvan resultados.
+    private List<string> Estados
+    {
+        get
+        {
+            return _usuarios
+                .Select(u => u.Estado)
+                .Where(e => !string.IsNullOrWhiteSpace(e))
+                .Distinct()
+                .OrderBy(e => e)
+                .ToList();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarUsuariosAsync();
+    }
+
+    private async Task CargarUsuariosAsync()
+    {
+        try
+        {
+            HttpResp<List<AdminUsuarioListadoDTO>> respuesta = await Admin.ObtenerUsuariosAsync();
+
+            if (respuesta.Error)
+            {
+                _error = await respuesta.ObtenerMensajeAsync("No se pudo cargar el directorio de usuarios.");
+                _usuarios = new List<AdminUsuarioListadoDTO>();
+            }
+            else
+            {
+                _usuarios = respuesta.Respuesta ?? new List<AdminUsuarioListadoDTO>();
+            }
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task AbrirDetalleAsync(int id)
+    {
+        _mostrarDetalle = true;
+        _cargandoDetalle = true;
+        _errorDetalle = null;
+        _detalle = null;
+
+        try
+        {
+            HttpResp<AdminUsuarioDetalleDTO> respuesta = await Admin.ObtenerUsuarioAsync(id);
+
+            if (respuesta.Error)
+            {
+                _errorDetalle = await respuesta.ObtenerMensajeAsync("No se pudo cargar el detalle del usuario.");
+            }
+            else
+            {
+                _detalle = respuesta.Respuesta;
+            }
+        }
+        finally
+        {
+            _cargandoDetalle = false;
+        }
+    }
+
+    private void CerrarDetalle()
+    {
+        _mostrarDetalle = false;
+        _detalle = null;
+        _errorDetalle = null;
+    }
+
+    private void FiltrarPorRol(string rol)
+    {
+        _filtroRol = rol;
+    }
+
+    private void LimpiarFiltroRol()
+    {
+        _filtroRol = null;
+    }
+
+    private void LimpiarFiltros()
+    {
+        _busqueda = string.Empty;
+        _filtroRol = null;
+        _filtroEstado = null;
+    }
+
+    private static bool CoincideBusqueda(AdminUsuarioListadoDTO usuario, string texto)
+    {
+        return Contiene(usuario.Nombre, texto)
+            || Contiene(usuario.Apellido, texto)
+            || Contiene(usuario.Email, texto);
+    }
+
+    private static bool Contiene(string? valor, string texto)
+    {
+        return !string.IsNullOrWhiteSpace(valor)
+            && valor.Contains(texto, StringComparison.OrdinalIgnoreCase);
+    }
+}
