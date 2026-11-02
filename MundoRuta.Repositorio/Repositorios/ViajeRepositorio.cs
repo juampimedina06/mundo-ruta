@@ -196,5 +196,15 @@ namespace MundoRuta.Repositorio.Repositorios
                 .Where(v => v.Estado == EstadosViaje.Finalizado)
                 .SumAsync(v => (decimal?)v.Monto) ?? 0m;
         }
+
+        public async Task<int> ContarViajesDeUsuario(int usuarioId) // Cuenta los viajes donde el usuario aparece como prestador, pasajero o solicitante.
+        {
+            return await context.Viajes.CountAsync(v => v.IdUsuario == usuarioId || v.IdPasajero == usuarioId || v.IdSolicitante == usuarioId);
+        }
+
+        public async Task<int> ContarViajesDeChofer(int idChofer) // Cuenta los viajes asignados a un chofer.
+        {
+            return await context.Viajes.CountAsync(v => v.IdChofer == idChofer);
+        }
     }
 }
