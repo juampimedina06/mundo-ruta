@@ -76,6 +76,39 @@ namespace MundoRuta.Repositorio.Repositorios
                 .ToList();
         }
 
+        public async Task<List<AdminUsuarioListadoDTO>> ListarUsuarios()
+        {
+            // Mismo criterio que ListarSolicitudesPrestador: se materializa primero y se marca
+            // FechaRegistro como UTC, porque SQL Server la devuelve con Kind = Unspecified.
+            List<AdminUsuarioListadoDTO> usuarios = await context.Usuarios
+                .AsNoTracking()
+                .OrderByDescending(u => u.FechaRegistro)
+                .Select(u => new AdminUsuarioListadoDTO
+                {
+                    Id = u.Id,
+                    Nombre = u.Nombre,
+                    Apellido = u.Apellido,
+                    Email = u.Email,
+                    Rol = u.Rol,
+                    Estado = u.Estado,
+                    FechaRegistro = u.FechaRegistro
+                })
+                .ToListAsync();
+
+            return usuarios
+                .Select(u => new AdminUsuarioListadoDTO
+                {
+                    Id = u.Id,
+                    Nombre = u.Nombre,
+                    Apellido = u.Apellido,
+                    Email = u.Email,
+                    Rol = u.Rol,
+                    Estado = u.Estado,
+                    FechaRegistro = DateTime.SpecifyKind(u.FechaRegistro, DateTimeKind.Utc)
+                })
+                .ToList();
+        }
+
         public async Task<bool> CambiarEstado(int id, string nuevoEstado)
         {
             var usuario = await context.Usuarios.FindAsync(id);

@@ -16,13 +16,19 @@ namespace MundoRuta.Server.Controllers
         private readonly IUsuarioRepositorio _usuarioRepositorio;
         private readonly IViajeRepositorio _viajeRepositorio;
         private readonly ILiquidacionRepositorio _liquidacionRepositorio;
+        private readonly ICalificacionRepositorio _calificacionRepositorio;
+        private readonly IChoferRepositorio _choferRepositorio;
+        private readonly IVehiculoRepositorio _vehiculoRepositorio;
         private readonly AppDbContext _context;
 
-        public AdminController(IUsuarioRepositorio usuarioRepositorio, IViajeRepositorio viajeRepositorio, ILiquidacionRepositorio liquidacionRepositorio, AppDbContext context)
+        public AdminController(IUsuarioRepositorio usuarioRepositorio, IViajeRepositorio viajeRepositorio, ILiquidacionRepositorio liquidacionRepositorio, ICalificacionRepositorio calificacionRepositorio, IChoferRepositorio choferRepositorio, IVehiculoRepositorio vehiculoRepositorio, AppDbContext context)
         {
             _usuarioRepositorio = usuarioRepositorio;
             _viajeRepositorio = viajeRepositorio;
             _liquidacionRepositorio = liquidacionRepositorio;
+            _calificacionRepositorio = calificacionRepositorio;
+            _choferRepositorio = choferRepositorio;
+            _vehiculoRepositorio = vehiculoRepositorio;
             _context = context;
         }
 
@@ -117,6 +123,67 @@ namespace MundoRuta.Server.Controllers
             };
 
             return Ok(dto);
+        }
+
+        [HttpGet("usuarios")] // api/admin/usuarios
+        public async Task<ActionResult<List<AdminUsuarioListadoDTO>>> ListarUsuarios()
+        {
+            List<AdminUsuarioListadoDTO> usuarios = await _usuarioRepositorio.ListarUsuarios();
+
+            // Se devuelve 200 con lista vacía para que el cliente distinga "sin datos" de "error".
+            return Ok(usuarios);
+        }
+
+        [HttpGet("usuarios/{id:int}")] // api/admin/usuarios/{id}
+        public async Task<ActionResult<AdminUsuarioDetalleDTO>> ObtenerUsuario(int id)
+        {
+            Usuario? usuario = await _usuarioRepositorio.ObtenerPorId(id);
+
+            if (usuario == null)
+            {
+                return NotFound("Usuario no encontrado");
+            }
+
+            (double? Promedio, int Total) recibidas = await _calificacionRepositorio.ObtenerPromedioRecibido(id);
+            (double? Promedio, int Total) otorgadas = await _calificacionRepositorio.ObtenerPromedioOtorgado(id);
+
+            AdminUsuarioDetalleDTO detalle = new AdminUsuarioDetalleDTO
+            {
+                Id = usuario.Id,
+                Nombre = usuario.Nombre,
+                Apellido = usuario.Apellido,
+                Email = usuario.Email,
+                Telefono = usuario.Telefono,
+                Rol = usuario.Rol,
+                Estado = usuario.Estado,
+                // FechaRegistro se guarda en UTC y SQL Server la devuelve con Kind = Unspecified.
+                FechaRegistro = DateTime.SpecifyKind(usuario.FechaRegistro, DateTimeKind.Utc),
+                RazonSocial = usuario.RazonSocial,
+                Cuit = usuario.Cuit,
+                TarifaBaseKm = usuario.TarifaBaseKm,
+                PromedioRecibido = recibidas.Promedio,
+                TotalRecibidas = recibidas.Total,
+                PromedioOtorgado = otorgadas.Promedio,
+                TotalOtorgadas = otorgadas.Total
+            };
+
+            if (usuario.Rol == Roles.Prestador)
+            {
+                detalle.Vehiculos = await _vehiculoRepositorio.ObtenerPorPrestador(id);
+                detalle.Choferes = await _choferRepositorio.ObtenerPorPrestador(id);
+                detalle.CantidadViajes = await _viajeRepositorio.ContarViajesDeUsuario(id);
+            }
+            else if (usuario.Rol == Roles.Chofer)
+            {
+                Chofer? chofer = await _choferRepositorio.ObtenerPorUsuario(id);
+                detalle.CantidadViajes = chofer == null ? 0 : await _viajeRepositorio.ContarViajesDeChofer(chofer.Id);
+            }
+            else
+            {
+                detalle.CantidadViajes = await _viajeRepositorio.ContarViajesDeUsuario(id);
+            }
+
+            return Ok(detalle);
         }
 
         [HttpGet("configuracion/recargo-acompanante")]

@@ -7,6 +7,7 @@ namespace MundoRuta.Servicios.Admin
     {
         private const string RutaDashboard = "api/admin/dashboard";
         private const string RutaSolicitudesPrestadores = "api/admin/prestadores/solicitudes";
+        private const string RutaUsuarios = "api/admin/usuarios";
 
         private readonly IHttpServices _http;
 
@@ -34,6 +35,20 @@ namespace MundoRuta.Servicios.Admin
             string url = "api/admin/prestadores/" + id + "/estado";
 
             return await _http.PutAsync<ActualizarEstadoPrestadorDTO>(url, dto);
+        }
+
+        // Consulta el directorio de usuarios mediante GET api/admin/usuarios.
+        public async Task<HttpResp<List<AdminUsuarioListadoDTO>>> ObtenerUsuariosAsync()
+        {
+            return await _http.GetAsync<List<AdminUsuarioListadoDTO>>(RutaUsuarios);
+        }
+
+        // Consulta la ficha completa de un usuario mediante GET api/admin/usuarios/{id}.
+        public async Task<HttpResp<AdminUsuarioDetalleDTO>> ObtenerUsuarioAsync(int id)
+        {
+            string url = RutaUsuarios + "/" + id;
+
+            return await _http.GetAsync<AdminUsuarioDetalleDTO>(url);
         }
     }
 }

@@ -11,6 +11,7 @@ namespace MundoRuta.Repositorio.Repositorios
         Task<Usuario?> ValidarCredenciales(string email, string password);
         Task<List<PrestadorListadoDTO>> ObtenerPrestadoresPorEstado(string estado);
         Task<List<PrestadorSolicitudDTO>> ListarSolicitudesPrestador();
+        Task<List<AdminUsuarioListadoDTO>> ListarUsuarios();
         Task<bool> CambiarEstado(int id, string nuevoEstado);
         Task<int> ContarPorRolYEstado(string rol, string? estado = null);
     }

@@ -390,3 +390,135 @@ h1:focus {
 .mr-badge--suspendido {
     background-color: var(--mr-texto-suave);
 }
+
+/* Selector de estado del directorio de usuarios. */
+.mr-filtro {
+    max-width: 240px;
+}
+
+/* Capa modal sin JavaScript: overlay oscuro centrado por encima de la navbar. */
+.mr-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background-color: rgba(15, 31, 61, .55);
+    overflow-y: auto;
+}
+
+.mr-modal {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 760px;
+    max-height: calc(100vh - 3rem);
+    margin: auto;
+    background-color: #fff;
+    border-radius: var(--mr-radio);
+    box-shadow: var(--mr-sombra);
+}
+
+.mr-modal__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .75rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--mr-borde);
+}
+
+.mr-modal__titulo {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--mr-azul-marino);
+}
+
+.mr-modal__cerrar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin-left: auto;
+    padding: 0;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--mr-texto-suave);
+    background-color: transparent;
+    border: 1px solid var(--mr-borde);
+    border-radius: var(--mr-radio);
+    cursor: pointer;
+}
+
+.mr-modal__cerrar:hover {
+    color: var(--mr-naranja);
+    border-color: var(--mr-naranja);
+}
+
+.mr-modal__body {
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.mr-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: .5rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--mr-borde);
+}
+
+.mr-detalle__bloque {
+    margin-top: 1.75rem;
+}
+
+.mr-detalle__bloque:first-child {
+    margin-top: 0;
+}
+
+.mr-detalle__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 1.5rem;
+}
+
+.mr-detalle__etiqueta {
+    display: block;
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--mr-texto-suave);
+}
+
+.mr-detalle__valor {
+    display: block;
+    font-weight: 500;
+    color: var(--mr-texto);
+}
+
+.mr-badge--usuario {
+    background-color: #1D4ED8;
+}
+
+.mr-badge--chofer {
+    background-color: #0E7490;
+}
+
+.mr-badge--admin {
+    background-color: #6D28D9;
+}
+
+.mr-badge--inactivo {
+    background-color: var(--mr-texto-suave);
+}
+
+@media (max-width: 640px) {
+    .mr-detalle__grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -20,5 +20,7 @@ namespace MundoRuta.Repositorio.Repositorios
         Task<int> ContarTodos();
         Task<int> ContarActivos();
         Task<decimal> SumarMontoTransaccionado();
+        Task<int> ContarViajesDeUsuario(int usuarioId);
+        Task<int> ContarViajesDeChofer(int idChofer);
     }
 }
