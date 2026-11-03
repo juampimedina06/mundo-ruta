@@ -1,0 +1,83 @@
+@page "/admin/dashboard"
+@inject IAdminServicio Admin
+
+<PageTitle>Dashboard | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="@Roles.Admin">
+    <div class="mr-page">
+        <div class="mr-container">
+            <PageHeader Titulo="Dashboard"
+                        Descripcion="Indicadores de funcionamiento de la plataforma en tiempo real." />
+
+            @if (_cargando)
+            {
+                <div class="mr-loading">Cargando indicadores...</div>
+            }
+            else if (_error is not null)
+            {
+                <div class="mr-alert mr-alert--error">@_error</div>
+            }
+            else if (_dashboard is null)
+            {
+                <EmptyState Titulo="Sin datos disponibles"
+                            Descripcion="No se recibieron indicadores del servidor." />
+            }
+            else
+            {
+                <div class="mr-grid">
+                    <article class="mr-kpi">
+                        <h2 class="mr-kpi__label">Usuarios registrados</h2>
+                        <p class="mr-kpi__value">@_dashboard.TotalUsuarios</p>
+                        <ul class="mr-kpi__detail">
+                            <li>Pasajeros: @_dashboard.TotalPasajeros</li>
+                            <li>Prestadores: @_dashboard.TotalPrestadores</li>
+                            <li>Choferes: @_dashboard.TotalChoferes</li>
+                        </ul>
+                    </article>
+
+                    <article class="mr-kpi @(_dashboard.PrestadoresPendientes > 0 ? "mr-kpi--alerta" : string.Empty)">
+                        <h2 class="mr-kpi__label">Prestadores pendientes</h2>
+                        <p class="mr-kpi__value">@_dashboard.PrestadoresPendientes</p>
+                        <a class="mr-kpi__link" href="/admin/prestadores">Ver solicitudes</a>
+                    </article>
+
+                    <article class="mr-kpi">
+                        <h2 class="mr-kpi__label">Viajes</h2>
+                        <p class="mr-kpi__value">@_dashboard.TotalViajes</p>
+                        <p class="mr-muted">Activos ahora: @_dashboard.ViajesActivos</p>
+                    </article>
+
+                    <article class="mr-kpi">
+                        <h2 class="mr-kpi__label">Facturación</h2>
+                        <p class="mr-kpi__value">@FormatoPanel.Moneda(_dashboard.VolumenTransaccionado)</p>
+                        <p class="mr-muted">Comisiones: @FormatoPanel.Moneda(_dashboard.Comisiones)</p>
+                    </article>
+                </div>
+
+                <p class="mr-kpi__footer">Fecha de corte: @FormatoPanel.Fecha(_dashboard.FechaCorte)</p>
+            }
+        </div>
+    </div>
+</RoleGuard>
+
+@code {
+    private AdminDashboardDTO? _dashboard;
+    private bool _cargando = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        HttpResp<AdminDashboardDTO> respuesta = await Admin.ObtenerDashboardAsync();
+
+        if (respuesta.Error)
+        {
+            _error = await respuesta.ObtenerMensajeAsync("No se pudieron cargar los indicadores.");
+        }
+        else
+        {
+            _dashboard = respuesta.Respuesta;
+        }
+
+        _cargando = false;
+    }
+}

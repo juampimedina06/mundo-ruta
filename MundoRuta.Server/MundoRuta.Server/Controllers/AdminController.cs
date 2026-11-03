@@ -14,12 +14,14 @@ namespace MundoRuta.Server.Controllers
     {
         private readonly IUsuarioRepositorio _usuarioRepositorio;
         private readonly IViajeRepositorio _viajeRepositorio;
+        private readonly ILiquidacionRepositorio _liquidacionRepositorio;
         private readonly AppDbContext _context;
 
-        public AdminController(IUsuarioRepositorio usuarioRepositorio, IViajeRepositorio viajeRepositorio, AppDbContext context)
+        public AdminController(IUsuarioRepositorio usuarioRepositorio, IViajeRepositorio viajeRepositorio, ILiquidacionRepositorio liquidacionRepositorio, AppDbContext context)
         {
             _usuarioRepositorio = usuarioRepositorio;
             _viajeRepositorio = viajeRepositorio;
+            _liquidacionRepositorio = liquidacionRepositorio;
             _context = context;
         }
 
@@ -54,18 +56,32 @@ namespace MundoRuta.Server.Controllers
         }
 
         [HttpGet("dashboard")] // api/admin/dashboard
-        public async Task<IActionResult> GetDashboard()
+        public async Task<ActionResult<AdminDashboardDTO>> GetDashboard()
         {
-            var totalUsuarios = await _usuarioRepositorio.ContarPorRolYEstado("Usuario", null);
-            var totalPrestadores = await _usuarioRepositorio.ContarPorRolYEstado("Prestador", "APROBADO");
-            var viajesConcretados = await _viajeRepositorio.ContarViajesFinalizados();
+            int totalPasajeros = await _usuarioRepositorio.ContarPorRolYEstado("Usuario", null);
+            int totalPrestadores = await _usuarioRepositorio.ContarPorRolYEstado("Prestador", null);
+            int totalChoferes = await _usuarioRepositorio.ContarPorRolYEstado("Chofer", null);
+            int prestadoresPendientes = await _usuarioRepositorio.ContarPorRolYEstado("Prestador", "PENDIENTE");
+            int totalViajes = await _viajeRepositorio.ContarTodos();
+            int viajesActivos = await _viajeRepositorio.ContarActivos();
+            decimal volumenTransaccionado = await _viajeRepositorio.SumarMontoTransaccionado();
+            decimal comisiones = await _liquidacionRepositorio.SumarComisiones();
 
-            return Ok(new
+            AdminDashboardDTO dto = new AdminDashboardDTO
             {
-                totalUsuarios,
-                totalPrestadores,
-                viajesConcretados
-            });
+                TotalPasajeros = totalPasajeros,
+                TotalPrestadores = totalPrestadores,
+                TotalChoferes = totalChoferes,
+                TotalUsuarios = totalPasajeros + totalPrestadores + totalChoferes,
+                PrestadoresPendientes = prestadoresPendientes,
+                TotalViajes = totalViajes,
+                ViajesActivos = viajesActivos,
+                VolumenTransaccionado = volumenTransaccionado,
+                Comisiones = comisiones,
+                FechaCorte = DateTime.UtcNow
+            };
+
+            return Ok(dto);
         }
 
         [HttpGet("configuracion/recargo-acompanante")]

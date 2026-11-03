@@ -40,6 +40,7 @@ namespace MundoRuta.Server.Client.Navigation
 
         private static readonly IReadOnlyList<MenuItem> MenuAdmin = new List<MenuItem>
         {
+            new MenuItem("Dashboard", "/admin/dashboard"),
             new MenuItem("Panel", "/admin"),
             new MenuItem("Prestadores", "/admin/prestadores"),
             new MenuItem("Configuración", "/admin/configuracion")
