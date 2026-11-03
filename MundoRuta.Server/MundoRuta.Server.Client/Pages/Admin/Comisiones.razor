@@ -1,0 +1,231 @@
+@page "/admin/comisiones"
+@page "/admin/viajes"
+@inject IAdminServicio Admin
+
+<PageTitle>Auditoría de Viajes y Comisiones | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="@Roles.Admin">
+    <div class="mr-page">
+        <div class="mr-container">
+            <PageHeader Titulo="Auditoría de viajes y comisiones"
+                        Descripcion="Seguimiento financiero y operativo de viajes, montos acordados y comisiones de la plataforma." />
+
+            @if (_cargando && _reporte is null)
+            {
+                <div class="mr-loading">Cargando reporte de comisiones...</div>
+            }
+            else if (_error is not null)
+            {
+                <div class="mr-alert mr-alert--error">@_error</div>
+            }
+            else
+            {
+                <!-- Totalizadores / KPIs superiores -->
+                <div class="mr-grid mb-4">
+                    <article class="mr-kpi">
+                        <h2 class="mr-kpi__label">Total facturado en fletes</h2>
+                        <p class="mr-kpi__value">@FormatoPanel.Moneda(_reporte?.TotalFacturado ?? 0m)</p>
+                        <p class="mr-kpi__footer">@((_reporte?.CantidadOperaciones ?? 0)) operaciones auditadas</p>
+                    </article>
+
+                    <article class="mr-kpi">
+                        <h2 class="mr-kpi__label">Comisiones retenidas / cobradas</h2>
+                        <p class="mr-kpi__value text-success">@FormatoPanel.Moneda(_reporte?.TotalComisionesRetenidas ?? 0m)</p>
+                        <p class="mr-kpi__footer">Viajes con pago confirmado</p>
+                    </article>
+
+                    <article class="mr-kpi">
+                        <h2 class="mr-kpi__label">Comisiones pendientes</h2>
+                        <p class="mr-kpi__value text-warning">@FormatoPanel.Moneda(_reporte?.TotalComisionesPendientes ?? 0m)</p>
+                        <p class="mr-kpi__footer">Viajes pendientes de pago</p>
+                    </article>
+                </div>
+
+                <!-- Barra de filtros -->
+                <div class="card p-3 mb-4 bg-light border-0 shadow-sm">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-12 col-md-3">
+                            <label class="form-label small fw-semibold">Fecha desde</label>
+                            <input type="date" class="form-control form-control-sm" @bind="_fechaDesde" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label small fw-semibold">Fecha hasta</label>
+                            <input type="date" class="form-control form-control-sm" @bind="_fechaHasta" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label small fw-semibold">Empresa prestadora</label>
+                            <select class="form-select form-select-sm" @bind="_prestadorId">
+                                <option value="0">Todas las empresas</option>
+                                @foreach (AdminUsuarioListadoDTO prestador in _prestadores)
+                                {
+                                    <option value="@prestador.Id">@prestador.Nombre @prestador.Apellido</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label small fw-semibold">Estado del viaje</label>
+                            <select class="form-select form-select-sm" @bind="_estadoViaje">
+                                <option value="">Todos los estados</option>
+                                <option value="@EstadosViaje.Buscando">Buscando</option>
+                                <option value="@EstadosViaje.Asignado">Asignado</option>
+                                <option value="@EstadosViaje.CargaSubida">Carga subida</option>
+                                <option value="@EstadosViaje.EnTransito">En tránsito</option>
+                                <option value="@EstadosViaje.LlegadaDestino">Llegada a destino</option>
+                                <option value="@EstadosViaje.Finalizado">Finalizado</option>
+                                <option value="@EstadosViaje.Cancelado">Cancelado</option>
+                            </select>
+                        </div>
+                        <div class="col-12 d-flex gap-2 justify-content-end mt-3">
+                            <button type="button" class="btn btn-sm btn-primary" @onclick="AplicarFiltrosAsync" disabled="@_cargando">
+                                @if (_cargando)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                }
+                                Filtrar
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="LimpiarFiltrosAsync" disabled="@_cargando">
+                                Limpiar filtros
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desglose de operaciones -->
+                @if (_reporte is null || _reporte.Operaciones.Count == 0)
+                {
+                    <EmptyState Titulo="Sin operaciones registradas"
+                                Descripcion="No se encontraron viajes o comisiones que coincidan con los filtros aplicados." />
+                }
+                else
+                {
+                    <div class="mr-tabla-contenedor">
+                        <table class="mr-tabla">
+                            <thead>
+                                <tr>
+                                    <th scope="col">ID Viaje</th>
+                                    <th scope="col">Prestador</th>
+                                    <th scope="col">Pasajero</th>
+                                    <th scope="col">Fecha</th>
+                                    <th scope="col" class="text-end">Monto total</th>
+                                    <th scope="col" class="text-end">Comisión (%)</th>
+                                    <th scope="col" class="text-end">Monto comisión</th>
+                                    <th scope="col">Estado viaje</th>
+                                    <th scope="col">Estado pago</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (AdminComisionFilaDTO op in _reporte.Operaciones)
+                                {
+                                    <tr @key="op.ViajeId">
+                                        <td>
+                                            <span class="fw-bold">#@op.ViajeId</span>
+                                        </td>
+                                        <td>
+                                            <div>@op.PrestadorNombre</div>
+                                            @if (!string.IsNullOrWhiteSpace(op.PrestadorRazonSocial))
+                                            {
+                                                <small class="text-muted">@op.PrestadorRazonSocial</small>
+                                            }
+                                        </td>
+                                        <td>@op.PasajeroNombre</td>
+                                        <td>@FormatoPanel.Fecha(op.Fecha)</td>
+                                        <td class="text-end fw-semibold">@FormatoPanel.Moneda(op.MontoTotal)</td>
+                                        <td class="text-end text-muted">@op.PorcentajeComision%</td>
+                                        <td class="text-end fw-bold text-success">@FormatoPanel.Moneda(op.MontoComision)</td>
+                                        <td><EstadoBadge Estado="@op.EstadoViaje" /></td>
+                                        <td><EstadoBadge Estado="@op.EstadoPago" /></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</RoleGuard>
+
+@code {
+    private bool _cargando = true;
+    private string? _error;
+    private AdminComisionesReporteDTO? _reporte;
+    private List<AdminUsuarioListadoDTO> _prestadores = new List<AdminUsuarioListadoDTO>();
+
+    private DateTime? _fechaDesde;
+    private DateTime? _fechaHasta;
+    private int _prestadorId = 0;
+    private string _estadoViaje = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(CargarPrestadoresAsync(), CargarReporteAsync());
+    }
+
+    private async Task CargarPrestadoresAsync()
+    {
+        try
+        {
+            HttpResp<List<AdminUsuarioListadoDTO>> respuesta = await Admin.ObtenerUsuariosAsync();
+            if (!respuesta.Error && respuesta.Respuesta != null)
+            {
+                _prestadores = respuesta.Respuesta
+                    .Where(u => u.Rol == Roles.Prestador)
+                    .OrderBy(u => u.Nombre)
+                    .ToList();
+            }
+        }
+        catch (Exception)
+        {
+            // Error silencioso al cargar lista de prestadores para el filtro
+        }
+    }
+
+    private async Task CargarReporteAsync()
+    {
+        _cargando = true;
+        _error = null;
+
+        try
+        {
+            AdminFiltroComisionesDTO filtro = new AdminFiltroComisionesDTO
+            {
+                FechaDesde = _fechaDesde,
+                FechaHasta = _fechaHasta,
+                PrestadorId = _prestadorId > 0 ? _prestadorId : null,
+                EstadoViaje = string.IsNullOrWhiteSpace(_estadoViaje) ? null : _estadoViaje
+            };
+
+            HttpResp<AdminComisionesReporteDTO> respuesta = await Admin.ObtenerComisionesAsync(filtro);
+            if (!respuesta.Error && respuesta.Respuesta != null)
+            {
+                _reporte = respuesta.Respuesta;
+            }
+            else
+            {
+                _error = "No se pudo cargar el reporte de comisiones. Intente nuevamente.";
+            }
+        }
+        catch (Exception)
+        {
+            _error = "Ocurrió un error de red al intentar consultar el reporte.";
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task AplicarFiltrosAsync()
+    {
+        await CargarReporteAsync();
+    }
+
+    private async Task LimpiarFiltrosAsync()
+    {
+        _fechaDesde = null;
+        _fechaHasta = null;
+        _prestadorId = 0;
+        _estadoViaje = string.Empty;
+        await CargarReporteAsync();
+    }
+}

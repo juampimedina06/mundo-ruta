@@ -14,5 +14,7 @@ namespace MundoRuta.Servicios.Admin
         Task<HttpResp<List<AdminUsuarioListadoDTO>>> ObtenerUsuariosAsync();
 
         Task<HttpResp<AdminUsuarioDetalleDTO>> ObtenerUsuarioAsync(int id);
+
+        Task<HttpResp<AdminComisionesReporteDTO>> ObtenerComisionesAsync(AdminFiltroComisionesDTO? filtro = null);
     }
 }
