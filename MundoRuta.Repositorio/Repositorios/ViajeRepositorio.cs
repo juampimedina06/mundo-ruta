@@ -1,4 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos;
 using MundoRuta.BD.Datos.Entity;
 using MundoRuta.Shared;
@@ -205,6 +208,99 @@ namespace MundoRuta.Repositorio.Repositorios
         public async Task<int> ContarViajesDeChofer(int idChofer) // Cuenta los viajes asignados a un chofer.
         {
             return await context.Viajes.CountAsync(v => v.IdChofer == idChofer);
+        }
+
+        public async Task<AdminComisionesReporteDTO> ObtenerReporteComisiones(AdminFiltroComisionesDTO filtro, decimal porcentajeComision)
+        {
+            IQueryable<Viaje> query = context.Viajes
+                .Include(v => v.Usuario)
+                .Include(v => v.Pasajero)
+                .AsQueryable();
+
+            if (filtro.FechaDesde.HasValue)
+            {
+                DateTime desde = filtro.FechaDesde.Value.Date;
+                query = query.Where(v => v.Fecha >= desde);
+            }
+
+            if (filtro.FechaHasta.HasValue)
+            {
+                DateTime hasta = filtro.FechaHasta.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(v => v.Fecha <= hasta);
+            }
+
+            if (filtro.PrestadorId.HasValue && filtro.PrestadorId.Value > 0)
+            {
+                query = query.Where(v => v.IdUsuario == filtro.PrestadorId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filtro.EstadoViaje))
+            {
+                string estadoNormalizado = filtro.EstadoViaje.Trim().ToUpperInvariant().Replace("-", "_");
+                query = query.Where(v => v.Estado == estadoNormalizado);
+            }
+
+            List<Viaje> viajes = await query
+                .OrderByDescending(v => v.Fecha)
+                .ThenByDescending(v => v.Id)
+                .ToListAsync();
+
+            List<AdminComisionFilaDTO> operaciones = new List<AdminComisionFilaDTO>();
+            decimal totalFacturado = 0m;
+            decimal comisionesRetenidas = 0m;
+            decimal comisionesPendientes = 0m;
+
+            foreach (Viaje v in viajes)
+            {
+                decimal montoFlete = v.Monto;
+                decimal comision = Math.Round(montoFlete * (porcentajeComision / 100m), 2);
+
+                string prestadorNombre = v.Usuario != null
+                    ? $"{v.Usuario.Nombre} {v.Usuario.Apellido}".Trim()
+                    : "Sin asignar";
+                string? razonSocial = v.Usuario?.RazonSocial;
+
+                string pasajeroNombre = v.Pasajero != null
+                    ? $"{v.Pasajero.Nombre} {v.Pasajero.Apellido}".Trim()
+                    : "Sin asignar";
+
+                string estadoPago = string.IsNullOrWhiteSpace(v.EstadoPago) ? "PENDIENTE" : v.EstadoPago.ToUpperInvariant();
+
+                operaciones.Add(new AdminComisionFilaDTO
+                {
+                    ViajeId = v.Id,
+                    PrestadorId = v.IdUsuario,
+                    PrestadorNombre = prestadorNombre,
+                    PrestadorRazonSocial = razonSocial,
+                    PasajeroId = v.IdPasajero,
+                    PasajeroNombre = pasajeroNombre,
+                    Fecha = DateTime.SpecifyKind(v.Fecha, DateTimeKind.Utc),
+                    MontoTotal = montoFlete,
+                    PorcentajeComision = porcentajeComision,
+                    MontoComision = comision,
+                    EstadoViaje = v.Estado ?? string.Empty,
+                    EstadoPago = estadoPago
+                });
+
+                totalFacturado += montoFlete;
+                if (estadoPago == "PAGADO")
+                {
+                    comisionesRetenidas += comision;
+                }
+                else
+                {
+                    comisionesPendientes += comision;
+                }
+            }
+
+            return new AdminComisionesReporteDTO
+            {
+                TotalFacturado = totalFacturado,
+                TotalComisionesRetenidas = comisionesRetenidas,
+                TotalComisionesPendientes = comisionesPendientes,
+                CantidadOperaciones = operaciones.Count,
+                Operaciones = operaciones
+            };
         }
     }
 }

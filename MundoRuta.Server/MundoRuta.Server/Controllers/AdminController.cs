@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos;
 using MundoRuta.BD.Datos.Entity;
@@ -225,6 +225,36 @@ namespace MundoRuta.Server.Controllers
             }
             await _context.SaveChangesAsync();
             return Ok(new { mensaje = "RECARGO POR ACOMPAÑANTE ACTUALIZADO", porcentajeRecargoAcompanante = dto.PorcentajeRecargoAcompanante });
+        }
+
+        [HttpGet("comisiones")] // api/admin/comisiones
+        public async Task<ActionResult<AdminComisionesReporteDTO>> ObtenerComisiones([FromQuery] AdminFiltroComisionesDTO filtro)
+        {
+            decimal porcentajeComision = 10m;
+            try
+            {
+                ConfiguracionSistema? config = await _context.ConfiguracionesSistema
+                    .FirstOrDefaultAsync(c => c.Clave == "COMISION_PLATAFORMA_PORCENTAJE");
+
+                if (config != null)
+                {
+                    if (decimal.TryParse(config.Valor.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal valorInv))
+                    {
+                        porcentajeComision = valorInv;
+                    }
+                    else if (decimal.TryParse(config.Valor, out decimal valorLoc))
+                    {
+                        porcentajeComision = valorLoc;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Fallback por defecto en caso de que la tabla de configuración no esté creada en la base local.
+            }
+
+            AdminComisionesReporteDTO reporte = await _viajeRepositorio.ObtenerReporteComisiones(filtro, porcentajeComision);
+            return Ok(reporte);
         }
     }
 }

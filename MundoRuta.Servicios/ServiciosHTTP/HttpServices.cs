@@ -26,7 +26,7 @@ namespace MundoRuta.Servicios.ServiciosHTTP
             }
             catch (Exception e)
             {
-                return new HttpResp<T>(default, true, null, e.Message);
+                return new HttpResp<T>(default, true, null, MensajeDeError("GET", url, e));
             }
         }
 
@@ -45,7 +45,7 @@ namespace MundoRuta.Servicios.ServiciosHTTP
             }
             catch (Exception e)
             {
-                return new HttpResp<TResponse>(default, true, null, e.Message);
+                return new HttpResp<TResponse>(default, true, null, MensajeDeError("POST", url, e));
             }
         }
 
@@ -64,7 +64,7 @@ namespace MundoRuta.Servicios.ServiciosHTTP
             }
             catch (Exception e)
             {
-                return new HttpResp<TResponse>(default, true, null, e.Message);
+                return new HttpResp<TResponse>(default, true, null, MensajeDeError("POST", url, e));
             }
         }
 
@@ -82,7 +82,7 @@ namespace MundoRuta.Servicios.ServiciosHTTP
             }
             catch (Exception e)
             {
-                return new HttpResp<object>(default, true, null, e.Message);
+                return new HttpResp<object>(default, true, null, MensajeDeError("POST", url, e));
             }
         }
 
@@ -101,7 +101,7 @@ namespace MundoRuta.Servicios.ServiciosHTTP
             }
             catch (Exception e)
             {
-                return new HttpResp<TResponse>(default, true, null, e.Message);
+                return new HttpResp<TResponse>(default, true, null, MensajeDeError("PUT", url, e));
             }
         }
 
@@ -120,7 +120,7 @@ namespace MundoRuta.Servicios.ServiciosHTTP
             }
             catch (Exception e)
             {
-                return new HttpResp<TResponse>(default, true, null, e.Message);
+                return new HttpResp<TResponse>(default, true, null, MensajeDeError("PUT", url, e));
             }
         }
 
@@ -138,7 +138,7 @@ namespace MundoRuta.Servicios.ServiciosHTTP
             }
             catch (Exception e)
             {
-                return new HttpResp<object>(default, true, null, e.Message);
+                return new HttpResp<object>(default, true, null, MensajeDeError("PUT", url, e));
             }
         }
 
@@ -156,7 +156,7 @@ namespace MundoRuta.Servicios.ServiciosHTTP
             }
             catch (Exception e)
             {
-                return new HttpResp<object>(default, true, null, e.Message);
+                return new HttpResp<object>(default, true, null, MensajeDeError("PUT", url, e));
             }
         }
 
@@ -180,7 +180,7 @@ namespace MundoRuta.Servicios.ServiciosHTTP
             }
             catch (Exception e)
             {
-                return new HttpResp<TResponse>(default, true, null, e.Message);
+                return new HttpResp<TResponse>(default, true, null, MensajeDeError("DELETE", url, e));
             }
         }
 
@@ -198,8 +198,15 @@ namespace MundoRuta.Servicios.ServiciosHTTP
             }
             catch (Exception e)
             {
-                return new HttpResp<object>(default, true, null, e.Message);
+                return new HttpResp<object>(default, true, null, MensajeDeError("DELETE", url, e));
             }
+        }
+
+        private static string MensajeDeError(string metodo, string url, Exception e)
+        {
+            string detalle = $"{metodo} {url} ({e.GetType().Name}): {e.Message}";
+            Console.Error.WriteLine("[HttpServices] " + detalle);
+            return "No se pudo completar la solicitud. Detalle: " + detalle;
         }
     }
 }

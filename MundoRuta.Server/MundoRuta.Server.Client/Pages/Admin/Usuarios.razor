@@ -109,7 +109,7 @@
 
     <DetalleUsuarioModal Visible="_mostrarDetalle"
                          Cargando="_cargandoDetalle"
-                         Error="_errorDetalle"
+                         Error="@_errorDetalle"
                          Detalle="_detalle"
                          OnCerrar="CerrarDetalle" />
 </RoleGuard>
@@ -178,6 +178,11 @@
                 _usuarios = respuesta.Respuesta ?? new List<AdminUsuarioListadoDTO>();
             }
         }
+        catch (Exception)
+        {
+            _error = "No se pudo cargar el directorio de usuarios. Intente nuevamente.";
+            _usuarios = new List<AdminUsuarioListadoDTO>();
+        }
         finally
         {
             _cargando = false;
@@ -203,6 +208,10 @@
             {
                 _detalle = respuesta.Respuesta;
             }
+        }
+        catch (Exception)
+        {
+            _errorDetalle = "No se pudo cargar el detalle del usuario. Intente nuevamente.";
         }
         finally
         {

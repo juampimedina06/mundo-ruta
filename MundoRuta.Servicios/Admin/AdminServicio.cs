@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using MundoRuta.Shared.DTO;
 using MundoRuta.Servicios.ServiciosHTTP;
 
@@ -8,6 +10,7 @@ namespace MundoRuta.Servicios.Admin
         private const string RutaDashboard = "api/admin/dashboard";
         private const string RutaSolicitudesPrestadores = "api/admin/prestadores/solicitudes";
         private const string RutaUsuarios = "api/admin/usuarios";
+        private const string RutaComisiones = "api/admin/comisiones";
 
         private readonly IHttpServices _http;
 
@@ -49,6 +52,43 @@ namespace MundoRuta.Servicios.Admin
             string url = RutaUsuarios + "/" + id;
 
             return await _http.GetAsync<AdminUsuarioDetalleDTO>(url);
+        }
+
+        // Consulta el reporte financiero de comisiones mediante GET api/admin/comisiones.
+        public async Task<HttpResp<AdminComisionesReporteDTO>> ObtenerComisionesAsync(AdminFiltroComisionesDTO? filtro = null)
+        {
+            List<string> parametros = new List<string>();
+
+            if (filtro != null)
+            {
+                if (filtro.FechaDesde.HasValue)
+                {
+                    parametros.Add("fechaDesde=" + Uri.EscapeDataString(filtro.FechaDesde.Value.ToString("yyyy-MM-dd")));
+                }
+
+                if (filtro.FechaHasta.HasValue)
+                {
+                    parametros.Add("fechaHasta=" + Uri.EscapeDataString(filtro.FechaHasta.Value.ToString("yyyy-MM-dd")));
+                }
+
+                if (filtro.PrestadorId.HasValue && filtro.PrestadorId.Value > 0)
+                {
+                    parametros.Add("prestadorId=" + filtro.PrestadorId.Value);
+                }
+
+                if (!string.IsNullOrWhiteSpace(filtro.EstadoViaje))
+                {
+                    parametros.Add("estadoViaje=" + Uri.EscapeDataString(filtro.EstadoViaje.Trim()));
+                }
+            }
+
+            string url = RutaComisiones;
+            if (parametros.Count > 0)
+            {
+                url += "?" + string.Join("&", parametros);
+            }
+
+            return await _http.GetAsync<AdminComisionesReporteDTO>(url);
         }
     }
 }

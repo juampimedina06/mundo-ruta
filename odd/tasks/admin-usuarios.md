@@ -71,9 +71,9 @@ The ticket in `MundoRuta.Shared/ticketEliminar.cs` is the spec. The user selecte
 - [x] `GET api/admin/usuarios` returns every user ordered by `FechaRegistro` desc with Id, Nombre, Apellido, Email, Rol, Estado and FechaRegistro, and never exposes Password.
 - [x] `GET api/admin/usuarios/{id}` returns contact data, both rating aggregates and the trip count; 404 for an unknown id.
 - [x] For a `Prestador`, the detail includes vehicles and drivers (flota asociada).
-- [ ] `/admin/usuarios` renders the table under `RoleGuard` for admin only.
-- [ ] Search by name or email and filters by role and state narrow the table without network traffic.
-- [ ] "Ver detalle" opens the modal with the full profile and closes without a page reload.
+- [x] `/admin/usuarios` renders the table under `RoleGuard` for admin only.
+- [x] Search by name or email and filters by role and state narrow the table without network traffic.
+- [x] "Ver detalle" opens the modal with the full profile and closes without a page reload.
 
 ## Tasks
 
@@ -95,7 +95,7 @@ The ticket in `MundoRuta.Shared/ticketEliminar.cs` is the spec. The user selecte
 - [ ] `GET api/admin/usuarios/{id}` for a `Chofer` user — not exercised, no `Chofer` user exists in the local database. The branch is covered only by compilation.
 - [x] `GET api/admin/usuarios/999999` — 404.
 - [x] Response payload scan — no `password` field in either endpoint.
-- [ ] `/admin/usuarios` browser smoke — not exercised. The page and modal were verified by compilation only; table, search, both filters and modal open/close still need a manual pass.
+- [x] `/admin/usuarios` browser smoke — exercised with Playwright and the system Edge: table renders, search by name and email narrows correctly, role chip and state select work with one single list request, the three detail modals open with data and close. The smoke found and confirmed the fix for the `_errorDetalle` literal binding (see Post-smoke bugfix).
 
 ## TDD
 
@@ -115,7 +115,7 @@ Not configured. No test project, no runner. Checks are compilation-based plus en
 - [x] TASK-06
 - [x] TASK-07
 - [x] TASK-08
-- [x] TASK-09 (endpoint smoke green; browser smoke pending)
+- [x] TASK-09 (endpoint and browser smoke green)
 
 ## Evidence
 
@@ -177,10 +177,34 @@ The EF log confirms the projection: `SELECT [u].[Id], [u].[Nombre], [u].[Apellid
 
 `dotnet build MundoRuta.slnx` — 0 errors, 150 warnings, the same count as before the feature.
 
+### Post-smoke bugfix y hardening
+
+El browser smoke real (Playwright + Edge del sistema, sesión sembrada en `localStorage`) reprodujo el fallo reportado: el modal mostraba el literal `_errorDetalle` aunque `GET api/admin/usuarios/{id}` respondía 200. Causa: en Razor, un parámetro de componente de tipo `string` con valor entrecomillado se pasa como **literal**; `Error="_errorDetalle"` enviaba el texto, no el valor del campo. Los parámetros `bool` y DTO no se veían afectados porque su valor se interpreta como expresión.
+
+Correcciones:
+
+- `Usuarios.razor` — `Error="@_errorDetalle"` (binding explícito).
+- `Usuarios.razor` — `catch` defensivo en `CargarUsuariosAsync` y `AbrirDetalleAsync`, con mensaje neutro.
+- `HttpRespExtensiones.ObtenerMensajeAsync` — ya no vuelca HTML crudo: ignora `text/html`, extrae `mensaje`/`message`/`error`/`detail`/`title` de JSON y limita el texto plano a 300 caracteres.
+- `HttpServices` — los mensajes de excepción incluyen método, URL y tipo de excepción; se registran en `Console.Error`.
+- `VehiculoDTO` / `ChoferDTO` — strings inicializados en `string.Empty`; `VehiculoDTO.FechaFabricación` pasa a `DateTime?`.
+
+Verificación (Edge headless):
+
+```
+GET api/admin/usuarios            -> 200, 3 filas
+Ver detalle (3 usuarios)          -> modal con datos, error=null, sin errores de consola
+500 con HTML en el detalle        -> "Error interno del servidor" (sin HTML crudo)
+fallo de red en el detalle        -> "No se pudo completar la solicitud. Detalle: GET api/admin/usuarios/2003 (HttpRequestException): ..."
+buscar "juan"                     -> 1 fila; buscar "gmail.com" -> 2; chip Prestadores -> 1; estado APROBADO -> 3; 1 sola request a la lista
+```
+
+`dotnet build` — 0 errores. Warnings: baseline preexistente.
+
 ### Review
 
 `gentle-ai review assess --base-ref 26923b4 --committed-only` after the backend batch returned `risk: medium`, `review_due: false`, `review_due_reason: under_budget` (263 changed lines). Receipt-driven development is enabled by global mode, so the slice stayed pending until the client batch pushed it to `review_due: true` / `slice_budget_reached` (968 changed lines). The native preflight ran and returned a `gentle-ai.review-integration.consent/v3` envelope, which was relayed unchanged; the user chose **declined**. The exact decline invocation returned `action: declined`, `consent: declined_this_candidate`, with the target identity matching, so no review record was created and reviews stay enabled for later changes. No push and no PR were made; delivery follows ordinary repository policy.
 
 ## Next Step
 
-Manual browser pass of `/admin/usuarios`: confirm the directory renders for an admin, that search matches by name and email, that the role chips and the state select narrow the table without network traffic, that "Ver detalle" opens the modal with both rating figures and the fleet sections for a `Prestador`, and that the overlay closes from the backdrop, the `×` and the footer button. Then decide the delivery shape: one PR with `size:exception` (~858 authored lines) or the two recorded slices (backend 232, client 626).
+Los cambios del bugfix y del hardening están sin commitear. Decidir la forma de entrega: un PR con `size:exception` (~858 líneas autoradas) o las dos slices registradas (backend 232, cliente 626).

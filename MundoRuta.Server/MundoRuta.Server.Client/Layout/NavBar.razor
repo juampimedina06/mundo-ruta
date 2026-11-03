@@ -4,7 +4,7 @@
 
 <header class="mr-navbar">
     <div class="mr-container mr-navbar__inner">
-        <a class="mr-navbar__brand" href="/">
+        <a class="mr-navbar__brand" href="@(Sesion.EstaLogueado ? RutaInicioPorRol.Obtener(Sesion.Rol) : "/")">
             <img src="img/logo-mundo-ruta.svg" alt="Mundo Ruta" />
         </a>
 
