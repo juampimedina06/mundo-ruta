@@ -1,106 +1,255 @@
 @page "/admin/usuarios"
 @inject IAdminServicio Admin
 
-<PageTitle>Usuarios | Mundo Ruta</PageTitle>
+<PageTitle>Gestión y Listado de Usuarios | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="@Roles.Admin">
     <div class="mr-page">
         <div class="mr-container">
-            <PageHeader Titulo="Usuarios"
-                        Descripcion="Directorio centralizado de usuarios registrados." />
+            <!-- Context Header & Breadcrumb -->
+            <div class="mr-context-header">
+                <nav class="mr-breadcrumb" aria-label="Ruta de navegación">
+                    <a href="/admin/dashboard">Inicio</a>
+                    <span class="mr-breadcrumb__sep">/</span>
+                    <span>Administración</span>
+                    <span class="mr-breadcrumb__sep">/</span>
+                    <span class="mr-breadcrumb__current">Listado de Usuarios</span>
+                </nav>
+
+                <div class="mr-header-main">
+                    <div>
+                        <div class="mr-header-title-wrap">
+                            <h1 class="mr-header-title">Gestión y Listado de Usuarios</h1>
+                            <span class="mr-header-tag">
+                                <span class="mr-header-tag__dot"></span>
+                                Registro &amp; Habilitaciones
+                            </span>
+                        </div>
+                        <p class="mr-header-desc">
+                            Control global de cuentas registradas, estados de validación y perfiles de Pasajeros, Prestadores y Choferes.
+                        </p>
+                    </div>
+                </div>
+            </div>
 
             @if (_cargando)
             {
-                <div class="mr-loading">Cargando usuarios...</div>
+                <div class="mr-loading">
+                    <span class="spinner-border text-primary me-2" role="status"></span>
+                    Cargando directorio de usuarios...
+                </div>
             }
             else if (_error is not null)
             {
                 <div class="mr-alert mr-alert--error">@_error</div>
             }
-            else if (_usuarios.Count == 0)
-            {
-                <EmptyState Titulo="Sin usuarios"
-                            Descripcion="Todavía no hay usuarios registrados en la plataforma." />
-            }
             else
             {
-                <div class="mr-toolbar">
-                    <input type="search"
-                           class="form-control mr-busqueda"
-                           placeholder="Buscar por nombre o correo"
-                           @bind="_busqueda"
-                           @bind:event="oninput" />
-
-                    <div class="mr-chips">
-                        <button type="button"
-                                class="mr-chip @(_filtroRol is null ? "mr-chip--activo" : string.Empty)"
-                                @onclick="LimpiarFiltroRol">Todos</button>
-                        <button type="button"
-                                class="mr-chip @(_filtroRol == Roles.Usuario ? "mr-chip--activo" : string.Empty)"
-                                @onclick="() => FiltrarPorRol(Roles.Usuario)">Usuarios</button>
-                        <button type="button"
-                                class="mr-chip @(_filtroRol == Roles.Prestador ? "mr-chip--activo" : string.Empty)"
-                                @onclick="() => FiltrarPorRol(Roles.Prestador)">Prestadores</button>
-                        <button type="button"
-                                class="mr-chip @(_filtroRol == Roles.Chofer ? "mr-chip--activo" : string.Empty)"
-                                @onclick="() => FiltrarPorRol(Roles.Chofer)">Choferes</button>
-                        <button type="button"
-                                class="mr-chip @(_filtroRol == Roles.Admin ? "mr-chip--activo" : string.Empty)"
-                                @onclick="() => FiltrarPorRol(Roles.Admin)">Administradores</button>
+                <!-- 4 Top KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 d-flex flex-wrap gap-3">
+                    <div class="mr-kpi flex-fill" style="min-width: 240px;">
+                        <div class="mr-kpi__top">
+                            <div>
+                                <span class="mr-kpi__label">Total Usuarios</span>
+                                <div class="mr-kpi__value">@_usuarios.Count</div>
+                            </div>
+                            <div class="mr-kpi__icon mr-kpi__icon--navy">
+                                <span class="material-symbols-outlined text-[24px]">group</span>
+                            </div>
+                        </div>
+                        <div class="mr-kpi__footer">
+                            <span class="mr-kpi__pill mr-kpi__pill--success">
+                                <span class="material-symbols-outlined text-[14px]">trending_up</span> 100%
+                            </span>
+                            <span>Base consolidada</span>
+                        </div>
                     </div>
 
-                    <select class="form-select mr-filtro" @bind="_filtroEstado">
-                        <option value="">Todos los estados</option>
-                        @foreach (string estado in Estados)
-                        {
-                            <option value="@estado">@estado</option>
-                        }
-                    </select>
+                    <div class="mr-kpi flex-fill" style="min-width: 240px;">
+                        <div class="mr-kpi__top">
+                            <div>
+                                <span class="mr-kpi__label">Pasajeros Activos</span>
+                                <div class="mr-kpi__value">@_usuarios.Count(u => u.Rol == Roles.Usuario)</div>
+                            </div>
+                            <div class="mr-kpi__icon mr-kpi__icon--blue">
+                                <span class="material-symbols-outlined text-[24px]">person</span>
+                            </div>
+                        </div>
+                        <div class="mr-kpi__footer">
+                            <span class="fw-semibold">@(CalcularPorcentaje(Roles.Usuario))%</span>
+                            <span>de la base total</span>
+                        </div>
+                    </div>
+
+                    <div class="mr-kpi flex-fill" style="min-width: 240px;">
+                        <div class="mr-kpi__top">
+                            <div>
+                                <span class="mr-kpi__label">Prestadores / Empresas</span>
+                                <div class="mr-kpi__value">@_usuarios.Count(u => u.Rol == Roles.Prestador)</div>
+                            </div>
+                            <div class="mr-kpi__icon mr-kpi__icon--amber">
+                                <span class="material-symbols-outlined text-[24px]">domain</span>
+                            </div>
+                        </div>
+                        <div class="mr-kpi__footer">
+                            <span class="mr-kpi__pill mr-kpi__pill--warning">
+                                @_usuarios.Count(u => u.Rol == Roles.Prestador && u.Estado == "PENDIENTE") pendientes
+                            </span>
+                            <span>Flotas</span>
+                        </div>
+                    </div>
+
+                    <div class="mr-kpi flex-fill" style="min-width: 240px;">
+                        <div class="mr-kpi__top">
+                            <div>
+                                <span class="mr-kpi__label">Choferes Registrados</span>
+                                <div class="mr-kpi__value">@_usuarios.Count(u => u.Rol == Roles.Chofer)</div>
+                            </div>
+                            <div class="mr-kpi__icon mr-kpi__icon--green">
+                                <span class="material-symbols-outlined text-[24px]">badge</span>
+                            </div>
+                        </div>
+                        <div class="mr-kpi__footer">
+                            <span class="fw-semibold">@(CalcularPorcentaje(Roles.Chofer))%</span>
+                            <span>de la base</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs & Filter Toolbar -->
+                <div class="mr-filter-card">
+                    <div class="mr-tab-header">
+                        <div class="mr-tab-group">
+                            <button type="button"
+                                    class="mr-tab-btn @(_filtroRol is null ? "mr-tab-btn--active" : string.Empty)"
+                                    @onclick="LimpiarFiltroRol">
+                                <span>Todos</span>
+                                <span class="mr-tab-count">@_usuarios.Count</span>
+                            </button>
+                            <button type="button"
+                                    class="mr-tab-btn @(_filtroRol == Roles.Usuario ? "mr-tab-btn--active" : string.Empty)"
+                                    @onclick="() => FiltrarPorRol(Roles.Usuario)">
+                                <span>Pasajeros</span>
+                                <span class="mr-tab-count">@_usuarios.Count(u => u.Rol == Roles.Usuario)</span>
+                            </button>
+                            <button type="button"
+                                    class="mr-tab-btn @(_filtroRol == Roles.Prestador ? "mr-tab-btn--active" : string.Empty)"
+                                    @onclick="() => FiltrarPorRol(Roles.Prestador)">
+                                <span>Prestadores</span>
+                                <span class="mr-tab-count">@_usuarios.Count(u => u.Rol == Roles.Prestador)</span>
+                            </button>
+                            <button type="button"
+                                    class="mr-tab-btn @(_filtroRol == Roles.Chofer ? "mr-tab-btn--active" : string.Empty)"
+                                    @onclick="() => FiltrarPorRol(Roles.Chofer)">
+                                <span>Choferes</span>
+                                <span class="mr-tab-count">@_usuarios.Count(u => u.Rol == Roles.Chofer)</span>
+                            </button>
+                            <button type="button"
+                                    class="mr-tab-btn @(_filtroRol == Roles.Admin ? "mr-tab-btn--active" : string.Empty)"
+                                    @onclick="() => FiltrarPorRol(Roles.Admin)">
+                                <span>Administradores</span>
+                                <span class="mr-tab-count">@_usuarios.Count(u => u.Rol == Roles.Admin)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mr-filter-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div class="mr-search-input-wrap flex-fill" style="max-width: 440px;">
+                            <span class="material-symbols-outlined mr-search-icon">search</span>
+                            <input type="search"
+                                   class="mr-search-input"
+                                   placeholder="Buscar por Nombre, Apellido o Email..."
+                                   @bind="_busqueda"
+                                   @bind:event="oninput" />
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <select class="mr-select" @bind="_filtroEstado">
+                                <option value="">Estado: Todos</option>
+                                @foreach (string estado in Estados)
+                                {
+                                    <option value="@estado">@estado</option>
+                                }
+                            </select>
+
+                            @if (!string.IsNullOrWhiteSpace(_busqueda) || _filtroRol != null || !string.IsNullOrWhiteSpace(_filtroEstado))
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="LimpiarFiltros">
+                                    Limpiar filtros
+                                </button>
+                            }
+                        </div>
+                    </div>
                 </div>
 
                 @if (UsuariosFiltrados.Count == 0)
                 {
                     <EmptyState Titulo="Sin coincidencias"
-                                Descripcion="Ningún usuario coincide con la búsqueda o los filtros elegidos.">
-                        <button type="button" class="btn btn-outline-primary" @onclick="LimpiarFiltros">Limpiar filtros</button>
+                                Descripcion="Ningún usuario coincide con los filtros o el término de búsqueda ingresado.">
+                        <button type="button" class="btn btn-outline-primary mt-2" @onclick="LimpiarFiltros">Restablecer filtros</button>
                     </EmptyState>
                 }
                 else
                 {
-                    <div class="mr-tabla-contenedor">
-                        <table class="mr-tabla">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Usuario</th>
-                                    <th scope="col">Email</th>
-                                    <th scope="col">Rol</th>
-                                    <th scope="col">Estado</th>
-                                    <th scope="col">Fecha de alta</th>
-                                    <th scope="col">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (AdminUsuarioListadoDTO usuario in UsuariosFiltrados)
-                                {
-                                    <tr @key="usuario.Id">
-                                        <td>
-                                            <span class="mr-tabla__principal">@usuario.Nombre @usuario.Apellido</span>
-                                        </td>
-                                        <td>@usuario.Email</td>
-                                        <td><EstadoBadge Estado="@usuario.Rol" /></td>
-                                        <td><EstadoBadge Estado="@usuario.Estado" /></td>
-                                        <td>@FormatoPanel.Fecha(usuario.FechaRegistro)</td>
-                                        <td>
-                                            <div class="mr-acciones">
+                    <!-- Primary Data Table -->
+                    <div class="mr-tabla-card">
+                        <div class="mr-tabla-contenedor">
+                            <table class="mr-tabla">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Usuario</th>
+                                        <th scope="col">Email</th>
+                                        <th scope="col">Rol</th>
+                                        <th scope="col">Fecha Registro</th>
+                                        <th scope="col">Estado</th>
+                                        <th scope="col" class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (AdminUsuarioListadoDTO usuario in UsuariosFiltrados)
+                                    {
+                                        <tr @key="usuario.Id">
+                                            <td>
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="mr-avatar @ObtenerClaseAvatar(usuario.Rol)">
+                                                        @ObtenerIniciales(usuario.Nombre, usuario.Apellido)
+                                                    </div>
+                                                    <div>
+                                                        <div class="mr-cell-title">@usuario.Nombre @usuario.Apellido</div>
+                                                        <div class="mr-cell-sub">#USR-@usuario.Id</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="mr-cell-mono">@usuario.Email</span>
+                                            </td>
+                                            <td>
+                                                <EstadoBadge Estado="@usuario.Rol" />
+                                            </td>
+                                            <td>
+                                                <span class="mr-cell-mono">@FormatoPanel.Fecha(usuario.FechaRegistro)</span>
+                                            </td>
+                                            <td>
+                                                <EstadoBadge Estado="@usuario.Estado" />
+                                            </td>
+                                            <td class="text-end">
                                                 <button type="button"
                                                         class="btn btn-sm btn-outline-primary"
-                                                        @onclick="() => AbrirDetalleAsync(usuario.Id)">Ver detalle</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                                                        @onclick="() => AbrirDetalleAsync(usuario.Id)">
+                                                    Ver detalle
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="p-3 bg-light border-top d-flex align-items-center justify-content-between text-muted small">
+                            <span>
+                                Mostrando <strong class="text-dark">@UsuariosFiltrados.Count</strong> de <strong class="text-dark">@_usuarios.Count</strong> usuarios registrados
+                            </span>
+                        </div>
                     </div>
                 }
             }
@@ -128,34 +277,13 @@
     private string? _errorDetalle;
     private AdminUsuarioDetalleDTO? _detalle;
 
-    // Aplica la búsqueda y los filtros sobre la lista ya cargada.
-    private List<AdminUsuarioListadoDTO> UsuariosFiltrados
+    private static readonly string[] Estados =
     {
-        get
-        {
-            string texto = _busqueda.Trim();
-
-            return _usuarios
-                .Where(u => string.IsNullOrEmpty(_filtroRol) || u.Rol == _filtroRol)
-                .Where(u => string.IsNullOrEmpty(_filtroEstado) || u.Estado == _filtroEstado)
-                .Where(u => texto.Length == 0 || CoincideBusqueda(u, texto))
-                .ToList();
-        }
-    }
-
-    // Estados presentes en el listado, para no ofrecer filtros que no devuelvan resultados.
-    private List<string> Estados
-    {
-        get
-        {
-            return _usuarios
-                .Select(u => u.Estado)
-                .Where(e => !string.IsNullOrWhiteSpace(e))
-                .Distinct()
-                .OrderBy(e => e)
-                .ToList();
-        }
-    }
+        EstadosPrestador.Aprobado,
+        EstadosPrestador.Pendiente,
+        EstadosPrestador.Rechazado,
+        EstadosPrestador.Suspendido
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -164,6 +292,9 @@
 
     private async Task CargarUsuariosAsync()
     {
+        _cargando = true;
+        _error = null;
+
         try
         {
             HttpResp<List<AdminUsuarioListadoDTO>> respuesta = await Admin.ObtenerUsuariosAsync();
@@ -243,16 +374,56 @@
         _filtroEstado = null;
     }
 
-    private static bool CoincideBusqueda(AdminUsuarioListadoDTO usuario, string texto)
+    private int CalcularPorcentaje(string rol)
     {
-        return Contiene(usuario.Nombre, texto)
-            || Contiene(usuario.Apellido, texto)
-            || Contiene(usuario.Email, texto);
+        if (_usuarios.Count == 0) return 0;
+        int cantidad = _usuarios.Count(u => u.Rol == rol);
+        return (int)Math.Round((double)cantidad / _usuarios.Count * 100);
     }
 
-    private static bool Contiene(string? valor, string texto)
+    private static string ObtenerIniciales(string nombre, string apellido)
     {
-        return !string.IsNullOrWhiteSpace(valor)
-            && valor.Contains(texto, StringComparison.OrdinalIgnoreCase);
+        string n = string.IsNullOrWhiteSpace(nombre) ? "" : nombre.Substring(0, 1).ToUpperInvariant();
+        string a = string.IsNullOrWhiteSpace(apellido) ? "" : apellido.Substring(0, 1).ToUpperInvariant();
+        return $"{n}{a}";
+    }
+
+    private static string ObtenerClaseAvatar(string rol)
+    {
+        if (string.Equals(rol, Roles.Prestador, StringComparison.OrdinalIgnoreCase)) return "mr-avatar--amber";
+        if (string.Equals(rol, Roles.Chofer, StringComparison.OrdinalIgnoreCase)) return "mr-avatar--green";
+        if (string.Equals(rol, Roles.Admin, StringComparison.OrdinalIgnoreCase)) return "mr-avatar--navy";
+        return "mr-avatar--subtle";
+    }
+
+    private IReadOnlyList<AdminUsuarioListadoDTO> UsuariosFiltrados
+    {
+        get
+        {
+            IEnumerable<AdminUsuarioListadoDTO> filtrados = _usuarios;
+
+            if (!string.IsNullOrWhiteSpace(_busqueda))
+            {
+                string termino = _busqueda.Trim();
+                filtrados = filtrados.Where(u =>
+                    u.Nombre.Contains(termino, StringComparison.OrdinalIgnoreCase) ||
+                    u.Apellido.Contains(termino, StringComparison.OrdinalIgnoreCase) ||
+                    u.Email.Contains(termino, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(_filtroRol))
+            {
+                filtrados = filtrados.Where(u =>
+                    string.Equals(u.Rol, _filtroRol, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(_filtroEstado))
+            {
+                filtrados = filtrados.Where(u =>
+                    string.Equals(u.Estado, _filtroEstado, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return filtrados.ToList();
+        }
     }
 }
