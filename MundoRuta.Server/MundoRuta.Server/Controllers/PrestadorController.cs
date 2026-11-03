@@ -56,6 +56,20 @@ public class PrestadorController : ControllerBase
         return Ok(viajes);
     }
 
+    // GET: detalle de un viaje de la empresa
+    [HttpGet("{prestadorId:int}/viajes/{viajeId:int}")] // api/prestador/{prestadorId}/viajes/{viajeId}
+    public async Task<ActionResult<ViajeDetalladoDTO>> GetViajeDetalle(int prestadorId, int viajeId)
+    {
+        var viaje = await _viajeRepositorio.ObtenerDetalle(viajeId, prestadorId, true);
+
+        if (viaje == null)
+        {
+            return NotFound("Viaje no encontrado.");
+        }
+
+        return Ok(CrearDetalleDTO(viaje));
+    }
+
     // POST: El prestador agrega un nuevo chofer a la empresa
     [HttpPost("choferes")] // api/prestador/choferes 
     public async Task<ActionResult<Chofer>> AltaChofer(ChoferAltaDTO dto)
@@ -328,24 +342,7 @@ public class PrestadorController : ControllerBase
         viaje.Estado = EstadosViaje.EnTransito;
         await _viajeRepositorio.Update(viaje);
 
-        // DTO para la notificación en tiempo real
-        var estadoDto = new EstadoViajeActualizadoDTO
-        {
-            IdViaje = viaje.Id,
-            Estado = EstadosViaje.EnTransito,
-            Mensaje = "El viaje ha sido iniciado y está en curso"
-        };
-
-        // Notificaciones vía SignalR
-        await _hubContext.Clients.Group($"viaje_{viaje.Id}").SendAsync("EstadoViajeActualizado", estadoDto);
-        if (viaje.IdPasajero > 0)
-        {
-            await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("EstadoViajeActualizado", estadoDto);
-        }
-        if (viaje.IdChofer > 0)
-        {
-            await _hubContext.Clients.Group($"chofer_{viaje.IdChofer}").SendAsync("EstadoViajeActualizado", estadoDto);
-        }
+        await NotificarEstadoAsync(viaje, EstadosViaje.EnTransito, "El viaje ha sido iniciado y está en curso");
 
         return Ok(new { mensaje = "Viaje iniciado correctamente" });
     }
@@ -370,21 +367,7 @@ public class PrestadorController : ControllerBase
 
         await _viajeRepositorio.FinalizarViaje(viaje);
 
-        var estadoDto = new EstadoViajeActualizadoDTO
-        {
-            IdViaje = viaje.Id,
-            Estado = EstadosViaje.Finalizado,
-            Mensaje = "Viaje finalizado correctamente"
-        };
-        await _hubContext.Clients.Group($"viaje_{viaje.Id}").SendAsync("EstadoViajeActualizado", estadoDto);
-        if (viaje.IdPasajero > 0)
-        {
-            await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("EstadoViajeActualizado", estadoDto);
-        }
-        if (viaje.IdChofer > 0)
-        {
-            await _hubContext.Clients.Group($"chofer_{viaje.IdChofer}").SendAsync("EstadoViajeActualizado", estadoDto);
-        }
+        await NotificarEstadoAsync(viaje, EstadosViaje.Finalizado, "Viaje finalizado correctamente");
 
         return Ok(new { mensaje = "Viaje finalizado correctamente" });
     }
@@ -406,17 +389,7 @@ public class PrestadorController : ControllerBase
 
         await _viajeRepositorio.Update(viaje);
 
-        var pagoDto = new EstadoViajeActualizadoDTO
-        {
-            IdViaje = viaje.Id,
-            Estado = viaje.Estado,
-            Mensaje = "Pago registrado"
-        };
-        await _hubContext.Clients.Group($"viaje_{viaje.Id}").SendAsync("EstadoViajeActualizado", pagoDto);
-        if (viaje.IdPasajero > 0)
-        {
-            await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("EstadoViajeActualizado", pagoDto);
-        }
+        await NotificarEstadoAsync(viaje, viaje.Estado, "Pago registrado");
 
         return Ok(new { mensaje = "Pago realizado con exito", viaje });
     }
@@ -434,5 +407,80 @@ public class PrestadorController : ControllerBase
         prestador.TarifaBaseKm = dto.TarifaBaseKm;
         await _usuarioRepositorio.Update(prestador);
         return Ok(new { mensaje = "Tarifa por km actualizada", tarifaBaseKm = prestador.TarifaBaseKm });
+    }
+
+    private async Task NotificarEstadoAsync(Viaje viaje, string estado, string mensaje)
+    {
+        var estadoDto = new EstadoViajeActualizadoDTO
+        {
+            IdViaje = viaje.Id,
+            Estado = estado,
+            Mensaje = mensaje
+        };
+
+        await _hubContext.Clients.Group($"viaje_{viaje.Id}").SendAsync("EstadoViajeActualizado", estadoDto);
+
+        if (viaje.IdUsuario > 0)
+        {
+            await _hubContext.Clients.Group($"prestador_{viaje.IdUsuario}").SendAsync("EstadoViajeActualizado", estadoDto);
+        }
+
+        if (viaje.IdPasajero > 0)
+        {
+            await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("EstadoViajeActualizado", estadoDto);
+        }
+
+        if (viaje.IdChofer > 0)
+        {
+            await _hubContext.Clients.Group($"chofer_{viaje.IdChofer}").SendAsync("EstadoViajeActualizado", estadoDto);
+        }
+    }
+
+    private static ViajeDetalladoDTO CrearDetalleDTO(Viaje viaje)
+    {
+        return new ViajeDetalladoDTO
+        {
+            Id = viaje.Id,
+            Origen = viaje.Origen,
+            Destino = viaje.Destino,
+            TipoSolicitud = viaje.TipoSolicitud,
+            Estado = viaje.Estado,
+            EstadoPago = viaje.EstadoPago,
+            Fecha = viaje.Fecha,
+            Hora = viaje.Hora,
+            FechaHoraReserva = viaje.FechaHoraReserva,
+            Monto = viaje.Monto,
+            MontoEstimado = viaje.MontoEstimado,
+            MetodoDePago = viaje.MetodoDePago,
+            EquipajeCarga = viaje.EquipajeCarga,
+            DetalleCarga = viaje.DetalleCarga,
+            MotivoCancelacion = viaje.MotivoCancelacion,
+            IdPasajero = viaje.IdPasajero,
+            NombrePasajero = viaje.Pasajero == null
+                ? string.Empty
+                : NombreCompleto(viaje.Pasajero.Nombre, viaje.Pasajero.Apellido),
+            IdUsuario = viaje.IdUsuario,
+            NombrePrestador = viaje.Usuario == null
+                ? null
+                : NombreCompleto(viaje.Usuario.Nombre, viaje.Usuario.Apellido, viaje.Usuario.RazonSocial),
+            CalificadoPorPasajero = viaje.CalificadoPorPasajero,
+            IdChofer = viaje.IdChofer > 0 ? viaje.IdChofer : null,
+            NombreChofer = viaje.Chofer == null
+                ? null
+                : NombreCompleto(viaje.Chofer.Nombre, viaje.Chofer.Apellido),
+            IdVehiculo = viaje.IdVehiculo > 0 ? viaje.IdVehiculo : null,
+            Patente = viaje.Vehiculo?.Patente,
+            Marca = viaje.Vehiculo?.Marca
+        };
+    }
+
+    private static string NombreCompleto(string? nombre, string? apellido, string? razonSocial = null)
+    {
+        if (!string.IsNullOrWhiteSpace(razonSocial))
+        {
+            return razonSocial.Trim();
+        }
+
+        return $"{nombre} {apellido}".Trim();
     }
 }

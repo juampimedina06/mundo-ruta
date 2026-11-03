@@ -1,9 +1,12 @@
 @* Muestra el estado de un viaje o solicitud con el color que le corresponde. *@
-<span class="mr-badge @ClaseEstado">@Estado</span>
+<span class="mr-badge @ClaseEstado">@(string.IsNullOrWhiteSpace(Texto) ? Estado : Texto)</span>
 
 @code {
     [Parameter, EditorRequired]
     public string Estado { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Texto { get; set; }
 
     private string ClaseEstado
     {
