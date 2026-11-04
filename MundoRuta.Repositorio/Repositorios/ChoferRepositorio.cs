@@ -26,7 +26,7 @@ namespace MundoRuta.Repositorio.Repositorios
                 Estado = "APROBADO",
                 Cuit = dto.Cuit,
                 RazonSocial = "",
-                Telefono = ""
+                Telefono = dto.Telefono.ToString()
             };
 
             var chofer = new Chofer
