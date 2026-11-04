@@ -22,6 +22,7 @@ namespace MundoRuta.Repositorio.Repositorios
                 {
                     Id = v.Id,
                     Patente = v.Patente,
+                    Nombre = v.Nombre,
                     Marca = v.Marca,
                     Licencia = v.Licencia,
                     Estado = v.Estado,
@@ -42,6 +43,7 @@ namespace MundoRuta.Repositorio.Repositorios
             var entidad = new Vehiculo
             {
                 Patente = dto.Patente,
+                Nombre = dto.Nombre,
                 Marca = dto.Marca,
                 Licencia = dto.Licencia,
                 Estado = dto.Estado,

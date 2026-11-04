@@ -1,0 +1,19 @@
+﻿Actúa como desarrollador experto en Blazor. Necesito desarrollar el panel de flota para la ruta `/prestador/vehiculos` de nuestro proyecto Mundo Ruta.
+
+Endpoints API a consumir:
+- GET /api/prestador/{id}/vehiculos
+- POST /api/prestador/vehiculo
+- PUT /api/prestador/{id}/tarifa-km
+
+Criterios de Aceptación estrictos:
+1. Tabla Simplificada: El listado principal debe mostrar únicamente 3 columnas de datos:
+   - Patente + Marca unificados (ej: "AB123CD - Ford").
+   - Nombre (identificador o modelo).
+   - Tipo de Vehículo.
+2. Acción de Detalle: Cada fila debe incluir un botón "Ver detalle" que abra un Modal independiente con el resto de las características técnicas y documentación de la unidad.
+3. Alta de Vehículo: Crear el formulario correspondiente para registrar una nueva unidad (POST).
+4. Tarifa Base: Incluir una sección con un input para que el prestador/empresa configure y guarde su precio base por kilómetro (PUT).
+5. UI/UX: 
+   - Todas las fechas visibles deben formatearse estrictamente como dd/mm/aaaa.
+   - Usar una paleta de colores formal y minimalista.
+   - NO utilizar emojis por defecto en los botones de acción (tachar, borrar, etc.), usar únicamente íconos estándar de la librería.

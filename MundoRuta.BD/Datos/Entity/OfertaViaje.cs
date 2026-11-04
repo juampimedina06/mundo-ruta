@@ -9,6 +9,7 @@ namespace MundoRuta.BD.Datos.Entity
         public int IdViaje { get; set; }
         public int IdPrestador { get; set; }
         public int? IdChoferPropuesto { get; set; }
+        public int? IdVehiculoPropuesto { get; set; }
         public decimal MontoOfertado { get; set; }
         public bool EsContraoferta { get; set; }
         public string EstadoOferta { get; set; }
@@ -17,6 +18,7 @@ namespace MundoRuta.BD.Datos.Entity
         public Viaje Viaje { get; set; }
         public Usuario Prestador { get; set; }
         public Chofer ChoferPropuesto { get; set; }
+        public Vehiculo VehiculoPropuesto { get; set; }
 
     }
 }

@@ -11,6 +11,7 @@ namespace MundoRuta.Repositorio.Repositorios
         Task<Viaje?> ObtenerDetalle(int viajeId, int usuarioId, bool esPrestador);
         Task<List<Viaje>> SolicitudesPendientes(int prestadorId);
         Task<List<ViajePrestadorDTO>> ListadoPorPrestador(int prestadorId, string? estado = null);
+        Task<List<ViajePrestadorDTO>> ListadoSolicitudesDisponibles(string? estado = null);
         Task<bool> ResponderSolicitud(int viajeId, ResponderSolicitudDTO dto);
         Task<bool> ContraOfertar(int viajeId, ContraOfertaDTO dto);
         Task FinalizarViaje(Viaje viaje);
