@@ -1,0 +1,589 @@
+@page "/admin/dashboard"
+@inject IAdminServicio Admin
+
+<PageTitle>Panel de Control Operativo | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="@Roles.Admin">
+    <div class="mr-page">
+        <div class="mr-container">
+            <!-- Context Header & Live Status Bar -->
+            <div class="mr-context-header">
+                <nav class="mr-breadcrumb" aria-label="Ruta de navegación">
+                    <a href="/admin/dashboard">Inicio</a>
+                    <span class="mr-breadcrumb__sep">/</span>
+                    <span class="mr-breadcrumb__current">Centro de Control</span>
+                </nav>
+
+                <div class="mr-header-main">
+                    <div>
+                        <div class="mr-header-title-wrap">
+                            <h1 class="mr-header-title">Panel de Control Operativo</h1>
+                            <span class="mr-header-tag">
+                                <span class="mr-header-tag__dot"></span>
+                                Logística &amp; Pasajeros
+                            </span>
+                        </div>
+                        <p class="mr-header-desc">
+                            Monitoreo de red, trazabilidad de flotas y validación de prestadores en tiempo real.
+                        </p>
+                    </div>
+
+                    @if (_dashboard is not null)
+                    {
+                        <div class="d-flex align-items-center gap-2 text-muted small bg-white px-3 py-2 rounded-lg border shadow-sm">
+                            <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                            <span>Corte: <strong>@FormatoPanel.Fecha(_dashboard.FechaCorte)</strong></span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (_cargandoDashboard)
+            {
+                <div class="mr-loading">
+                    <span class="spinner-border text-primary me-2" role="status"></span>
+                    Cargando indicadores operativos...
+                </div>
+            }
+            else if (_errorDashboard is not null)
+            {
+                <div class="mr-alert mr-alert--error mb-4">@_errorDashboard</div>
+            }
+            else if (_dashboard is not null)
+            {
+                <!-- 4 Key SaaS Operational Metric Cards -->
+                <div class="d-flex flex-wrap gap-3 mb-4">
+                    <!-- Metric 1: Usuarios Registrados -->
+                    <div class="mr-kpi flex-fill" style="min-width: 250px;">
+                        <div class="mr-kpi__top">
+                            <div>
+                                <span class="mr-kpi__label">Total Usuarios Registrados</span>
+                                <div class="mr-kpi__value">@_dashboard.TotalUsuarios</div>
+                            </div>
+                            <div class="mr-kpi__icon mr-kpi__icon--navy">
+                                <span class="material-symbols-outlined text-[24px]">groups</span>
+                            </div>
+                        </div>
+                        <div class="mr-kpi__footer">
+                            <span class="mr-kpi__pill mr-kpi__pill--success">
+                                Pasajeros: @_dashboard.TotalPasajeros
+                            </span>
+                            <span>Choferes: @_dashboard.TotalChoferes</span>
+                        </div>
+                    </div>
+
+                    <!-- Metric 2: Prestadores Aprobados & Flota -->
+                    <div class="mr-kpi flex-fill" style="min-width: 250px;">
+                        <div class="mr-kpi__top">
+                            <div>
+                                <span class="mr-kpi__label">Prestadores / Empresas</span>
+                                <div class="mr-kpi__value">@_dashboard.TotalPrestadores</div>
+                            </div>
+                            <div class="mr-kpi__icon mr-kpi__icon--amber">
+                                <span class="material-symbols-outlined text-[24px]">local_shipping</span>
+                            </div>
+                        </div>
+                        <div class="mr-kpi__footer">
+                            @if (_dashboard.PrestadoresPendientes > 0)
+                            {
+                                <a class="mr-kpi__pill mr-kpi__pill--warning text-decoration-none fw-bold" href="#solicitudes-prestadores">
+                                    <span class="material-symbols-outlined text-[14px]">priority_high</span>
+                                    @_dashboard.PrestadoresPendientes pendientes
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="mr-kpi__pill mr-kpi__pill--success">
+                                    <span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                    Al día
+                                </span>
+                            }
+                            <span>Ver solicitudes</span>
+                        </div>
+                    </div>
+
+                    <!-- Metric 3: Viajes Concretados -->
+                    <div class="mr-kpi flex-fill" style="min-width: 250px;">
+                        <div class="mr-kpi__top">
+                            <div>
+                                <span class="mr-kpi__label">Viajes Concretados</span>
+                                <div class="mr-kpi__value">@_dashboard.TotalViajes</div>
+                            </div>
+                            <div class="mr-kpi__icon mr-kpi__icon--blue">
+                                <span class="material-symbols-outlined text-[24px]">route</span>
+                            </div>
+                        </div>
+                        <div class="mr-kpi__footer">
+                            <span class="mr-kpi__pill mr-kpi__pill--success">
+                                <span class="material-symbols-outlined text-[14px]">local_shipping</span>
+                                @_dashboard.ViajesActivos en curso
+                            </span>
+                            <span>Trazabilidad activa</span>
+                        </div>
+                    </div>
+
+                    <!-- Metric 4: Facturación & Comisiones -->
+                    <div class="mr-kpi flex-fill" style="min-width: 250px;">
+                        <div class="mr-kpi__top">
+                            <div>
+                                <span class="mr-kpi__label">Volumen Transaccionado</span>
+                                <div class="mr-kpi__value">@FormatoPanel.Moneda(_dashboard.VolumenTransaccionado)</div>
+                            </div>
+                            <div class="mr-kpi__icon mr-kpi__icon--green">
+                                <span class="material-symbols-outlined text-[24px]">payments</span>
+                            </div>
+                        </div>
+                        <div class="mr-kpi__footer">
+                            <span class="fw-semibold text-dark">
+                                Comisiones: @FormatoPanel.Moneda(_dashboard.Comisiones)
+                            </span>
+                            <a href="/admin/comisiones" class="text-primary fw-semibold">Auditar</a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Operational Flow & Management Table Section -->
+            <section id="solicitudes-prestadores" class="mt-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-white border shadow-sm p-2 d-flex align-items-center justify-content-center text-primary">
+                            <span class="material-symbols-outlined text-[22px]">how_to_reg</span>
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-2">
+                                <h2 class="h5 fw-bold text-dark mb-0">Prestadores &amp; Verificaciones</h2>
+                                @if (ContarPendientes() > 0)
+                                {
+                                    <span class="badge bg-warning text-dark font-monospace">
+                                        @ContarPendientes() pendientes de homologación
+                                    </span>
+                                }
+                            </div>
+                            <p class="text-muted small mb-0">
+                                Verificación vehicular, datos impositivos y habilitación legal para operar en la plataforma.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                @if (_mensajeExito is not null)
+                {
+                    <div class="mr-alert mr-alert--exito mb-3">@_mensajeExito</div>
+                }
+
+                @if (_errorAccion is not null)
+                {
+                    <div class="mr-alert mr-alert--error mb-3">@_errorAccion</div>
+                }
+
+                @if (_cargandoSolicitudes)
+                {
+                    <div class="mr-loading">
+                        <span class="spinner-border text-primary me-2" role="status"></span>
+                        Cargando solicitudes de prestadores...
+                    </div>
+                }
+                else if (_errorSolicitudes is not null)
+                {
+                    <div class="mr-alert mr-alert--error mb-3">@_errorSolicitudes</div>
+                }
+                else if (_solicitudes.Count == 0)
+                {
+                    <EmptyState Titulo="No hay empresas registradas"
+                                Descripcion="Cuando una empresa de transporte se registre va a aparecer acá para homologarla o rechazarla." />
+                }
+                else
+                {
+                    <!-- Filter Toolbar Card -->
+                    <div class="mr-filter-card">
+                        <div class="mr-tab-header">
+                            <div class="mr-tab-group">
+                                <button type="button"
+                                        class="mr-tab-btn @(_filtroEstado is null ? "mr-tab-btn--active" : string.Empty)"
+                                        @onclick="LimpiarFiltroEstado">
+                                    <span>Todas</span>
+                                    <span class="mr-tab-count">@_solicitudes.Count</span>
+                                </button>
+                                <button type="button"
+                                        class="mr-tab-btn @(_filtroEstado == EstadosPrestador.Pendiente ? "mr-tab-btn--active" : string.Empty)"
+                                        @onclick="() => FiltrarPorEstado(EstadosPrestador.Pendiente)">
+                                    <span>Pendientes</span>
+                                    <span class="mr-tab-count">@_solicitudes.Count(s => s.Estado == EstadosPrestador.Pendiente)</span>
+                                </button>
+                                <button type="button"
+                                        class="mr-tab-btn @(_filtroEstado == EstadosPrestador.Aprobado ? "mr-tab-btn--active" : string.Empty)"
+                                        @onclick="() => FiltrarPorEstado(EstadosPrestador.Aprobado)">
+                                    <span>Aprobados</span>
+                                    <span class="mr-tab-count">@_solicitudes.Count(s => s.Estado == EstadosPrestador.Aprobado)</span>
+                                </button>
+                                <button type="button"
+                                        class="mr-tab-btn @(_filtroEstado == EstadosPrestador.Rechazado ? "mr-tab-btn--active" : string.Empty)"
+                                        @onclick="() => FiltrarPorEstado(EstadosPrestador.Rechazado)">
+                                    <span>Rechazados</span>
+                                    <span class="mr-tab-count">@_solicitudes.Count(s => s.Estado == EstadosPrestador.Rechazado)</span>
+                                </button>
+                                <button type="button"
+                                        class="mr-tab-btn @(_filtroEstado == EstadosPrestador.Suspendido ? "mr-tab-btn--active" : string.Empty)"
+                                        @onclick="() => FiltrarPorEstado(EstadosPrestador.Suspendido)">
+                                    <span>Suspendidos</span>
+                                    <span class="mr-tab-count">@_solicitudes.Count(s => s.Estado == EstadosPrestador.Suspendido)</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mr-filter-body">
+                            <div class="mr-search-input-wrap">
+                                <span class="material-symbols-outlined mr-search-icon">search</span>
+                                <input type="search"
+                                       class="mr-search-input"
+                                       placeholder="Buscar por razón social, nombre, CUIT, email o teléfono..."
+                                       @bind="_busqueda"
+                                       @bind:event="oninput" />
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (SolicitudesFiltradas.Count == 0)
+                    {
+                        <EmptyState Titulo="Sin coincidencias"
+                                    Descripcion="Ninguna empresa coincide con la búsqueda o el filtro elegido.">
+                            <button type="button" class="btn btn-outline-primary mt-2" @onclick="LimpiarFiltros">Restablecer filtros</button>
+                        </EmptyState>
+                    }
+                    else
+                    {
+                        <!-- Logistics Data Table -->
+                        <div class="mr-tabla-card">
+                            <div class="mr-tabla-contenedor">
+                                <table class="mr-tabla">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Razón Social / Titular</th>
+                                            <th scope="col">Identificación Fiscal</th>
+                                            <th scope="col">Contacto</th>
+                                            <th scope="col">Fecha Solicitud</th>
+                                            <th scope="col">Estado</th>
+                                            <th scope="col" class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (PrestadorSolicitudDTO prestador in SolicitudesFiltradas)
+                                        {
+                                            <tr @key="prestador.Id">
+                                                <td>
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div class="mr-avatar mr-avatar--amber">
+                                                            @ObtenerIniciales(prestador.RazonSocial, prestador.NombreCompleto)
+                                                        </div>
+                                                        <div>
+                                                            <div class="mr-cell-title">@NombreVisible(prestador)</div>
+                                                            @if (TieneNombreSecundario(prestador))
+                                                            {
+                                                                <div class="mr-cell-sub">@prestador.NombreCompleto</div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="fw-semibold text-dark">CUIT: @ValorODefecto(prestador.Cuit)</div>
+                                                    <div class="mr-cell-sub">#PST-@prestador.Id</div>
+                                                </td>
+                                                <td>
+                                                    <div class="mr-cell-mono">@ValorODefecto(prestador.Email)</div>
+                                                    <div class="mr-cell-sub">@ValorODefecto(prestador.Telefono)</div>
+                                                </td>
+                                                <td>
+                                                    <span class="mr-cell-mono">@FormatoPanel.Fecha(prestador.FechaRegistro)</span>
+                                                </td>
+                                                <td>
+                                                    <EstadoBadge Estado="@prestador.Estado" />
+                                                </td>
+                                                <td class="text-end">
+                                                    @if (_accionId == prestador.Id)
+                                                    {
+                                                        <div class="d-inline-flex align-items-center gap-2">
+                                                            <span class="text-muted small">¿Confirmás?</span>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-primary"
+                                                                    disabled="@_procesando"
+                                                                    @onclick="ConfirmarAccionAsync">
+                                                                Sí, @EtiquetaAccion(_accionEstado)
+                                                            </button>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-secondary"
+                                                                    disabled="@_procesando"
+                                                                    @onclick="CancelarAccion">
+                                                                Cancelar
+                                                            </button>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="d-inline-flex align-items-center gap-1 justify-content-end">
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-success"
+                                                                    disabled="@(prestador.Estado == EstadosPrestador.Aprobado || _procesando)"
+                                                                    @onclick="() => PedirAccion(prestador, EstadosPrestador.Aprobado)">
+                                                                Aprobar
+                                                            </button>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-danger"
+                                                                    disabled="@(prestador.Estado == EstadosPrestador.Rechazado || _procesando)"
+                                                                    @onclick="() => PedirAccion(prestador, EstadosPrestador.Rechazado)">
+                                                                Rechazar
+                                                            </button>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-secondary"
+                                                                    disabled="@(prestador.Estado == EstadosPrestador.Suspendido || _procesando)"
+                                                                    @onclick="() => PedirAccion(prestador, EstadosPrestador.Suspendido)">
+                                                                Suspender
+                                                            </button>
+                                                        </div>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="p-3 bg-light border-top d-flex align-items-center justify-content-between text-muted small">
+                                <span>
+                                    Mostrando <strong class="text-dark">@SolicitudesFiltradas.Count</strong> de <strong class="text-dark">@_solicitudes.Count</strong> prestadores
+                                </span>
+                            </div>
+                        </div>
+                    }
+                }
+            </section>
+        </div>
+    </div>
+</RoleGuard>
+
+@code {
+    private AdminDashboardDTO? _dashboard;
+    private bool _cargandoDashboard = true;
+    private string? _errorDashboard;
+
+    private List<PrestadorSolicitudDTO> _solicitudes = new List<PrestadorSolicitudDTO>();
+    private bool _cargandoSolicitudes = true;
+    private string? _errorSolicitudes;
+
+    private string _busqueda = string.Empty;
+    private string? _filtroEstado;
+
+    private int? _accionId;
+    private string? _accionEstado;
+    private bool _procesando;
+    private string? _errorAccion;
+    private string? _mensajeExito;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(CargarDashboardAsync(), CargarSolicitudesAsync());
+    }
+
+    private async Task CargarDashboardAsync()
+    {
+        _cargandoDashboard = true;
+        _errorDashboard = null;
+
+        try
+        {
+            HttpResp<AdminDashboardDTO> respuesta = await Admin.ObtenerDashboardAsync();
+
+            if (respuesta.Error)
+            {
+                _errorDashboard = await respuesta.ObtenerMensajeAsync("No se pudo cargar el resumen del dashboard.");
+            }
+            else
+            {
+                _dashboard = respuesta.Respuesta;
+            }
+        }
+        catch (Exception)
+        {
+            _errorDashboard = "Ocurrió un error al consultar los indicadores operativos.";
+        }
+        finally
+        {
+            _cargandoDashboard = false;
+        }
+    }
+
+    private async Task CargarSolicitudesAsync()
+    {
+        _cargandoSolicitudes = true;
+        _errorSolicitudes = null;
+
+        try
+        {
+            HttpResp<List<PrestadorSolicitudDTO>> respuesta = await Admin.ObtenerSolicitudesPrestadoresAsync();
+
+            if (respuesta.Error)
+            {
+                _errorSolicitudes = await respuesta.ObtenerMensajeAsync("No se pudieron cargar las solicitudes.");
+            }
+            else
+            {
+                _solicitudes = respuesta.Respuesta ?? new List<PrestadorSolicitudDTO>();
+            }
+        }
+        catch (Exception)
+        {
+            _errorSolicitudes = "Ocurrió un error al consultar las empresas de transporte.";
+        }
+        finally
+        {
+            _cargandoSolicitudes = false;
+        }
+    }
+
+    private int ContarPendientes()
+    {
+        return _solicitudes.Count(s => s.Estado == EstadosPrestador.Pendiente);
+    }
+
+    private void FiltrarPorEstado(string estado)
+    {
+        _filtroEstado = estado;
+        CancelarAccion();
+    }
+
+    private void LimpiarFiltroEstado()
+    {
+        _filtroEstado = null;
+        CancelarAccion();
+    }
+
+    private void LimpiarFiltros()
+    {
+        _busqueda = string.Empty;
+        _filtroEstado = null;
+        CancelarAccion();
+    }
+
+    private void PedirAccion(PrestadorSolicitudDTO prestador, string nuevoEstado)
+    {
+        _errorAccion = null;
+        _mensajeExito = null;
+        _accionId = prestador.Id;
+        _accionEstado = nuevoEstado;
+    }
+
+    private void CancelarAccion()
+    {
+        _accionId = null;
+        _accionEstado = null;
+    }
+
+    private async Task ConfirmarAccionAsync()
+    {
+        if (!_accionId.HasValue || string.IsNullOrWhiteSpace(_accionEstado))
+        {
+            return;
+        }
+
+        int id = _accionId.Value;
+        string nuevoEstado = _accionEstado;
+        _procesando = true;
+        _errorAccion = null;
+        _mensajeExito = null;
+
+        try
+        {
+            HttpResp<object> respuesta = await Admin.ActualizarEstadoPrestadorAsync(id, nuevoEstado);
+
+            if (respuesta.Error)
+            {
+                _errorAccion = await respuesta.ObtenerMensajeAsync("No se pudo actualizar el estado de la empresa.");
+            }
+            else
+            {
+                PrestadorSolicitudDTO? item = _solicitudes.FirstOrDefault(s => s.Id == id);
+                if (item is not null)
+                {
+                    item.Estado = nuevoEstado;
+                }
+
+                _mensajeExito = "El prestador fue actualizado a estado " + nuevoEstado.ToLowerInvariant() + " correctamente.";
+                CancelarAccion();
+                await CargarDashboardAsync();
+            }
+        }
+        catch (Exception)
+        {
+            _errorAccion = "Error de red al actualizar el estado.";
+        }
+        finally
+        {
+            _procesando = false;
+        }
+    }
+
+    private static string NombreVisible(PrestadorSolicitudDTO prestador)
+    {
+        return !string.IsNullOrWhiteSpace(prestador.RazonSocial)
+            ? prestador.RazonSocial
+            : prestador.NombreCompleto;
+    }
+
+    private static bool TieneNombreSecundario(PrestadorSolicitudDTO prestador)
+    {
+        return !string.IsNullOrWhiteSpace(prestador.RazonSocial)
+            && !string.IsNullOrWhiteSpace(prestador.NombreCompleto)
+            && !string.Equals(prestador.RazonSocial.Trim(), prestador.NombreCompleto.Trim(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ValorODefecto(string? valor)
+    {
+        return string.IsNullOrWhiteSpace(valor) ? "—" : valor;
+    }
+
+    private static string EtiquetaAccion(string? estado)
+    {
+        if (estado == EstadosPrestador.Aprobado) return "aprobar";
+        if (estado == EstadosPrestador.Rechazado) return "rechazar";
+        if (estado == EstadosPrestador.Suspendido) return "suspender";
+        return "actualizar";
+    }
+
+    private static string ObtenerIniciales(string? razonSocial, string? nombre)
+    {
+        string texto = !string.IsNullOrWhiteSpace(razonSocial) ? razonSocial : (nombre ?? "PR");
+        string[] partes = texto.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (partes.Length >= 2)
+        {
+            return $"{partes[0][0]}{partes[1][0]}".ToUpperInvariant();
+        }
+        return texto.Length >= 2 ? texto.Substring(0, 2).ToUpperInvariant() : "PR";
+    }
+
+    private IReadOnlyList<PrestadorSolicitudDTO> SolicitudesFiltradas
+    {
+        get
+        {
+            IEnumerable<PrestadorSolicitudDTO> filtradas = _solicitudes;
+
+            if (!string.IsNullOrWhiteSpace(_busqueda))
+            {
+                string termino = _busqueda.Trim();
+                filtradas = filtradas.Where(s =>
+                    (!string.IsNullOrWhiteSpace(s.RazonSocial) && s.RazonSocial.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(s.NombreCompleto) && s.NombreCompleto.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(s.Cuit) && s.Cuit.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(s.Email) && s.Email.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(s.Telefono) && s.Telefono.Contains(termino, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(_filtroEstado))
+            {
+                filtradas = filtradas.Where(s =>
+                    string.Equals(s.Estado, _filtroEstado, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return filtradas.ToList();
+        }
+    }
+}

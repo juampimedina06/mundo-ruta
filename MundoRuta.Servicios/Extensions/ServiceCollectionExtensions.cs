@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using MundoRuta.Servicios.Admin;
 using MundoRuta.Servicios.Auth;
 using MundoRuta.Servicios.Flota;
 using MundoRuta.Servicios.Realtime;
@@ -25,6 +26,7 @@ namespace MundoRuta.Servicios.Extensions
             services.AddScoped<SesionEstado>();
             services.AddScoped<IAuthServicio, AuthServicio>();
             services.AddScoped<IVehiculoServicio, VehiculoServicio>();
+            services.AddScoped<IAdminServicio, AdminServicio>();
             services.AddScoped<IViajeHubService, ViajeHubService>();
 
             return services;
