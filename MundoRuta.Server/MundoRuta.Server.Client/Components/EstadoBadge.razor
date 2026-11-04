@@ -8,6 +8,9 @@
     [Parameter, EditorRequired]
     public string Estado { get; set; } = string.Empty;
 
+    [Parameter]
+    public string? Texto { get; set; }
+
     private string ClaseEstado
     {
         get

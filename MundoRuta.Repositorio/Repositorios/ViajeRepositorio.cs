@@ -73,11 +73,19 @@ namespace MundoRuta.Repositorio.Repositorios
 
         public async Task<Viaje?> ObtenerDetalle(int viajeId, int usuarioId, bool esPrestador)
         {
-            return await context.Viajes
+            IQueryable<Viaje> query = context.Viajes
                 .Include(v => v.Pasajero)
+                .Include(v => v.Usuario)
                 .Include(v => v.Chofer)
-                .Include(v => v.Vehiculo)
-                .FirstOrDefaultAsync(v => v.Id == viajeId);
+                    .ThenInclude(c => c.Usuario)
+                .Include(v => v.Vehiculo);
+
+            if (esPrestador)
+            {
+                query = query.Where(v => v.IdUsuario == usuarioId);
+            }
+
+            return await query.FirstOrDefaultAsync(v => v.Id == viajeId);
         }
 
         public async Task<List<Viaje>> SolicitudesPendientes(int prestadorId) // Obtiene las solicitudes de viaje que todavía están buscando un prestador.

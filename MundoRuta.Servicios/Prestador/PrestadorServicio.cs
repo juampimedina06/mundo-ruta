@@ -1,9 +1,9 @@
-using MundoRuta.Shared.DTO;
 using MundoRuta.Servicios.ServiciosHTTP;
+using MundoRuta.Shared.DTO;
 
 namespace MundoRuta.Servicios.Prestador
 {
-    public class PrestadorServicio : IPrestadorServicio
+    public sealed class PrestadorServicio : IPrestadorServicio
     {
         private const string RutaBase = "api/prestador";
 
@@ -13,6 +13,25 @@ namespace MundoRuta.Servicios.Prestador
         {
             _http = http;
         }
+
+
+        public Task<HttpResp<List<ViajePrestadorDTO>>> ObtenerViajesAsync(int prestadorId, string? estado = null)
+        {
+            string url = $"{RutaBase}/{prestadorId}/viajes";
+
+            if (!string.IsNullOrWhiteSpace(estado))
+            {
+                url += "?estado=" + Uri.EscapeDataString(estado);
+            }
+
+            return _http.GetAsync<List<ViajePrestadorDTO>>(url);
+        }
+
+        public Task<HttpResp<ViajeDetalladoDTO>> ObtenerDetalleViajeAsync(int prestadorId, int viajeId)
+        {
+            return _http.GetAsync<ViajeDetalladoDTO>($"{RutaBase}/{prestadorId}/viajes/{viajeId}");
+        }
+
 
         public Task<HttpResp<List<ViajePrestadorDTO>>> ObtenerSolicitudesAsync(int prestadorId, string? estado = null)
         {

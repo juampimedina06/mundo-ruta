@@ -5,6 +5,9 @@ namespace MundoRuta.Servicios.Prestador
 {
     public interface IPrestadorServicio
     {
+
+        Task<HttpResp<ViajeDetalladoDTO>> ObtenerDetalleViajeAsync(int prestadorId, int viajeId);
+      
         Task<HttpResp<List<ViajePrestadorDTO>>> ObtenerSolicitudesAsync(int prestadorId, string? estado = null);
 
         Task<HttpResp<List<ChoferDTO>>> ObtenerChoferesAsync(int prestadorId);
