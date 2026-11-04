@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MundoRuta.BD.Datos.Entity;
 using MundoRuta.Repositorio.Repositorios;
+using MundoRuta.Shared;
 using MundoRuta.Shared.DTO;
 
 namespace MundoRuta.Server.Controllers
@@ -61,9 +62,16 @@ namespace MundoRuta.Server.Controllers
                 return Unauthorized("Credenciales incorrectas");
             }
 
-            if (usuario.Estado == "PENDIENTE")
+            if (usuario.Estado == EstadosPrestador.Pendiente)
             {
                 return StatusCode(403, "Cuenta pendiente de aprobación");
+            }
+
+            // Una empresa rechazada o suspendida tampoco puede iniciar sesión ni operar.
+            if (usuario.Rol == Roles.Prestador
+                && (usuario.Estado == EstadosPrestador.Rechazado || usuario.Estado == EstadosPrestador.Suspendido))
+            {
+                return StatusCode(403, "Cuenta rechazada o suspendida");
             }
 
             return Ok(new

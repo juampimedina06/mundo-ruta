@@ -1,4 +1,6 @@
 @page "/"
+@inject SesionEstado Sesion
+@inject NavigationManager Navegacion
 
 <PageTitle>Mundo Ruta | Tu carga y tu viaje, en un solo lugar</PageTitle>
 
@@ -82,3 +84,13 @@
         </div>
     </section>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        if (Sesion.EstaLogueado && string.Equals(Sesion.Rol, Roles.Admin, StringComparison.OrdinalIgnoreCase))
+        {
+            Navegacion.NavigateTo("/admin/dashboard", replace: true);
+        }
+    }
+}
