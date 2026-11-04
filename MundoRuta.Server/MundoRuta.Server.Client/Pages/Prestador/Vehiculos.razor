@@ -553,9 +553,9 @@
         return string.IsNullOrWhiteSpace(valor) ? "Sin datos" : valor;
     }
 
-    private static string FormatearFecha(DateTime fecha)
+    private static string FormatearFecha(DateTime? fecha)
     {
-        return fecha == default ? "Sin datos" : fecha.ToString("dd/MM/yyyy", CulturaInvariante);
+        return !fecha.HasValue || fecha.Value == default ? "Sin datos" : fecha.Value.ToString("dd/MM/yyyy", CulturaInvariante);
     }
 
     private static string FormatearMoneda(decimal valor)

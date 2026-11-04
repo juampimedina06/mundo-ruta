@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -7,6 +7,7 @@ namespace MundoRuta.Shared.DTO;
 public class VehiculoDTO
 {
     public int Id { get; set; }
+    public string? Nombre { get; set; }
     public string Patente { get; set; } = string.Empty;
     public string Marca { get; set; } = string.Empty;
     public string Licencia { get; set; } = string.Empty;
@@ -19,6 +20,4 @@ public class VehiculoDTO
     public DateTime? FechaFabricación { get; set; }
     public int NumeroConductor { get; set; }
     public string CaracteristicasConductor { get; set; } = string.Empty;
-
-
 }

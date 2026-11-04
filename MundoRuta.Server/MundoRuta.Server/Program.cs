@@ -73,8 +73,6 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 app.UseHttpsRedirection();
 
 app.UseRouting();// Habilitar el enrutamiento de la aplicación
-app.UseAuthentication();
-app.UseAuthorization();
 
 app.UseAntiforgery();
 
