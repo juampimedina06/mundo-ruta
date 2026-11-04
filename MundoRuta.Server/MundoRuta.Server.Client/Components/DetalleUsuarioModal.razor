@@ -1,0 +1,379 @@
+@* Detalle de un usuario del directorio, estilizado según el sistema de diseño logístico *@
+@if (Visible)
+{
+    <div class="mr-modal-overlay" @onclick="CerrarAsync">
+        <div class="mr-modal mr-modal--wide" role="dialog" aria-modal="true" @onclick:stopPropagation="true">
+            <!-- Modal Header -->
+            <div class="mr-modal__header">
+                @if (Detalle is not null)
+                {
+                    <div class="mr-modal-header-profile">
+                        <div class="mr-avatar mr-avatar--lg @ObtenerClaseAvatar(Detalle.Rol)">
+                            @ObtenerIniciales(Detalle.Nombre, Detalle.Apellido)
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <h2 class="mr-modal__titulo">@TituloUsuario</h2>
+                                <EstadoBadge Estado="@Detalle.Rol" />
+                                <EstadoBadge Estado="@Detalle.Estado" />
+                            </div>
+                            <div class="d-flex align-items-center gap-2 text-muted small mt-1 font-monospace">
+                                <span>#USR-@Detalle.Id</span>
+                                <span>•</span>
+                                <span>Alta: @FormatoPanel.Fecha(Detalle.FechaRegistro)</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <h2 class="mr-modal__titulo">Detalle del usuario</h2>
+                }
+
+                <button type="button"
+                        class="mr-modal__cerrar"
+                        aria-label="Cerrar"
+                        @onclick="CerrarAsync">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">close</span>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="mr-modal__body">
+                @if (Cargando)
+                {
+                    <div class="p-5 text-center text-muted">
+                        <div class="spinner-border text-primary mb-3" role="status"></div>
+                        <p class="mb-0 fw-semibold">Cargando información del usuario...</p>
+                    </div>
+                }
+                else if (Error is not null)
+                {
+                    <div class="mr-alert mr-alert--error d-flex align-items-center gap-2">
+                        <span class="material-symbols-outlined">error</span>
+                        <span>@Error</span>
+                    </div>
+                }
+                else if (Detalle is null)
+                {
+                    <EmptyState Titulo="Sin datos"
+                                Descripcion="No se pudo obtener la información del usuario." />
+                }
+                else
+                {
+                    <!-- Contact quick bar -->
+                    <div class="mr-user-hero-bar">
+                        <div class="mr-user-hero-item">
+                            <span class="material-symbols-outlined">alternate_email</span>
+                            <span>Email: <strong>@ValorODefecto(Detalle.Email)</strong></span>
+                        </div>
+                        <div class="mr-user-hero-item">
+                            <span class="material-symbols-outlined">call</span>
+                            <span>Teléfono: <strong>@ValorODefecto(Detalle.Telefono)</strong></span>
+                        </div>
+                        <div class="mr-user-hero-item">
+                            <span class="material-symbols-outlined">badge</span>
+                            <span>Rol: <strong>@ValorODefecto(Detalle.Rol)</strong></span>
+                        </div>
+                        <div class="mr-user-hero-item">
+                            <span class="material-symbols-outlined">verified_user</span>
+                            <span>Estado: <strong>@ValorODefecto(Detalle.Estado)</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- KPI Quick Metrics -->
+                    <div class="mr-kpi-grid--mini">
+                        <div class="mr-kpi-card--mini">
+                            <div class="mr-kpi-mini-icon">
+                                <span class="material-symbols-outlined">local_shipping</span>
+                            </div>
+                            <div>
+                                <div class="mr-kpi-mini-value">@Detalle.CantidadViajes</div>
+                                <div class="mr-kpi-mini-label">Viajes Registrados</div>
+                            </div>
+                        </div>
+
+                        <div class="mr-kpi-card--mini">
+                            <div class="mr-kpi-mini-icon mr-kpi-mini-icon--amber">
+                                <span class="material-symbols-outlined">star</span>
+                            </div>
+                            <div>
+                                <div class="mr-kpi-mini-value">@FormatearPromedio(Detalle.PromedioRecibido) <span class="fs-6 text-muted fw-normal">/ 5.0</span></div>
+                                <div class="mr-kpi-mini-label">@Detalle.TotalRecibidas Recibidas</div>
+                            </div>
+                        </div>
+
+                        <div class="mr-kpi-card--mini">
+                            <div class="mr-kpi-mini-icon mr-kpi-mini-icon--green">
+                                <span class="material-symbols-outlined">rate_review</span>
+                            </div>
+                            <div>
+                                <div class="mr-kpi-mini-value">@FormatearPromedio(Detalle.PromedioOtorgado) <span class="fs-6 text-muted fw-normal">/ 5.0</span></div>
+                                <div class="mr-kpi-mini-label">@Detalle.TotalOtorgadas Emitidas</div>
+                            </div>
+                        </div>
+
+                        @if (Detalle.TarifaBaseKm.HasValue)
+                        {
+                            <div class="mr-kpi-card--mini">
+                                <div class="mr-kpi-mini-icon">
+                                    <span class="material-symbols-outlined">payments</span>
+                                </div>
+                                <div>
+                                    <div class="mr-kpi-mini-value">$@Detalle.TarifaBaseKm.Value.ToString("N2")</div>
+                                    <div class="mr-kpi-mini-label">Tarifa Base / Km</div>
+                                </div>
+                            </div>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(Detalle.Cuit))
+                        {
+                            <div class="mr-kpi-card--mini">
+                                <div class="mr-kpi-mini-icon">
+                                    <span class="material-symbols-outlined">badge</span>
+                                </div>
+                                <div>
+                                    <div class="mr-kpi-mini-value" style="font-size: .95rem;">@Detalle.Cuit</div>
+                                    <div class="mr-kpi-mini-label">Identificación CUIT</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Datos Comerciales y Fiscales -->
+                    @if (!string.IsNullOrWhiteSpace(Detalle.RazonSocial) || !string.IsNullOrWhiteSpace(Detalle.Cuit) || Detalle.TarifaBaseKm.HasValue)
+                    {
+                        <div class="mr-detalle-seccion">
+                            <div class="mr-detalle-seccion__header">
+                                <h3 class="mr-detalle-seccion__titulo">
+                                    <span class="material-symbols-outlined">domain</span>
+                                    <span>Datos Comerciales y Fiscales</span>
+                                </h3>
+                            </div>
+                            <div class="mr-info-grid">
+                                @if (!string.IsNullOrWhiteSpace(Detalle.RazonSocial))
+                                {
+                                    <div class="mr-info-item">
+                                        <span class="mr-info-item__label">Razón Social</span>
+                                        <span class="mr-info-item__value">@Detalle.RazonSocial</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(Detalle.Cuit))
+                                {
+                                    <div class="mr-info-item">
+                                        <span class="mr-info-item__label">CUIT</span>
+                                        <span class="mr-info-item__value font-monospace">@Detalle.Cuit</span>
+                                    </div>
+                                }
+                                @if (Detalle.TarifaBaseKm.HasValue)
+                                {
+                                    <div class="mr-info-item">
+                                        <span class="mr-info-item__label">Tarifa Base por Km</span>
+                                        <span class="mr-info-item__value font-monospace">$@Detalle.TarifaBaseKm.Value.ToString("N2")</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Flota y Choferes (Prestador) -->
+                    @if (Detalle.Rol == Roles.Prestador)
+                    {
+                        <div class="mr-detalle-seccion">
+                            <div class="mr-detalle-seccion__header">
+                                <h3 class="mr-detalle-seccion__titulo">
+                                    <span class="material-symbols-outlined">local_shipping</span>
+                                    <span>Flota de Vehículos</span>
+                                </h3>
+                                <span class="mr-detalle-seccion__count">@Detalle.Vehiculos.Count @(Detalle.Vehiculos.Count == 1 ? "vehículo" : "vehículos")</span>
+                            </div>
+
+                            @if (Detalle.Vehiculos.Count == 0)
+                            {
+                                <div class="mr-subtle-empty">
+                                    El prestador aún no cuenta con vehículos asociados.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="mr-tabla-contenedor">
+                                    <table class="mr-tabla">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Patente</th>
+                                                <th scope="col">Marca / Modelo</th>
+                                                <th scope="col">Capacidad</th>
+                                                <th scope="col">Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (VehiculoDTO v in Detalle.Vehiculos)
+                                            {
+                                                <tr @key="v.Id">
+                                                    <td>
+                                                        <span class="mr-patente-badge">@v.Patente</span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="fw-semibold text-dark">@ValorODefecto(v.Marca)</div>
+                                                        <div class="small text-muted">@ValorODefecto(v.MarcaModelo)</div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="text-secondary small">@ValorODefecto(v.CapacidadCarga)</span>
+                                                    </td>
+                                                    <td>
+                                                        @if (string.IsNullOrWhiteSpace(v.Estado))
+                                                        {
+                                                            <span>—</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <EstadoBadge Estado="@v.Estado" />
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="mr-detalle-seccion">
+                            <div class="mr-detalle-seccion__header">
+                                <h3 class="mr-detalle-seccion__titulo">
+                                    <span class="material-symbols-outlined">badge</span>
+                                    <span>Equipo de Choferes</span>
+                                </h3>
+                                <span class="mr-detalle-seccion__count">@Detalle.Choferes.Count @(Detalle.Choferes.Count == 1 ? "chofer" : "choferes")</span>
+                            </div>
+
+                            @if (Detalle.Choferes.Count == 0)
+                            {
+                                <div class="mr-subtle-empty">
+                                    El prestador aún no cuenta con choferes registrados.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="mr-tabla-contenedor">
+                                    <table class="mr-tabla">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Conductor</th>
+                                                <th scope="col">Licencia</th>
+                                                <th scope="col">CUIT</th>
+                                                <th scope="col">Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (ChoferDTO c in Detalle.Choferes)
+                                            {
+                                                <tr @key="c.Id">
+                                                    <td>
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <div class="mr-avatar mr-avatar--green" style="width: 28px; height: 28px; font-size: .75rem;">
+                                                                @ObtenerIniciales(c.Nombre, c.Apellido)
+                                                            </div>
+                                                            <div class="fw-semibold text-dark">@c.Nombre @c.Apellido</div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="font-monospace small">@ValorODefecto(c.Licencia)</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="font-monospace small">@ValorODefecto(c.Cuit)</span>
+                                                    </td>
+                                                    <td>
+                                                        @if (string.IsNullOrWhiteSpace(c.Estado))
+                                                        {
+                                                            <span>—</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <EstadoBadge Estado="@c.Estado" />
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="mr-modal__footer">
+                <button type="button"
+                        class="btn btn-outline-secondary px-4 fw-semibold"
+                        @onclick="CerrarAsync">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; }
+
+    [Parameter]
+    public bool Cargando { get; set; }
+
+    [Parameter]
+    public string? Error { get; set; }
+
+    [Parameter]
+    public AdminUsuarioDetalleDTO? Detalle { get; set; }
+
+    [Parameter]
+    public EventCallback OnCerrar { get; set; }
+
+    private string TituloUsuario
+    {
+        get
+        {
+            if (Detalle is null)
+            {
+                return "Detalle del usuario";
+            }
+
+            string nombreCompleto = (Detalle.Nombre + " " + Detalle.Apellido).Trim();
+
+            return string.IsNullOrWhiteSpace(nombreCompleto) ? "Detalle del usuario" : nombreCompleto;
+        }
+    }
+
+    private async Task CerrarAsync()
+    {
+        await OnCerrar.InvokeAsync();
+    }
+
+    private static string FormatearPromedio(double? promedio)
+    {
+        return promedio.HasValue ? promedio.Value.ToString("0.0") : "—";
+    }
+
+    private static string ValorODefecto(string? valor)
+    {
+        return string.IsNullOrWhiteSpace(valor) ? "—" : valor;
+    }
+
+    private static string ObtenerIniciales(string? nombre, string? apellido)
+    {
+        string n = string.IsNullOrWhiteSpace(nombre) ? "" : nombre.Substring(0, 1).ToUpperInvariant();
+        string a = string.IsNullOrWhiteSpace(apellido) ? "" : apellido.Substring(0, 1).ToUpperInvariant();
+        string res = $"{n}{a}";
+        return string.IsNullOrWhiteSpace(res) ? "U" : res;
+    }
+
+    private static string ObtenerClaseAvatar(string? rol)
+    {
+        if (string.Equals(rol, Roles.Prestador, StringComparison.OrdinalIgnoreCase)) return "mr-avatar--amber";
+        if (string.Equals(rol, Roles.Chofer, StringComparison.OrdinalIgnoreCase)) return "mr-avatar--green";
+        if (string.Equals(rol, Roles.Admin, StringComparison.OrdinalIgnoreCase)) return "mr-avatar--navy";
+        return "mr-avatar--subtle";
+    }
+}

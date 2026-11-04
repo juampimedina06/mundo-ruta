@@ -8,5 +8,10 @@ namespace MundoRuta.Repositorio.Repositorios
         Task CambiarEstado(int choferId, string nuevoEstado);
         Task<Chofer> CrearChoferConUsuario(ChoferAltaDTO dto);
         Task<List<ChoferDTO>> ObtenerPorPrestador(int prestadorId);
+        Task<Chofer> ObtenerPorIdAsync(int id);
+        Task<bool> ActualizarChoferAsync(int id, ChoferUpdateDto dto);
+        Task<bool> TieneViajesEnTransitoAsync(int id);
+        Task<bool> BajaLogicaAsync(int id);
+        Task<Chofer?> ObtenerPorUsuario(int idUsuario);
     }
 }

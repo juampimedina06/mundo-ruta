@@ -1,4 +1,4 @@
-﻿using MundoRuta.BD.Datos.Entity;
+using MundoRuta.BD.Datos.Entity;
 using MundoRuta.Shared.DTO;
 
 namespace MundoRuta.Repositorio.Repositorios
@@ -18,7 +18,11 @@ namespace MundoRuta.Repositorio.Repositorios
         Task IniciarViaje(Viaje viaje);
         Task<bool> RegistrarPago(int viajeId, ConfirmacionPagoDTO dto);
         Task<int> ContarViajesFinalizados();
-
-        
+        Task<int> ContarTodos();
+        Task<int> ContarActivos();
+        Task<decimal> SumarMontoTransaccionado();
+        Task<int> ContarViajesDeUsuario(int usuarioId);
+        Task<int> ContarViajesDeChofer(int idChofer);
+        Task<AdminComisionesReporteDTO> ObtenerReporteComisiones(AdminFiltroComisionesDTO filtro, decimal porcentajeComision);
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos.Entity;
@@ -113,6 +114,7 @@ public class PrestadorController : ControllerBase
         {
             Id = v.Id,
             Patente = v.Patente,
+            Nombre = v.Nombre,
             Marca = v.Marca,
             Licencia = v.Licencia,
             Estado = v.Estado
@@ -305,6 +307,7 @@ public class PrestadorController : ControllerBase
         var entidad = new Vehiculo
         {
             Patente = dto.Patente,
+            Nombre = dto.Nombre,
             Marca = dto.Marca,
             Licencia = dto.Licencia,
             Estado = dto.Estado,
@@ -450,6 +453,20 @@ public class PrestadorController : ControllerBase
         return Ok(new { mensaje = "Pago realizado con exito", viaje });
     }
 
+    // GET: Tarifa base por km configurada por el prestador
+    [HttpGet("{id:int}/tarifa-km")]
+    public async Task<ActionResult<TarifaKmDTO>> ObtenerTarifaKm(int id)
+    {
+        var prestador = await _usuarioRepositorio.ObtenerPorId(id);
+        if (prestador == null || prestador.Rol != "Prestador")
+        {
+            return NotFound("Prestador no encontrado");
+        }
+
+        var tarifa = new TarifaKmDTO { TarifaBaseKm = prestador.TarifaBaseKm ?? 0m };
+        return Ok(tarifa);
+    }
+
     // PUT: Configurar tarifa por km del prestador (opción A)
     [HttpPut("{id:int}/tarifa-km")]
     public async Task<IActionResult> ConfigurarTarifaKm(int id, TarifaKmDTO dto)
@@ -460,8 +477,87 @@ public class PrestadorController : ControllerBase
             return NotFound("Prestador no encontrado");
         }
 
+        if (dto.TarifaBaseKm < 0)
+        {
+            return BadRequest("La tarifa base por kilómetro no puede ser negativa");
+        }
+
         prestador.TarifaBaseKm = dto.TarifaBaseKm;
         await _usuarioRepositorio.Update(prestador);
         return Ok(new { mensaje = "Tarifa por km actualizada", tarifaBaseKm = prestador.TarifaBaseKm });
+    }
+    [HttpGet("choferes/{choferId}")]
+    [Authorize(Roles = "Prestador")]
+    public async Task<IActionResult> ObtenerChoferPorId(int choferId)
+    {
+        try
+        {
+            var chofer = await _choferRepositorio.ObtenerPorIdAsync(choferId);
+
+            if (chofer == null)
+            {
+                return NotFound(new { mensaje = "El chofer solicitado no existe." });
+            }
+
+            return Ok(chofer);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { mensaje = "Error interno del servidor", detalle = ex.Message });
+        }
+    }
+
+    [HttpPut("choferes/{choferId}")]
+    [Authorize(Roles = "Prestador")]
+    public async Task<IActionResult> ModificarChofer(int choferId, [FromBody] ChoferUpdateDto dto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var actualizado = await _choferRepositorio.ActualizarChoferAsync(choferId, dto);
+
+            if (!actualizado)
+            {
+                return NotFound(new { mensaje = "No se pudo actualizar. El chofer no existe." });
+            }
+
+            return Ok(new { mensaje = "Datos del chofer actualizados correctamente." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { mensaje = "Error al actualizar el chofer", detalle = ex.Message });
+        }
+    }
+
+    [HttpDelete("choferes/{choferId}")]
+    [Authorize(Roles = "Prestador")]
+    public async Task<IActionResult> BajaChofer(int choferId)
+    {
+        try
+        {
+            var tieneViajesPendientes = await _choferRepositorio.TieneViajesEnTransitoAsync(choferId);
+
+            if (tieneViajesPendientes)
+            {
+                return BadRequest(new { mensaje = "No se puede dar de baja. El chofer tiene viajes en tránsito asignados." });
+            }
+
+            var bajaExitosa = await _choferRepositorio.BajaLogicaAsync(choferId);
+
+            if (!bajaExitosa)
+            {
+                return NotFound(new { mensaje = "No se pudo dar de baja. El chofer no existe o ya está inactivo." });
+            }
+
+            return Ok(new { mensaje = "Chofer dado de baja exitosamente." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { mensaje = "Error al intentar dar de baja al chofer", detalle = ex.Message });
+        }
     }
 }

@@ -48,6 +48,7 @@ builder.Services.AddScoped<IChatRepositorio, ChatRepositorio>();
 builder.Services.AddScoped<IMensajeRepositorio, MensajeRepositorio>();
 builder.Services.AddScoped<IOfertaViajeRepositorio, OfertaViajeRepositorio>();
 builder.Services.AddScoped<IConfiguracionSistemaRepositorio, ConfiguracionSistemaRepositorio>();
+builder.Services.AddScoped<ILiquidacionRepositorio, LiquidacionRepositorio>();
 #endregion
 
 
@@ -72,6 +73,8 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 app.UseHttpsRedirection();
 
 app.UseRouting();// Habilitar el enrutamiento de la aplicación
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseAntiforgery();
 
