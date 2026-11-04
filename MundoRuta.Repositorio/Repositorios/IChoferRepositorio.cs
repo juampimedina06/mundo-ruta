@@ -12,5 +12,6 @@ namespace MundoRuta.Repositorio.Repositorios
         Task<bool> ActualizarChoferAsync(int id, ChoferUpdateDto dto);
         Task<bool> TieneViajesEnTransitoAsync(int id);
         Task<bool> BajaLogicaAsync(int id);
+        Task<Chofer?> ObtenerPorUsuario(int idUsuario);
     }
 }

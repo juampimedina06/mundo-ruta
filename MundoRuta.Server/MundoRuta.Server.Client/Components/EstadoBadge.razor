@@ -1,5 +1,8 @@
-@* Muestra el estado de un viaje o solicitud con el color que le corresponde. *@
-<span class="mr-badge @ClaseEstado">@Estado</span>
+@* Muestra el estado de un viaje, solicitud o rol con el estilo y punto indicador del sistema de diseño. *@
+<span class="mr-badge @ClaseEstado">
+    <span class="mr-badge__dot"></span>
+    <span>@FormatearEstado(Estado)</span>
+</span>
 
 @code {
     [Parameter, EditorRequired]
@@ -12,5 +15,16 @@
             string normalizado = (Estado ?? string.Empty).Replace('_', '-').ToLowerInvariant();
             return "mr-badge--" + normalizado;
         }
+    }
+
+    private static string FormatearEstado(string estado)
+    {
+        if (string.IsNullOrWhiteSpace(estado))
+        {
+            return string.Empty;
+        }
+
+        string normalizado = estado.Replace('_', ' ').ToLowerInvariant();
+        return char.ToUpperInvariant(normalizado[0]) + normalizado.Substring(1);
     }
 }
