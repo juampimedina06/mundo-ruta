@@ -1,0 +1,12 @@
+@page "/admin/prestadores"
+@inject NavigationManager Navegacion
+
+<PageTitle>Prestadores | Mundo Ruta</PageTitle>
+
+@code {
+    // La bandeja de solicitudes vive dentro del dashboard, debajo de las métricas.
+    protected override void OnInitialized()
+    {
+        Navegacion.NavigateTo("/admin/dashboard#solicitudes-prestadores", replace: true);
+    }
+}

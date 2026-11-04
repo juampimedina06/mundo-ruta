@@ -1,0 +1,12 @@
+@page "/admin"
+@inject NavigationManager Navegacion
+
+<RoleGuard Permitidos="@Roles.Admin">
+</RoleGuard>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Navegacion.NavigateTo("/admin/dashboard", replace: true);
+    }
+}

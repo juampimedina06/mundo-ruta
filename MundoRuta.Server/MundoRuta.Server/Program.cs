@@ -20,6 +20,8 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 
+builder.Services.AddSignalR();
+
 #region Servicios
 builder.Services.AddSwaggerGen(); //esto es para documentar la API
 builder.Services.AddControllersWithViews();// Agregar servicios para controladores y vistas
@@ -44,6 +46,9 @@ builder.Services.AddScoped<ICalificacionRepositorio, CalificacionRepositorio>();
 builder.Services.AddScoped<ICargaRepositorio, CargaRepositorio>();
 builder.Services.AddScoped<IChatRepositorio, ChatRepositorio>();
 builder.Services.AddScoped<IMensajeRepositorio, MensajeRepositorio>();
+builder.Services.AddScoped<IOfertaViajeRepositorio, OfertaViajeRepositorio>();
+builder.Services.AddScoped<IConfiguracionSistemaRepositorio, ConfiguracionSistemaRepositorio>();
+builder.Services.AddScoped<ILiquidacionRepositorio, LiquidacionRepositorio>();
 #endregion
 
 
@@ -64,24 +69,16 @@ else
     app.UseHsts();
 }
 
-#region Middlewares
-app.MapControllers();// Mapear los controladores a las rutas correspondientes
-#endregion
-
-
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
-app.UseBlazorFrameworkFiles();
-app.UseStaticFiles();
 
 app.UseRouting();// Habilitar el enrutamiento de la aplicación
 
 app.UseAntiforgery();
 
+app.MapHub<MundoRuta.Server.Hubs.ViajeHub>("/hubs/viaje");
 app.MapRazorPages();
-app.MapControllers();
-app.MapFallbackToFile("index.html");
-//todo esto es el mapeo de los componentes de Razor y Blazor, para que se puedan renderizar en el navegador
+app.MapControllers();// Mapear los controladores a las rutas correspondientes
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

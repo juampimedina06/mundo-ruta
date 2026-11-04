@@ -22,5 +22,11 @@ namespace MundoRuta.Shared.DTO
         public int IdServicio { get; set; }
         public int IdVehiculo { get; set; }
 
+        public bool EsCubierto { get; set; }
+        public bool UsaBaulera { get; set; }
+        public bool LlevaAcompanante { get; set; }
+        public string DniReceptor { get; set; }
+        public decimal? PrecioOfrecido { get; set; }
+
     }
 }

@@ -1,0 +1,122 @@
+@page "/login"
+@using MundoRuta.Shared.DTO
+@inject IAuthServicio Auth
+@inject SesionEstado Sesion
+@inject NavigationManager Navegacion
+
+<PageTitle>Iniciar sesión | Mundo Ruta</PageTitle>
+
+<div class="mr-page">
+    <div class="mr-container mr-auth">
+        <div class="mr-card mr-auth__card">
+            <h1 class="mr-auth__titulo">Iniciar sesión</h1>
+            <p class="mr-muted">Accedé a tu panel de Mundo Ruta.</p>
+
+            @if (Registrado == 2)
+            {
+                <div class="mr-alert mr-alert--exito mb-3">
+                    Tu cuenta de prestador quedó pendiente de aprobación. Podrás ingresar cuando un administrador la habilite.
+                </div>
+            }
+            else if (Registrado == 1)
+            {
+                <div class="mr-alert mr-alert--exito mb-3">
+                    Tu cuenta fue creada. Ya podés iniciar sesión.
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(_error))
+            {
+                <div class="mr-alert mr-alert--error mb-3">@_error</div>
+            }
+
+            <EditForm Model="_modelo" OnSubmit="IngresarAsync">
+                <div class="mb-3">
+                    <label class="form-label" for="email">Email</label>
+                    <InputText id="email" class="form-control" type="email" autocomplete="email" @bind-Value="_modelo.Email" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="password">Contraseña</label>
+                    <InputText id="password" class="form-control" type="password" autocomplete="current-password" @bind-Value="_modelo.Password" />
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100" disabled="@_cargando">
+                    @(_cargando ? "Ingresando..." : "Iniciar sesión")
+                </button>
+            </EditForm>
+
+            <p class="mr-auth__pie">
+                ¿No tenés cuenta? <a href="/registro">Registrate</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly LoginRequestDto _modelo = new LoginRequestDto();
+    private bool _cargando;
+    private bool _redirigido;
+    private string? _error;
+
+    [SupplyParameterFromQuery(Name = "redirect")]
+    public string? RedirectUrl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "registrado")]
+    public int? Registrado { get; set; }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (_redirigido || !Sesion.Restaurada || !Sesion.EstaLogueado)
+        {
+            return;
+        }
+
+        // Un enlace directo con redirect tiene prioridad sobre el inicio por rol.
+        if (!string.IsNullOrWhiteSpace(RedirectUrl))
+        {
+            return;
+        }
+
+        _redirigido = true;
+        Navegacion.NavigateTo(RutaInicioPorRol.Obtener(Sesion.Rol));
+    }
+
+    private async Task IngresarAsync()
+    {
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_modelo.Email) || string.IsNullOrWhiteSpace(_modelo.Password))
+        {
+            _error = "Ingresá tu email y contraseña.";
+            return;
+        }
+
+        _cargando = true;
+
+        HttpResp<LoginResponseDto> respuesta = await Auth.LoginAsync(_modelo);
+
+        if (respuesta.Error)
+        {
+            _error = await respuesta.ObtenerMensajeAsync("No pudimos iniciar sesión.");
+            _cargando = false;
+            return;
+        }
+
+        string destino = ObtenerDestino();
+        _cargando = false;
+        Navegacion.NavigateTo(destino);
+    }
+
+    private string ObtenerDestino()
+    {
+        if (!string.IsNullOrWhiteSpace(RedirectUrl)
+            && RedirectUrl.StartsWith('/')
+            && !RedirectUrl.StartsWith("//"))
+        {
+            return RedirectUrl;
+        }
+
+        return RutaInicioPorRol.Obtener(Sesion.Rol);
+    }
+}

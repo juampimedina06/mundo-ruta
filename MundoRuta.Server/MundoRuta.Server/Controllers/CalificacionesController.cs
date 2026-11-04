@@ -32,6 +32,10 @@ namespace MundoRuta.Server.Controllers
             if (viaje.Estado != "FINALIZADO")
                 return BadRequest("El viaje tiene que estar finalizado para poder calificarlo");
 
+            // 1. EL BLOQUEO: Evitamos que califiquen dos veces el mismo viaje
+            if (viaje.CalificadoPorPasajero)
+                return BadRequest("Este viaje ya fue calificado.");
+
             var calificacion = new Calificacion
             {
                 IdViaje = dto.viajeId,
@@ -42,6 +46,12 @@ namespace MundoRuta.Server.Controllers
             };
 
             var creada = await _calificacionRepositorio.CrearCalificacion(calificacion);
+
+            // 2. LA MAGIA: Cambiamos el estado del viaje para desbloquear el detalle al pasajero
+            viaje.CalificadoPorPasajero = true;
+
+            // Guardamos el cambio usando tu repositorio (Ajustá el nombre del método si en tu interfaz se llama Actualizar, UpdateAsync, etc.)
+            await _viajeRepositorio.Update(viaje);
 
             var response = new CalificacionesResponseDTO
             {

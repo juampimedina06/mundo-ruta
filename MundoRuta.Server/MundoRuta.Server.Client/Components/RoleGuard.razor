@@ -1,0 +1,92 @@
+@inject SesionEstado Sesion
+@inject NavigationManager Navegacion
+@implements IDisposable
+
+@if (!Sesion.Restaurada)
+{
+    <div class="mr-loading">Cargando sesión...</div>
+}
+else if (Sesion.EstaLogueado && RolPermitido())
+{
+    @ChildContent
+}
+
+@code {
+    private bool _redirigiendo;
+
+    [Parameter, EditorRequired]
+    public string Permitidos { get; set; } = string.Empty;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Sesion.CambioSesion += AlCambiarSesion;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        VerificarAcceso();
+    }
+
+    public void Dispose()
+    {
+        Sesion.CambioSesion -= AlCambiarSesion;
+    }
+
+    private void AlCambiarSesion()
+    {
+        VerificarAcceso();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    // Redirige al login o a la página de acceso denegado según corresponda.
+    private void VerificarAcceso()
+    {
+        if (!Sesion.Restaurada || _redirigiendo)
+        {
+            return;
+        }
+
+        if (!Sesion.EstaLogueado)
+        {
+            _redirigiendo = true;
+            string destino = Navegacion.ToBaseRelativePath(Navegacion.Uri);
+
+            if (!destino.StartsWith('/'))
+            {
+                destino = "/" + destino;
+            }
+
+            Navegacion.NavigateTo("/login?redirect=" + Uri.EscapeDataString(destino));
+            return;
+        }
+
+        if (!RolPermitido())
+        {
+            _redirigiendo = true;
+            Navegacion.NavigateTo("/acceso-denegado");
+        }
+    }
+
+    private bool RolPermitido()
+    {
+        if (string.IsNullOrWhiteSpace(Permitidos))
+        {
+            return Sesion.EstaLogueado;
+        }
+
+        string[] roles = Permitidos.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        foreach (string rol in roles)
+        {
+            if (Sesion.TieneRol(rol))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}

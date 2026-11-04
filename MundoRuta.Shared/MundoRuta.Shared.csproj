@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- prompt.cs es el ticket de referencia en texto plano, no código fuente. -->
+    <Compile Remove="prompt.cs" />
+  </ItemGroup>
+
 </Project>

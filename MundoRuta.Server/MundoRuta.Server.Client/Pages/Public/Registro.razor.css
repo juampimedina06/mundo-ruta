@@ -1,0 +1,38 @@
+.mr-auth {
+    display: flex;
+    justify-content: center;
+    padding-top: 1rem;
+    padding-bottom: 4rem;
+}
+
+.mr-auth__card {
+    width: 100%;
+    max-width: 620px;
+}
+
+.mr-auth__titulo {
+    margin: 0 0 .35rem;
+    font-size: 1.6rem;
+    color: var(--mr-azul-marino);
+}
+
+.mr-auth__tipos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-bottom: 1.25rem;
+}
+
+.mr-auth__tipos .btn {
+    flex: 1 1 180px;
+}
+
+.mr-auth__pie {
+    margin: 1.25rem 0 0;
+    text-align: center;
+    color: var(--mr-texto-suave);
+}
+
+.mr-auth__pie a {
+    font-weight: 600;
+}

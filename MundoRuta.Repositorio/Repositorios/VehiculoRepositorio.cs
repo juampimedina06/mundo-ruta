@@ -17,7 +17,7 @@ namespace MundoRuta.Repositorio.Repositorios
         public async Task<List<VehiculoDTO>> ObtenerPorPrestador(int prestadorId)
         {
             return await context.Vehiculos
-                .Where(v => context.Choferes.Any(c => c.Id == v.IdChofer && c.IdPrestador == prestadorId))
+                .Where(v => v.IdUsuario == prestadorId)
                 .Select(v => new VehiculoDTO
                 {
                     Id = v.Id,
@@ -28,7 +28,11 @@ namespace MundoRuta.Repositorio.Repositorios
                     CapacidadCarga = v.CapacidadCarga,
                     TipoVehiculo = v.TipoVehiculo,
                     IdUsuario = v.IdUsuario,
-                    IdChofer = v.IdChofer
+                    IdChofer = v.IdChofer,
+                    MarcaModelo = v.MarcaModelo,
+                    FechaFabricación = v.FechaFabricación,
+                    NumeroConductor = v.NumeroConductor,
+                    CaracteristicasConductor = v.CaracteristicasConductor
                 })
                 .ToListAsync();
         }

@@ -65,6 +65,11 @@ namespace MundoRuta.Repositorio.Repositorios
                 .ToListAsync();
         }
 
+        public async Task<Chofer?> ObtenerPorUsuario(int idUsuario)
+        {
+            return await context.Choferes.FirstOrDefaultAsync(c => c.IdUsuario == idUsuario);
+        }
+
         public async Task CambiarEstado(int choferId, string nuevoEstado)
         {
             var chofer = await context.Choferes.FindAsync(choferId);

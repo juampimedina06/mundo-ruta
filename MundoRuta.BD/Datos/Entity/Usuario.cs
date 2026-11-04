@@ -16,6 +16,8 @@ namespace MundoRuta.BD.Datos.Entity
         public string Rol {  get; set; }
         public string RazonSocial { get; set; }
         public string Cuit { get; set; }
+        public decimal? TarifaBaseKm { get; set; }  // Tarifa base por kilómetro del prestador.
+        public string? FotoPerfilUrl { get; set; } // URL de la foto de perfil del usuario.
 
     }
 }

@@ -16,11 +16,13 @@ namespace MundoRuta.BD.Datos
         public DbSet<Chofer> Choferes { get; set; }
         public DbSet<Vehiculo> Vehiculos { get; set; }
         public DbSet<Viaje> Viajes { get; set; }
+        public DbSet<OfertaViaje> OfertasViajes { get; set; }
         public DbSet<Carga> Cargas { get; set; }
         public DbSet<Pago> Pagos { get; set; }
         public DbSet<Calificacion> Calificaciones { get; set; }
         public DbSet<Chat> Chats { get; set; }
         public DbSet<Mensaje> Mensajes { get; set; }
+        public DbSet<ConfiguracionSistema> ConfiguracionesSistema { get; set; }
 
         public AppDbContext(DbContextOptions options) : base(options)
         {
@@ -78,6 +80,32 @@ namespace MundoRuta.BD.Datos
                 .WithMany()
                 .HasForeignKey(v => v.IdUsuario)
                 .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configura la relación entre Chat y Viaje.
+            modelBuilder.Entity<Chat>()
+                .HasOne(c => c.Viaje) // Cada chat está relacionado con un viaje.
+                .WithMany() // No se configura una colección de chats en Viaje.
+                .HasForeignKey(c => c.IdViaje) // Indica la clave foránea del viaje.
+                .OnDelete(DeleteBehavior.Restrict); // Impide eliminar un viaje si tiene chats relacionados.
+
+            modelBuilder.Entity<OfertaViaje>()
+                .HasOne(o => o.Viaje)
+                .WithMany()
+                .HasForeignKey(o => o.IdViaje)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<OfertaViaje>()
+                .HasOne(o => o.Prestador)
+                .WithMany()
+                .HasForeignKey(o => o.IdPrestador)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<OfertaViaje>()
+                .HasOne(o => o.ChoferPropuesto)
+                .WithMany()
+                .HasForeignKey(o => o.IdChoferPropuesto)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
         }
 

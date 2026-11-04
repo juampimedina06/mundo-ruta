@@ -1,0 +1,17 @@
+@page "/prestador/viajes"
+
+<PageTitle>Viajes | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="Roles.Prestador">
+    <div class="mr-page">
+        <div class="mr-container">
+            <PageHeader Titulo="Viajes"
+                        Descripcion="Servicios asignados y en curso." />
+
+            <EmptyState Titulo="Todavía no hay viajes asignados"
+                        Descripcion="Los viajes aceptados y en curso van a aparecer acá.">
+                <a class="btn btn-outline-primary" href="/prestador/solicitudes">Ver solicitudes</a>
+            </EmptyState>
+        </div>
+    </div>
+</RoleGuard>

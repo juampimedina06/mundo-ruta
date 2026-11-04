@@ -15,5 +15,7 @@ public class Chofer : EntidadBase
 
     public int IdPrestador { get; set; }
     public Usuario Prestador { get; set; }
+    public string? Telefono { get; set; }
+    public string? FotoPerfil { get; set; }
 
 }

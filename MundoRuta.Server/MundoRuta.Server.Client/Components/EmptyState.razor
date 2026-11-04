@@ -1,0 +1,20 @@
+@* Estado vacío reutilizable: título, descripción y una acción opcional. *@
+<div class="mr-empty">
+    <h2>@Titulo</h2>
+    @if (!string.IsNullOrWhiteSpace(Descripcion))
+    {
+        <p>@Descripcion</p>
+    }
+    @ChildContent
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Titulo { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Descripcion { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

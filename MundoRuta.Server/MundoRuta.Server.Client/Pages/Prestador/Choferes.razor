@@ -237,3 +237,19 @@ else
         _ => "bg-secondary"
     };
 }
+
+<PageTitle>Choferes | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="Roles.Prestador">
+    <div class="mr-page">
+        <div class="mr-container">
+            <PageHeader Titulo="Choferes"
+                        Descripcion="Tu equipo de conducción." />
+
+            <EmptyState Titulo="Todavía no cargaste choferes"
+                        Descripcion="Desde acá vas a poder dar de alta choferes y consultar su estado.">
+                <a class="btn btn-outline-primary" href="/prestador">Volver al panel</a>
+            </EmptyState>
+        </div>
+    </div>
+</RoleGuard>
