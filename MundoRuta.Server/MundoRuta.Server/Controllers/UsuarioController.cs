@@ -78,7 +78,14 @@ namespace MundoRuta.Server.Controllers
             usuario.Telefono = request.Telefono;
             usuario.Apellido = request.Apellido;
             usuario.Email = request.Email;
-            usuario.Password = request.Password;
+
+            // El perfil no conoce la contraseña actual (GET no la devuelve),
+            // así que solo se actualiza si viene informada para no borrarla.
+            if (!string.IsNullOrWhiteSpace(request.Password))
+            {
+                usuario.Password = request.Password;
+            }
+
             usuario.RazonSocial = request.RazonSocial;
             usuario.Cuit = request.Cuit;
 
