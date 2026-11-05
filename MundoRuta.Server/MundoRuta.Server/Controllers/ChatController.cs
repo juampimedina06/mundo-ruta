@@ -5,6 +5,7 @@ using MundoRuta.BD.Datos;
 using MundoRuta.BD.Datos.Entity;
 using MundoRuta.Repositorio;
 using MundoRuta.Repositorio.Repositorios;
+using MundoRuta.Shared;
 using MundoRuta.Shared.DTO;
 
 namespace MundoRuta.Server.Controllers
@@ -46,7 +47,8 @@ namespace MundoRuta.Server.Controllers
             if (viaje == null) return NotFound("Viaje no encontrado.");
 
 
-            if (!EstadoPermiteChat(viaje.Estado))
+            var estadosActivos = EstadosViaje.Activos;
+            if (!estadosActivos.Contains(viaje.Estado))
             {
                 return BadRequest(new { mensaje = "El chat está deshabilitado. El viaje no se encuentra en curso." });
             }
@@ -85,7 +87,8 @@ namespace MundoRuta.Server.Controllers
             var viaje = await _context.Viajes.FindAsync(viajeId);
             if (viaje == null) return NotFound();
 
-            if (!EstadoPermiteChat(viaje.Estado))
+            var estadosActivos = EstadosViaje.Activos;
+            if (!estadosActivos.Contains(viaje.Estado))
             {
                 return BadRequest("No se pueden leer los mensajes de un viaje inactivo o cerrado.");
             }

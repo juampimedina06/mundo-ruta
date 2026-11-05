@@ -107,6 +107,13 @@ namespace MundoRuta.BD.Datos
                 .HasForeignKey(o => o.IdChoferPropuesto)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<OfertaViaje>()
+                .HasOne(o => o.VehiculoPropuesto)
+                .WithMany()
+                .HasForeignKey(o => o.IdVehiculoPropuesto)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
 

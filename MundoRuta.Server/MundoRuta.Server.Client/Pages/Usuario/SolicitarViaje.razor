@@ -1,17 +1,309 @@
 @page "/usuario/solicitar"
+@page "/viajes/solicitar"
+@using System.Globalization
+@using MundoRuta.Shared.DTO
+@using MundoRuta.Servicios.Viajes
+@inject IViajeServicio Viajes
+@inject SesionEstado Sesion
+@inject NavigationManager Navegacion
 
 <PageTitle>Solicitar viaje | Mundo Ruta</PageTitle>
 
-<RoleGuard Permitidos="Roles.Usuario">
+<RoleGuard Permitidos="@Roles.Usuario">
     <div class="mr-page">
         <div class="mr-container">
             <PageHeader Titulo="Solicitar viaje"
-                        Descripcion="Indicá origen, destino y tipo de servicio." />
+                        Descripcion="Flete exclusivo: indicá origen, destino, carga y el precio con el que abrís la subasta." />
 
-            <EmptyState Titulo="Formulario en preparación"
-                        Descripcion="Acá vas a poder cargar origen, destino, fecha, tipo de servicio, equipaje y método de pago.">
-                <a class="btn btn-outline-primary" href="/usuario">Volver al panel</a>
-            </EmptyState>
+            @if (_errores.Count > 0)
+            {
+                <div class="mr-alert mr-alert--error mb-3">
+                    <ul class="mb-0">
+                        @foreach (string error in _errores)
+                        {
+                            <li>@error</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <div class="mr-card">
+                <EditForm Model="_modelo" OnSubmit="SolicitarAsync">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="origen">Origen</label>
+                            <InputText id="origen" class="form-control" @bind-Value="_modelo.Origen" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="destino">Destino</label>
+                            <InputText id="destino" class="form-control" @bind-Value="_modelo.Destino" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="fecha">Fecha de reserva</label>
+                            <InputDate id="fecha" class="form-control" TValue="DateTime" min="@FechaMinima" @bind-Value="_modelo.Fecha" />
+                            <div class="form-text">Formato dd/mm/aaaa. No se puede elegir una fecha pasada.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="hora">Hora de reserva</label>
+                            <input id="hora" type="time" class="form-control" @bind="_modelo.Hora" />
+                        </div>
+
+                        <div class="col-12">
+                            <span class="form-label d-block">Tipo de caja</span>
+                            <InputRadioGroup @bind-Value="_modelo.TipoCaja">
+                                <div class="form-check">
+                                    <InputRadio id="caja-cubierta" class="form-check-input" Value="@TipoCajaCubierta" />
+                                    <label class="form-check-label" for="caja-cubierta">
+                                        Cubierta: protege la carga de la lluvia
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <InputRadio id="caja-descubierta" class="form-check-input" Value="@TipoCajaDescubierta" />
+                                    <label class="form-check-label" for="caja-descubierta">
+                                        Descubierta: sin protección adicional
+                                    </label>
+                                </div>
+                            </InputRadioGroup>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <InputCheckbox id="baulera" class="form-check-input" @bind-Value="_modelo.UsaBaulera" />
+                                <label class="form-check-label" for="baulera">
+                                    Usa baulera (espacio bajo el asiento)
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <InputCheckbox id="acompanante" class="form-check-input" @bind-Value="_modelo.LlevaAcompanante" />
+                                <label class="form-check-label" for="acompanante">
+                                    Lleva acompañante
+                                </label>
+                            </div>
+                            <div class="form-text">Suma un costo adicional sobre la tarifa.</div>
+                            @if (_modelo.LlevaAcompanante)
+                            {
+                                <div class="mr-alert mt-2 py-2 mb-0">
+                                    El acompañante suma un costo adicional sobre la tarifa del flete.
+                                </div>
+                            }
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="dni">DNI del receptor</label>
+                            <InputText id="dni" class="form-control" inputmode="numeric" @bind-Value="_modelo.DniReceptor" />
+                            <div class="form-text">Persona que recibe la carga en destino (7 u 8 dígitos).</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="precio">Precio ofrecido</label>
+                            <InputNumber id="precio" class="form-control" TValue="decimal?" step="0.01" min="0" @bind-Value="_modelo.PrecioOfrecido" />
+                            <div class="form-text">Monto que proponés para abrir la subasta.</div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check">
+                                <InputCheckbox id="equipaje" class="form-check-input" @bind-Value="_modelo.EquipajeCarga" />
+                                <label class="form-check-label" for="equipaje">
+                                    La reserva incluye equipaje o carga a detallar
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label" for="detalle">Detalle de la carga</label>
+                            <InputTextArea id="detalle" class="form-control" rows="3" @bind-Value="_modelo.DetalleCarga" />
+                            <div class="form-text">Obligatorio si marcaste que la reserva incluye carga.</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary" disabled="@_enviando">
+                            @(_enviando ? "Publicando solicitud..." : "Publicar solicitud")
+                        </button>
+                        <a class="btn btn-outline-primary" href="/usuario">Cancelar</a>
+                    </div>
+                </EditForm>
+            </div>
         </div>
     </div>
 </RoleGuard>
+
+@code {
+    private const string TipoCajaCubierta = "CUBIERTA";
+    private const string TipoCajaDescubierta = "DESCUBIERTA";
+    private const string TipoSolicitudExclusiva = "EXCLUSIVO";
+    private const decimal PrecioMaximo = 5000000m;
+
+    private readonly SolicitudModelo _modelo = new SolicitudModelo();
+    private readonly List<string> _errores = new List<string>();
+    private bool _enviando;
+
+    private string FechaMinima => DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    private async Task SolicitarAsync()
+    {
+        if (_enviando)
+        {
+            return;
+        }
+
+        _errores.Clear();
+
+        if (!Validar())
+        {
+            return;
+        }
+
+        if (!Sesion.EstaLogueado)
+        {
+            _errores.Add("Tu sesión expiró. Volvé a iniciar sesión.");
+            return;
+        }
+
+        try
+        {
+            TimeSpan hora = _modelo.Hora.GetValueOrDefault().ToTimeSpan();
+            decimal precio = _modelo.PrecioOfrecido ?? 0m;
+
+            SolicitarViajeDTO dto = new SolicitarViajeDTO
+            {
+                Origen = _modelo.Origen.Trim(),
+                Destino = _modelo.Destino.Trim(),
+                TipoSolicitud = TipoSolicitudExclusiva,
+                Fecha = _modelo.Fecha.Date,
+                Hora = hora,
+                EquipajeCarga = _modelo.EquipajeCarga,
+                detalleCarga = _modelo.DetalleCarga.Trim(),
+                EsCubierto = string.Equals(_modelo.TipoCaja, TipoCajaCubierta, StringComparison.Ordinal),
+                UsaBaulera = _modelo.UsaBaulera,
+                LlevaAcompanante = _modelo.LlevaAcompanante,
+                DniReceptor = _modelo.DniReceptor.Trim(),
+                PrecioOfrecido = precio,
+                Monto = precio,
+                IdSolicitante = Sesion.Id,
+                IdPasajero = Sesion.Id,
+                IdUsuario = Sesion.Id
+            };
+
+            _enviando = true;
+
+            HttpResp<SolicitudViajeCreadaDTO> respuesta = await Viajes.SolicitarAsync(dto);
+
+            if (respuesta.Error || respuesta.Respuesta is null || respuesta.Respuesta.Id <= 0)
+            {
+                _errores.Add(await respuesta.ObtenerMensajeAsync("No pudimos registrar la solicitud."));
+                return;
+            }
+
+            Navegacion.NavigateTo("/viajes/" + respuesta.Respuesta.Id + "/propuestas");
+        }
+        finally
+        {
+            _enviando = false;
+        }
+    }
+
+    private bool Validar()
+    {
+        string origen = _modelo.Origen.Trim();
+        string destino = _modelo.Destino.Trim();
+
+        if (origen.Length < 3 || origen.Length > 100)
+        {
+            _errores.Add("Ingresá un origen de entre 3 y 100 caracteres.");
+        }
+
+        if (destino.Length < 3 || destino.Length > 100)
+        {
+            _errores.Add("Ingresá un destino de entre 3 y 100 caracteres.");
+        }
+
+        ValidarFechaHora();
+
+        if (string.IsNullOrWhiteSpace(_modelo.TipoCaja))
+        {
+            _errores.Add("Elegí el tipo de caja: cubierta o descubierta.");
+        }
+
+        string dni = SoloDigitos(_modelo.DniReceptor);
+
+        if (dni.Length < 7 || dni.Length > 8)
+        {
+            _errores.Add("Ingresá el DNI del receptor con 7 u 8 dígitos.");
+        }
+
+        if (!_modelo.PrecioOfrecido.HasValue || _modelo.PrecioOfrecido.Value <= 0)
+        {
+            _errores.Add("Ingresá el precio ofrecido para abrir la subasta.");
+        }
+        else if (_modelo.PrecioOfrecido.Value > PrecioMaximo)
+        {
+            _errores.Add("El precio ofrecido no puede superar los $5.000.000.");
+        }
+        else if (decimal.Round(_modelo.PrecioOfrecido.Value, 2) != _modelo.PrecioOfrecido.Value)
+        {
+            _errores.Add("El precio ofrecido admite hasta 2 decimales.");
+        }
+
+        if (_modelo.EquipajeCarga && _modelo.DetalleCarga.Trim().Length < 5)
+        {
+            _errores.Add("Describí la carga con al menos 5 caracteres.");
+        }
+
+        return _errores.Count == 0;
+    }
+
+    private void ValidarFechaHora()
+    {
+        bool fechaValida = true;
+
+        if (_modelo.Fecha == default)
+        {
+            _errores.Add("Ingresá la fecha de reserva.");
+            fechaValida = false;
+        }
+        else if (_modelo.Fecha.Date < DateTime.Today)
+        {
+            _errores.Add("La fecha de reserva no puede ser anterior a hoy.");
+            fechaValida = false;
+        }
+
+        if (!_modelo.Hora.HasValue)
+        {
+            _errores.Add("Ingresá la hora de reserva.");
+            return;
+        }
+
+        if (fechaValida && _modelo.Fecha.Date == DateTime.Today
+            && _modelo.Hora.Value.ToTimeSpan() <= DateTime.Now.TimeOfDay)
+        {
+            _errores.Add("La hora de reserva tiene que ser posterior a la hora actual.");
+        }
+    }
+
+    private static string SoloDigitos(string valor)
+    {
+        return new string(valor.Where(char.IsDigit).ToArray());
+    }
+
+    private sealed class SolicitudModelo
+    {
+        public string Origen { get; set; } = string.Empty;
+        public string Destino { get; set; } = string.Empty;
+        public DateTime Fecha { get; set; } = DateTime.Today;
+        public TimeOnly? Hora { get; set; }
+        public string TipoCaja { get; set; } = string.Empty;
+        public bool UsaBaulera { get; set; }
+        public bool LlevaAcompanante { get; set; }
+        public string DniReceptor { get; set; } = string.Empty;
+        public decimal? PrecioOfrecido { get; set; }
+        public bool EquipajeCarga { get; set; }
+        public string DetalleCarga { get; set; } = string.Empty;
+    }
+}

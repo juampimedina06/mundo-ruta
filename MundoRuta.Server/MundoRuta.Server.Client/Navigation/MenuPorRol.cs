@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using MundoRuta.Shared;
 
@@ -40,9 +41,9 @@ namespace MundoRuta.Server.Client.Navigation
 
         private static readonly IReadOnlyList<MenuItem> MenuAdmin = new List<MenuItem>
         {
-            new MenuItem("Panel", "/admin"),
-            new MenuItem("Prestadores", "/admin/prestadores"),
-            new MenuItem("Configuración", "/admin/configuracion")
+            new MenuItem("Dashboard", "/admin/dashboard"),
+            new MenuItem("Comisiones", "/admin/comisiones"),
+            new MenuItem("Usuarios", "/admin/usuarios")
         };
 
         public static IReadOnlyList<MenuItem> Obtener(string? rol)
