@@ -38,22 +38,16 @@ namespace MundoRuta.Shared.DTO
         public int IdUsuario { get; set; }
         public string? NombrePrestador { get; set; }
 
-        // Prestador
-        public int IdUsuario { get; set; }
-        public string? NombrePrestador { get; set; }
-
-        public bool CalificadoPorPasajero { get; set; }
-
         // Chofer
         public int? IdChofer { get; set; }
         public string? NombreChofer { get; set; }
 
-        // Veh�culo
+        // Vehículo
         public int? IdVehiculo { get; set; }
         public string? Patente { get; set; }
         public string? Marca { get; set; }
 
-        // Calificaci�n
+        // Calificación
         public bool CalificadoPorPasajero { get; set; }
     }
 }

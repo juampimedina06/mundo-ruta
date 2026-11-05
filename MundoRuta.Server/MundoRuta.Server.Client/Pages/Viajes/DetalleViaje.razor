@@ -217,28 +217,7 @@
         _enviandoCalificacion = true;
         _errorCalificacion = null;
 
-        int usuarioPrestadorId = 0;
-        if (_detalle is not null)
-        {
-            usuarioPrestadorId = _detalle.IdUsuario;
-        }
-        else
-        {
-            // Si aún no tenemos detalle, intentamos obtenerlo una vez para sacar IdUsuario
-            HttpResp<ViajeDetalladoDTO> detallePrevio = await Http.GetAsync<ViajeDetalladoDTO>($"api/pasajero/{Sesion.Id}/viajes/{_viajeId}");
-            if (!detallePrevio.Error && detallePrevio.Respuesta is not null)
-            {
-                usuarioPrestadorId = detallePrevio.Respuesta.IdUsuario;
-                _detalle = detallePrevio.Respuesta;
-            }
-        }
-
-        if (usuarioPrestadorId <= 0)
-        {
-            _errorCalificacion = "No pudimos obtener el prestador para calificar.";
-            _enviandoCalificacion = false;
-            return;
-        }
+        int usuarioPrestadorId = _detalle?.IdUsuario ?? 0;
 
         CalificacionesDTO dto = new CalificacionesDTO
         {
