@@ -16,5 +16,29 @@ namespace MundoRuta.Shared
         public const string Cancelado = "CANCELADO"; // El viaje fue cancelado.
         public const string Contraofertado = "CONTRAOFERTADO"; // Hay una contraoferta pendiente.
         public const string Rechazado = "RECHAZADO"; // El viaje fue rechazado.
+
+        // Variantes históricas en minúscula/mixta para no perder registros ya guardados.
+        public static readonly string[] Activos =
+        {
+            Asignado, "Asignado",
+            CargaSubida, "Carga-subida",
+            EnTransito, "En-transito",
+            LlegadaDestino, "Llegada-destino"
+        };
+
+        public static readonly string[] Finalizados = { Finalizado, "Finalizado" };
+
+        // Devuelve una clave estable para comparar estados sin importar mayúsculas o guiones.
+        public static string Normalizar(string? estado)
+        {
+            string normalizado = (estado ?? string.Empty).Trim().Replace('_', '-').ToLowerInvariant();
+
+            return normalizado switch
+            {
+                "aceptado" => "asignado",
+                "en-curso" => "en-transito",
+                _ => normalizado
+            };
+        }
     }
 }

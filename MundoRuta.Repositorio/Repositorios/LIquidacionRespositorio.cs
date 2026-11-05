@@ -61,4 +61,11 @@ public class LiquidacionRepositorio : Repositorio<Liquidacion>, ILiquidacionRepo
             .OrderByDescending(l => l.Fecha)
             .ToListAsync();
     }
+
+    // 6. Sumar las comisiones de todas las liquidaciones; devuelve 0 si no hay registros.
+    public async Task<decimal> SumarComisiones()
+    {
+        int totalComisiones = await context.Liquidaciones.SumAsync(l => (int?)l.Comision) ?? 0;
+        return (decimal)totalComisiones;
+    }
 }

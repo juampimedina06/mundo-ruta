@@ -1,4 +1,9 @@
 @page "/usuario/perfil"
+@using System.Text.Json
+@using MundoRuta.Shared.DTO
+@inject SesionEstado Sesion
+@inject IUsuarioServicio UsuarioServicio
+@implements IDisposable
 
 <PageTitle>Mi perfil | Mundo Ruta</PageTitle>
 
@@ -8,10 +13,219 @@
             <PageHeader Titulo="Mi perfil"
                         Descripcion="Tus datos personales y de contacto." />
 
-            <EmptyState Titulo="Edición de perfil en preparación"
-                        Descripcion="Acá vas a poder actualizar nombre, email y teléfono.">
+            @if (_cargando)
+            {
+                <div class="mr-loading">Cargando tu perfil...</div>
+            }
+            else if (!string.IsNullOrWhiteSpace(_errorCarga))
+            {
+                <div class="mr-alert mr-alert--error mb-3">@_errorCarga</div>
                 <a class="btn btn-outline-primary" href="/usuario">Volver al panel</a>
-            </EmptyState>
+            }
+            else if (_perfil is not null)
+            {
+                @if (!string.IsNullOrWhiteSpace(_exito))
+                {
+                    <div class="mr-alert mr-alert--exito mb-3">@_exito</div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(_error))
+                {
+                    <div class="mr-alert mr-alert--error mb-3">@_error</div>
+                }
+
+                <EditForm Model="_modelo" OnSubmit="GuardarAsync">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="perfil-id">ID</label>
+                            <input id="perfil-id" class="form-control" value="@Sesion.Id" disabled />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="perfil-email">Email (no editable)</label>
+                            <InputText id="perfil-email" class="form-control" disabled
+                                       @bind-Value="_modelo.Email" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="perfil-nombre">Nombre</label>
+                            <InputText id="perfil-nombre" class="form-control" autocomplete="given-name"
+                                       @bind-Value="_modelo.Nombre" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="perfil-apellido">Apellido</label>
+                            <InputText id="perfil-apellido" class="form-control" autocomplete="family-name"
+                                       @bind-Value="_modelo.Apellido" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="perfil-telefono">Teléfono</label>
+                            <InputText id="perfil-telefono" class="form-control" type="tel" autocomplete="tel"
+                                       @bind-Value="_modelo.Telefono" />
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary mt-4" disabled="@_guardando">
+                        @(_guardando ? "Guardando..." : "Guardar Cambios")
+                    </button>
+                </EditForm>
+            }
         </div>
     </div>
 </RoleGuard>
+
+@code {
+    private PerfilModelo _modelo = new PerfilModelo();
+    private UsuarioDTO? _perfil;
+    private bool _cargando = true;
+    private bool _cargaIniciada;
+    private bool _guardando;
+    private string? _error;
+    private string? _errorCarga;
+    private string? _exito;
+
+    protected override void OnInitialized()
+    {
+        Sesion.CambioSesion += AlCambiarSesion;
+        IntentarCargar();
+    }
+
+    // La sesión se restaura de forma asíncrona: recién ahí tenemos el id del usuario.
+    private void AlCambiarSesion()
+    {
+        _ = InvokeAsync(() =>
+        {
+            IntentarCargar();
+            StateHasChanged();
+        });
+    }
+
+    private void IntentarCargar()
+    {
+        if (_cargaIniciada || !Sesion.Restaurada || !Sesion.EstaLogueado)
+        {
+            return;
+        }
+
+        _cargaIniciada = true;
+        _ = CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        HttpResp<UsuarioDTO> respuesta = await UsuarioServicio.ObtenerPorIdAsync(Sesion.Id);
+
+        if (respuesta.Error)
+        {
+            string mensaje = await respuesta.ObtenerMensajeAsync("No pudimos cargar tu perfil.");
+            _errorCarga = ExtraerMensaje(mensaje);
+        }
+        else if (respuesta.Respuesta is null)
+        {
+            _errorCarga = "No pudimos cargar tu perfil.";
+        }
+        else
+        {
+            _perfil = respuesta.Respuesta;
+            _modelo = new PerfilModelo
+            {
+                Nombre = _perfil.Nombre ?? string.Empty,
+                Apellido = _perfil.Apellido ?? string.Empty,
+                Email = _perfil.Email ?? string.Empty,
+                Telefono = _perfil.Telefono ?? string.Empty
+            };
+        }
+
+        _cargando = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task GuardarAsync()
+    {
+        _error = null;
+        _exito = null;
+
+        if (string.IsNullOrWhiteSpace(_modelo.Nombre)
+            || string.IsNullOrWhiteSpace(_modelo.Apellido)
+            || string.IsNullOrWhiteSpace(_modelo.Telefono))
+        {
+            _error = "Completá todos los campos obligatorios.";
+            return;
+        }
+
+        UpdateUserRequestDto dto = new UpdateUserRequestDto
+        {
+            Nombre = _modelo.Nombre.Trim(),
+            Apellido = _modelo.Apellido.Trim(),
+            Email = _modelo.Email.Trim(),
+            Telefono = _modelo.Telefono.Trim(),
+            // El GET no devuelve la contraseña: se envía vacío y el server la conserva.
+            Password = string.Empty,
+            RazonSocial = _perfil?.RazonSocial ?? string.Empty,
+            Cuit = _perfil?.Cuit ?? string.Empty
+        };
+
+        _guardando = true;
+
+        HttpResp<object> respuesta = await UsuarioServicio.ActualizarAsync(Sesion.Id, dto);
+
+        if (respuesta.Error)
+        {
+            string mensaje = await respuesta.ObtenerMensajeAsync("No pudimos guardar los cambios.");
+            _error = ExtraerMensaje(mensaje);
+        }
+        else
+        {
+            _exito = "Perfil actualizado correctamente.";
+            _perfil!.Nombre = dto.Nombre;
+            _perfil.Apellido = dto.Apellido;
+            _perfil.Telefono = dto.Telefono;
+
+            // Refresca el nombre que muestra el navbar.
+            Sesion.Iniciar(Sesion.Id, dto.Nombre, Sesion.Rol ?? string.Empty);
+        }
+
+        _guardando = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // Los controllers devuelven { "mensaje": "..." }; extrae el texto legible si el contenido es JSON.
+    private static string ExtraerMensaje(string contenido)
+    {
+        try
+        {
+            using JsonDocument documento = JsonDocument.Parse(contenido);
+
+            if (documento.RootElement.ValueKind == JsonValueKind.Object
+                && documento.RootElement.TryGetProperty("mensaje", out JsonElement mensaje))
+            {
+                string texto = mensaje.GetString() ?? string.Empty;
+
+                if (!string.IsNullOrWhiteSpace(texto))
+                {
+                    return texto;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // No es JSON (respuestas con texto plano): se muestra tal cual.
+        }
+
+        return contenido;
+    }
+
+    public void Dispose()
+    {
+        Sesion.CambioSesion -= AlCambiarSesion;
+    }
+
+    private sealed class PerfilModelo
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public string Apellido { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Telefono { get; set; } = string.Empty;
+    }
+}

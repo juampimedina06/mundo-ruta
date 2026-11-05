@@ -9,5 +9,6 @@ namespace MundoRuta.Repositorio.Repositorios
         Task<Liquidacion?> ObtenerPorId(int idLiquidacion);
         Task<List<Liquidacion>> ObtenerPorUsuarioId(int idUsuario);
         Task<List<Liquidacion>> ObtenerTodas();
+        Task<decimal> SumarComisiones();
     }
 }

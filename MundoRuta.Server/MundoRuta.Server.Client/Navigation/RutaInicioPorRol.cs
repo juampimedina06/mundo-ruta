@@ -29,7 +29,7 @@ namespace MundoRuta.Server.Client.Navigation
 
             if (string.Equals(rol, Roles.Admin, StringComparison.OrdinalIgnoreCase))
             {
-                return "/admin";
+                return "/admin/dashboard";
             }
 
             return "/";

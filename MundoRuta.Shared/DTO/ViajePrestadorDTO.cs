@@ -11,6 +11,10 @@ public class ViajePrestadorDTO
 
     public string TipoSolicitud { get; set; } = string.Empty;
 
+    public bool EsCubierto { get; set; }
+    public bool UsaBaulera { get; set; }
+    public bool LlevaAcompanante { get; set; }
+
     public string Estado { get; set; } = string.Empty;
     public string EstadoPago { get; set; } = string.Empty;
 

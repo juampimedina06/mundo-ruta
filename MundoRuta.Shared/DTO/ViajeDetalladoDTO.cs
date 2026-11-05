@@ -34,6 +34,12 @@ namespace MundoRuta.Shared.DTO
         public int IdPasajero { get; set; }
         public string NombrePasajero { get; set; } = string.Empty;
 
+        // Prestador
+        public int IdUsuario { get; set; }
+        public string? NombrePrestador { get; set; }
+
+        public bool CalificadoPorPasajero { get; set; }
+
         // Chofer
         public int? IdChofer { get; set; }
         public string? NombreChofer { get; set; }

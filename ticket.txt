@@ -1,0 +1,22 @@
+[FE] PREST-05: Pantalla "Viajes de la Empresa" (Monitoreo de Estados)
+
+
+Descripción
+
+Ruta Blazor: /prestador/viajes
+
+Endpoints API:
+
+GET /api/prestador/{prestadorId}/viajes (Listado de viajes de la empresa)
+
+GET /api/pasajero/{usuarioId}/viajes/{viajeId} (Detalle del viaje)
+
+Descripción: Implementar el listado de seguimiento de todos los viajes de la empresa con diseño simplificado, buscador y visualización en vivo de los estados operativos que avanza el chofer.
+
+Criterios de Aceptación:
+
+Diseño Simplificado y Filtros: Lista las filas con los datos esenciales para lectura rápida, fechas en formato dd/mm/aaaa, barra de búsqueda por texto y filtros por fecha y por estado.
+
+Monitoreo de los 5 Estados: Muestra en qué etapa se encuentra cada servicio (buscando, asignado, carga-subida, en-transito, llegada-destino, finalizado).
+
+Rol de Supervisión: El avance de estados en ruta y el cierre con validación de DNI corresponden a la interfaz del Chofer; en esta pantalla el prestador supervisa el estado y abre el modal de "Ver detalle" para consultar toda la información del servicio, chofer y cliente.
