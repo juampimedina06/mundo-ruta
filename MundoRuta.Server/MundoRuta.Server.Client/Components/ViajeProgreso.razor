@@ -1,0 +1,57 @@
+@* Secuencia de estados del viaje: buscando → asignado → carga subida → en tránsito → llegada a destino. *@
+
+@if (EtapaActual is null)
+{
+    <p class="mr-muted">No se pudo interpretar el estado actual del viaje.</p>
+}
+else
+{
+    <ol class="mr-progreso">
+        @foreach (EtapaViaje etapa in EstadosViajeUI.Secuencia)
+        {
+            <li class="@ClasePaso(etapa)">
+                <span class="mr-progreso__punto" aria-hidden="true">
+                    @if (EstaCompletada(etapa))
+                    {
+                        <text>✓</text>
+                    }
+                    else
+                    {
+                        <text>@((int)etapa + 1)</text>
+                    }
+                </span>
+                <span class="mr-progreso__etiqueta">@EstadosViajeUI.Etiqueta(etapa)</span>
+            </li>
+        }
+    </ol>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public string? Estado { get; set; }
+
+    private EtapaViaje? EtapaActual => EstadosViajeUI.ObtenerEtapa(Estado);
+
+    // Un paso está completado cuando su etapa ya quedó atrás en la secuencia.
+    private bool EstaCompletada(EtapaViaje etapa)
+    {
+        return EtapaActual.HasValue && etapa < EtapaActual.Value;
+    }
+
+    private bool EsActual(EtapaViaje etapa)
+    {
+        return EtapaActual.HasValue && etapa == EtapaActual.Value;
+    }
+
+    private string ClasePaso(EtapaViaje etapa)
+    {
+        if (EsActual(etapa))
+        {
+            return "mr-progreso__paso mr-progreso__paso--actual";
+        }
+
+        return EstaCompletada(etapa)
+            ? "mr-progreso__paso mr-progreso__paso--completado"
+            : "mr-progreso__paso";
+    }
+}

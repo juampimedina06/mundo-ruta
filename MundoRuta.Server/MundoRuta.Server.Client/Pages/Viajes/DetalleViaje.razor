@@ -1,0 +1,272 @@
+@page "/viajes/{ViajeId:int}"
+@inject IHttpServices Http
+@inject SesionEstado Sesion
+@inject NavigationManager Navegacion
+
+<PageTitle>Detalle del viaje | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="Roles.Usuario">
+    <div class="mr-page">
+        <div class="mr-container">
+            @if (_cargando)
+            {
+                <div class="mr-loading">Cargando detalle del viaje...</div>
+            }
+            else if (_requiereCalificacion && _viajeId > 0)
+            {
+                <PageHeader Titulo="@("Calificar viaje #" + _viajeId)"
+                            Descripcion="Para ver el resumen completo, primero debés calificar el servicio." />
+
+                <div class="mr-card mr-card--center" style="max-width: 420px; margin: 0 auto;">
+                    <div class="mr-card__body">
+                        <div class="mb-3 text-center">
+                            <div class="mb-2" style="font-weight: 600;">¿Cómo fue tu experiencia?</div>
+                            <div class="d-flex justify-content-center gap-2">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    int estrella = i;
+                                    <button type="button"
+                                            class="btn @(estrella <= _puntaje ? "btn-warning" : "btn-outline-secondary")"
+                                            style="font-size: 1.5rem; padding: 0.25rem 0.5rem;"
+                                            @onclick="() => SeleccionarEstrella(estrella)">
+                                        ★
+                                    </button>
+                                }
+                            </div>
+                            <div class="mt-2 text-muted" style="font-size: 0.9rem;">@_puntaje de 5</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Comentario (opcional)</label>
+                            <textarea class="form-control" rows="3" @bind="_comentario" placeholder="Contanos tu experiencia..."></textarea>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(_errorCalificacion))
+                        {
+                            <div class="mr-alert mr-alert--error mb-3">@_errorCalificacion</div>
+                        }
+
+                        <button class="btn btn-primary w-100" disabled="@_enviandoCalificacion" @onclick="EnviarCalificacion">
+                            @if (_enviandoCalificacion)
+                            {
+                                <span>Enviando...</span>
+                            }
+                            else
+                            {
+                                <span>Enviar</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            }
+            else if (!string.IsNullOrWhiteSpace(_error))
+            {
+                <div class="mr-alert mr-alert--error">@_error</div>
+                <a class="btn btn-outline-primary mt-3" href="/usuario/viajes">Volver a mis viajes</a>
+            }
+            else if (_detalle is not null)
+            {
+                <PageHeader Titulo="@("Viaje #" + _detalle.Id)"
+                            Descripcion="Resumen completo del viaje." />
+
+                <div class="mr-card mb-3">
+                    <div class="mr-card__header">
+                        <h2 class="mr-card__title mb-0">Recorrido</h2>
+                    </div>
+                    <div class="mr-card__body">
+                        <div class="mb-2"><strong>Origen:</strong> @_detalle.Origen</div>
+                        <div class="mb-2"><strong>Destino:</strong> @_detalle.Destino</div>
+                        <div class="mb-0"><strong>Tipo de solicitud:</strong> @_detalle.TipoSolicitud</div>
+                    </div>
+                </div>
+
+                <div class="mr-card mb-3">
+                    <div class="mr-card__header">
+                        <h2 class="mr-card__title mb-0">Chofer y vehículo</h2>
+                    </div>
+                    <div class="mr-card__body">
+                        <div class="mb-2"><strong>Prestador:</strong> @(_detalle.NombrePrestador ?? "-")</div>
+                        <div class="mb-2"><strong>Chofer:</strong> @(_detalle.NombreChofer ?? "-")</div>
+                        <div class="mb-0"><strong>Vehículo:</strong> @FormatVehiculo()</div>
+                    </div>
+                </div>
+
+                <div class="mr-card mb-3">
+                    <div class="mr-card__header">
+                        <h2 class="mr-card__title mb-0">Fechas y estado</h2>
+                    </div>
+                    <div class="mr-card__body">
+                        <div class="mb-2"><strong>Fecha:</strong> @_detalle.Fecha.ToString("dd/MM/yyyy")</div>
+                        <div class="mb-2"><strong>Hora:</strong> @_detalle.Hora.ToString(@"hh\:mm")</div>
+                        <div class="mb-2"><strong>Reservado:</strong> @_detalle.FechaHoraReserva.ToString("dd/MM/yyyy HH:mm")</div>
+                        <div class="mb-2"><strong>Estado:</strong> @_detalle.Estado</div>
+                        <div class="mb-0"><strong>Estado de pago:</strong> @_detalle.EstadoPago</div>
+                    </div>
+                </div>
+
+                <div class="mr-card mb-3">
+                    <div class="mr-card__header">
+                        <h2 class="mr-card__title mb-0">Montos</h2>
+                    </div>
+                    <div class="mr-card__body">
+                        <div class="mb-2"><strong>Monto estimado:</strong> $@_detalle.MontoEstimado.ToString("N2")</div>
+                        <div class="mb-0"><strong>Monto:</strong> $@_detalle.Monto.ToString("N2")</div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <a class="btn btn-outline-primary" href="/usuario/viajes">Volver a mis viajes</a>
+                </div>
+            }
+        </div>
+    </div>
+</RoleGuard>
+
+@code {
+    [Parameter]
+    public int ViajeId { get; set; }
+
+    private int _viajeId;
+    private ViajeDetalladoDTO? _detalle;
+    private bool _cargando = true;
+    private string? _error;
+    private bool _requiereCalificacion;
+    private int _puntaje = 0;
+    private string _comentario = string.Empty;
+    private bool _enviandoCalificacion;
+    private string? _errorCalificacion;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _viajeId = ViajeId;
+        await CargarDetalleAsync();
+    }
+
+    private async Task CargarDetalleAsync()
+    {
+        _cargando = true;
+        _error = null;
+        _requiereCalificacion = false;
+        _detalle = null;
+        _errorCalificacion = null;
+
+        if (!Sesion.Restaurada)
+        {
+            return;
+        }
+
+        if (!Sesion.EstaLogueado || Sesion.Id <= 0)
+        {
+            _error = "No hay sesión activa. Iniciá sesión para ver el detalle.";
+            _cargando = false;
+            return;
+        }
+
+        HttpResp<ViajeDetalladoDTO> respuesta = await Http.GetAsync<ViajeDetalladoDTO>($"api/pasajero/{Sesion.Id}/viajes/{_viajeId}");
+
+        if (respuesta.Error)
+        {
+            if (respuesta.Response is not null && (int)respuesta.Response.StatusCode == 403)
+            {
+                _requiereCalificacion = true;
+                _puntaje = 0;
+                _comentario = string.Empty;
+            }
+            else
+            {
+                _error = await respuesta.ObtenerMensajeAsync("No pudimos cargar el detalle del viaje.");
+            }
+        }
+        else if (respuesta.Respuesta is not null)
+        {
+            _detalle = respuesta.Respuesta;
+        }
+        else
+        {
+            _error = "No pudimos cargar el detalle del viaje.";
+        }
+
+        _cargando = false;
+        StateHasChanged();
+    }
+
+    private void SeleccionarEstrella(int estrella)
+    {
+        _puntaje = estrella;
+        _errorCalificacion = null;
+    }
+
+    private async Task EnviarCalificacion()
+    {
+        if (_enviandoCalificacion)
+        {
+            return;
+        }
+
+        if (_puntaje < 1 || _puntaje > 5)
+        {
+            _errorCalificacion = "Seleccioná una calificación entre 1 y 5 estrellas.";
+            return;
+        }
+
+        if (!Sesion.EstaLogueado || Sesion.Id <= 0 || _detalle is null && !_requiereCalificacion)
+        {
+            // Intentamos cargar de nuevo para obtener datos si faltan
+        }
+
+        _enviandoCalificacion = true;
+        _errorCalificacion = null;
+
+        int usuarioPrestadorId = _detalle?.IdUsuario ?? 0;
+
+        CalificacionesDTO dto = new CalificacionesDTO
+        {
+            viajeId = _viajeId,
+            usuarioId = Sesion.Id,
+            usuarioPrestadorId = usuarioPrestadorId,
+            puntaje = _puntaje,
+            comentario = _comentario ?? string.Empty
+        };
+
+        HttpResp<object> respuesta = await Http.PostAsync<CalificacionesDTO, object>("api/pasajero/calificaciones", dto);
+
+        if (respuesta.Error)
+        {
+            _errorCalificacion = await respuesta.ObtenerMensajeAsync("No pudimos enviar la calificación.");
+            _enviandoCalificacion = false;
+            return;
+        }
+
+        // Al calificar correctamente, recargamos el detalle para mostrarlo completo
+        await CargarDetalleAsync();
+        _enviandoCalificacion = false;
+    }
+
+    private string FormatVehiculo()
+    {
+        if (_detalle is null)
+        {
+            return "-";
+        }
+
+        string marca = _detalle.Marca ?? string.Empty;
+        string patente = _detalle.Patente ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(marca) && string.IsNullOrWhiteSpace(patente))
+        {
+            return "-";
+        }
+
+        if (string.IsNullOrWhiteSpace(marca))
+        {
+            return patente;
+        }
+
+        if (string.IsNullOrWhiteSpace(patente))
+        {
+            return marca;
+        }
+
+        return $"{marca} - {patente}";
+    }
+}

@@ -1,0 +1,717 @@
+@page "/viajes/{ViajeId:int}/propuestas"
+@using MundoRuta.Shared.DTO
+@using MundoRuta.Shared.DTO.Realtime
+@using System.Globalization
+@implements IDisposable
+@inject IViajePasajeroServicio Viajes
+@inject IViajeHubService Hub
+@inject SesionEstado Sesion
+@inject IJSRuntime JS
+
+<PageTitle>Propuestas de tu viaje | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="Roles.Usuario">
+    <div class="mr-page">
+        <div class="mr-container">
+            <PageHeader Titulo="@("Propuestas del viaje #" + ViajeId)"
+                        Descripcion="Elegí la oferta que más te sirva y seguí el viaje paso a paso." />
+
+            @if (!string.IsNullOrWhiteSpace(_mensajeExito))
+            {
+                <div class="mr-alert mr-alert--exito mb-3">@_mensajeExito</div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(_mensajeError))
+            {
+                <div class="mr-alert mr-alert--error mb-3">@_mensajeError</div>
+            }
+
+            @if (_cargando)
+            {
+                <div class="mr-loading">Cargando propuestas...</div>
+            }
+            else if (_viaje is null)
+            {
+                <EmptyState Titulo="No pudimos cargar el viaje"
+                            Descripcion="@(_errorCarga ?? "Verificá el identificador del viaje e intentá nuevamente.")">
+                    <a class="btn btn-outline-primary" href="/usuario/viajes">Volver a mis viajes</a>
+                </EmptyState>
+            }
+            else
+            {
+                @* --- Resumen del viaje --- *@
+                <div class="mr-card mb-4">
+                    <div class="mr-resumen">
+                        <div>
+                            <h2 class="mr-card__title">@_viaje.Origen → @_viaje.Destino</h2>
+                            <p class="mr-muted mb-0">
+                                @_viaje.Fecha.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) ·
+                                @_viaje.Hora.ToString(@"hh\:mm") ·
+                                @_viaje.TipoSolicitud
+                            </p>
+                        </div>
+                        <EstadoBadge Estado="@_viaje.Estado" />
+                    </div>
+
+                    <hr class="mr-resumen__separador" />
+
+                    <h3 class="mr-resumen__subtitulo">Seguimiento del viaje</h3>
+                    <ViajeProgreso Estado="@_viaje.Estado" />
+                </div>
+
+                @* --- Estado "buscando": subasta de ofertas --- *@
+                @if (EstadosViajeUI.EstaBuscando(_viaje.Estado))
+                {
+                    <div class="mr-card mb-4">
+                        <h2 class="mr-card__title">Propuestas recibidas</h2>
+
+                        @if (_ofertas.Count == 0)
+                        {
+                            <EmptyState Titulo="Todavía no hay postulaciones"
+                                        Descripcion="En cuanto un prestador oferte por tu viaje vas a verlo acá. Se avisa apenas llega una propuesta." />
+                        }
+                        else
+                        {
+                            <p class="mr-muted">
+                                @(_ofertas.Count == 1 ? "Hay 1 propuesta disponible" : $"Hay {_ofertas.Count} propuestas disponibles")
+                                · la más barata aparece primero.
+                            </p>
+
+                            @foreach (OfertaViajeDTO oferta in _ofertas)
+                            {
+                                bool esMasBarata = oferta.EsMasBarata || oferta == _ofertas[0];
+
+                                <article class="mr-oferta @(esMasBarata ? "mr-oferta--destacada" : null)">
+                                    <div class="mr-oferta__cabecera">
+                                        <div>
+                                            <h3 class="mr-oferta__nombre">@oferta.NombrePrestador</h3>
+                                            <p class="mr-oferta__calificacion mb-0">
+                                                @if (oferta.PromedioCalificacionPrestador > 0)
+                                                {
+                                                    <text>★ @oferta.PromedioCalificacionPrestador.ToString("0.0", CultureInfo.InvariantCulture)</text>
+                                                }
+                                                else
+                                                {
+                                                    <span class="mr-muted">Sin calificaciones</span>
+                                                }
+                                            </p>
+                                        </div>
+
+                                        <div class="mr-oferta__etiquetas">
+                                            @if (esMasBarata)
+                                            {
+                                                <span class="mr-badge mr-badge--naranja">Más barata</span>
+                                            }
+                                            @if (oferta.EsMejorCalificado)
+                                            {
+                                                <span class="mr-badge mr-badge--mejor">Mejor calificación</span>
+                                            }
+                                            @if (oferta.EsContraoferta)
+                                            {
+                                                <span class="mr-badge mr-badge--contraoferta">Contraoferta</span>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <div class="mr-oferta__pie">
+                                        <div>
+                                            <span class="mr-oferta__monto">@oferta.MontoOfertado.ToString("C", CultureInfo.InvariantCulture)</span>
+                                            <span class="mr-oferta__nota">
+                                                @(oferta.MontoOfertado == _viaje.Monto ? "· acepta tu precio" : $"· precio propuesto ${_viaje.Monto.ToString("N0", CultureInfo.InvariantCulture)}")
+                                            </span>
+                                        </div>
+
+                                        <button class="btn btn-primary"
+                                                disabled="@_procesando"
+                                                @onclick="() => AceptarOferta(oferta)">
+                                            @if (_procesando && _ofertaEnProceso == oferta.IdOferta)
+                                            {
+                                                <text>Contratando...</text>
+                                            }
+                                            else
+                                            {
+                                                <text>Aceptar / Contratar</text>
+                                            }
+                                        </button>
+                                    </div>
+                                </article>
+                            }
+                        }
+                    </div>
+                }
+
+                @* --- Canales de contacto --- *@
+                <div class="mr-card mb-4">
+                    <h2 class="mr-card__title">Contacto</h2>
+                    <div class="mr-contacto">
+                        <div class="mr-contacto__item">
+                            <button class="btn btn-outline-primary" @onclick="MostrarAvisoEmpresa">
+                                Llamar a la Empresa
+                            </button>
+
+                            @if (_avisoEmpresa)
+                            {
+                                <p class="mr-contacto__nota mr-muted mb-0">
+                                    El número de contacto de la empresa se habilitará próximamente.
+                                </p>
+                            }
+                        </div>
+
+                        <div class="mr-contacto__item">
+                            <button class="btn btn-primary"
+                                    disabled="@(!PuedeChatear)"
+                                    @onclick="AlternarChat">
+                                Chat con el Chofer
+                            </button>
+
+                            @if (!PuedeChatear)
+                            {
+                                <p class="mr-contacto__nota mr-muted mb-0">
+                                    Disponible cuando el viaje esté en curso.
+                                </p>
+                            }
+                        </div>
+                    </div>
+
+                    @if (_chatAbierto)
+                    {
+                        <div class="mr-chat">
+                            <div class="mr-chat__mensajes" @ref="_panelMensajes">
+                                @if (_cargandoMensajes)
+                                {
+                                    <p class="mr-muted mb-0">Cargando mensajes...</p>
+                                }
+                                else if (_mensajes.Count == 0)
+                                {
+                                    <p class="mr-muted mb-0">Todavía no hay mensajes. Escribí el primero.</p>
+                                }
+                                else
+                                {
+                                    @foreach (MensajeDTO mensaje in _mensajes)
+                                    {
+                                        bool mio = mensaje.IdEmisor == Sesion.Id;
+
+                                        <div class="mr-chat__mensaje @(mio ? "mr-chat__mensaje--mio" : null)">
+                                            <span class="mr-chat__texto">@mensaje.Contenido</span>
+                                            <span class="mr-chat__hora">@mensaje.EnviadoEn.ToString("dd/MM HH:mm", CultureInfo.InvariantCulture)</span>
+                                        </div>
+                                    }
+                                }
+                            </div>
+
+                            <div class="mr-chat__envio">
+                                <input class="form-control"
+                                       placeholder="Escribí un mensaje..."
+                                       maxlength="500"
+                                       @bind="_nuevoMensaje"
+                                       @bind:event="oninput"
+                                       @onkeydown="TeclaChat" />
+                                <button class="btn btn-primary"
+                                        disabled="@(_enviando || string.IsNullOrWhiteSpace(_nuevoMensaje))"
+                                        @onclick="EnviarMensaje">
+                                    Enviar
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @* --- Cancelación --- *@
+                @if (PuedeCancelar)
+                {
+                    <div class="mr-card">
+                        <h2 class="mr-card__title">Cancelar el viaje</h2>
+
+                        @if (!_cancelacionAbierta)
+                        {
+                            <p class="mr-muted">
+                                Podés cancelar hasta 30 minutos antes de la salida.
+                            </p>
+                            <button class="btn btn-outline-danger" @onclick="() => _cancelacionAbierta = true">
+                                Cancelar viaje
+                            </button>
+                        }
+                        else
+                        {
+                            @if (!string.IsNullOrWhiteSpace(_avisoCancelacion))
+                            {
+                                <div class="mr-alert mr-alert--error mb-3">@_avisoCancelacion</div>
+                            }
+
+                            <label class="form-label" for="motivo-cancelacion">Motivo de la cancelación</label>
+                            <textarea id="motivo-cancelacion"
+                                      class="form-control mb-3"
+                                      rows="3"
+                                      maxlength="300"
+                                      placeholder="Contanos por qué cancelás el viaje"
+                                      @bind="_motivoCancelacion"></textarea>
+
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-danger"
+                                        disabled="@_cancelando"
+                                        @onclick="CancelarViaje">
+                                    @(_cancelando ? "Cancelando..." : "Confirmar cancelación")
+                                </button>
+                                <button class="btn btn-outline-secondary" @onclick="CerrarCancelacion">
+                                    Volver
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</RoleGuard>
+
+@code {
+    [Parameter]
+    public int ViajeId { get; set; }
+
+    private ViajeDetalladoDTO? _viaje;
+    private List<OfertaViajeDTO> _ofertas = new();
+    private List<MensajeDTO> _mensajes = new();
+
+    private bool _cargando = true;
+    private bool _procesando;
+    private int _ofertaEnProceso;
+
+    private bool _chatAbierto;
+    private bool _cargandoMensajes;
+    private bool _enviando;
+    private string _nuevoMensaje = string.Empty;
+    private ElementReference _panelMensajes;
+
+    private bool _avisoEmpresa;
+
+    private bool _cancelacionAbierta;
+    private bool _cancelando;
+    private string _motivoCancelacion = string.Empty;
+    private string? _avisoCancelacion;
+
+    private string? _mensajeExito;
+    private string? _mensajeError;
+    private string? _errorCarga;
+
+    private CancellationTokenSource? _refrescoChat;
+    private bool _cargado;
+
+    private bool PuedeChatear => _viaje is not null && EstadosViajeUI.ChatHabilitado(_viaje.Estado);
+
+    // La cancelación sólo tiene sentido si el viaje sigue abierto y faltan más de 30 minutos.
+    private bool PuedeCancelar
+    {
+        get
+        {
+            if (_viaje is null)
+            {
+                return false;
+            }
+
+            if (EstadosViajeUI.EstaCancelado(_viaje.Estado) || EstadosViajeUI.Termino(_viaje.Estado))
+            {
+                return false;
+            }
+
+            return (_viaje.Fecha.Date + _viaje.Hora) > DateTime.Now.AddMinutes(30);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Sesion.CambioSesion += AlCambiarSesion;
+        _ = IntentarCargarAsync();
+    }
+
+    // La sesión se restaura de forma asíncrona: se reintenta hasta que el id esté disponible.
+    private async Task IntentarCargarAsync()
+    {
+        if (_cargado || !Sesion.Restaurada || Sesion.Id <= 0)
+        {
+            return;
+        }
+
+        _cargado = true;
+        await CargarViajeAsync();
+        await ConfigurarTiempoRealAsync();
+    }
+
+    private void AlCambiarSesion()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            await IntentarCargarAsync();
+            StateHasChanged();
+        });
+    }
+
+    private async Task CargarViajeAsync()
+    {
+        _cargando = true;
+        StateHasChanged();
+
+        HttpResp<ViajeDetalladoDTO> respuesta = await Viajes.ObtenerViajeAsync(Sesion.Id, ViajeId);
+
+        if (respuesta.Error)
+        {
+            int? status = respuesta.Response is null ? null : (int)respuesta.Response.StatusCode;
+
+            if (status == 403)
+            {
+                _errorCarga = "Este viaje finalizó y todavía no lo calificaste. Calificalo para ver su detalle.";
+            }
+            else if (status == 404)
+            {
+                _errorCarga = "El viaje que buscás no existe.";
+            }
+            else
+            {
+                _errorCarga = await respuesta.ObtenerMensajeAsync("No se pudo cargar el viaje.");
+            }
+
+            _viaje = null;
+        }
+        else
+        {
+            _viaje = respuesta.Respuesta;
+            _errorCarga = null;
+
+            if (EstadosViajeUI.EstaBuscando(_viaje!.Estado))
+            {
+                await CargarOfertasAsync();
+            }
+            else
+            {
+                _ofertas.Clear();
+            }
+        }
+
+        _cargando = false;
+        StateHasChanged();
+    }
+
+    private async Task CargarOfertasAsync()
+    {
+        HttpResp<List<OfertaViajeDTO>> respuesta = await Viajes.ObtenerOfertasAsync(ViajeId);
+
+        if (respuesta.Error)
+        {
+            _mensajeError = await respuesta.ObtenerMensajeAsync("No se pudieron cargar las propuestas.");
+            return;
+        }
+
+        // El backend ya ordena por monto, pero se reordena acá para garantizar que la más barata quede primera.
+        _ofertas = (respuesta.Respuesta ?? new List<OfertaViajeDTO>())
+            .OrderBy(o => o.MontoOfertado)
+            .Take(5)
+            .ToList();
+    }
+
+    private async Task AceptarOferta(OfertaViajeDTO oferta)
+    {
+        if (_procesando)
+        {
+            return;
+        }
+
+        _procesando = true;
+        _ofertaEnProceso = oferta.IdOferta;
+        _mensajeError = null;
+        _mensajeExito = null;
+        StateHasChanged();
+
+        HttpResp<object> respuesta = await Viajes.SeleccionarOfertaAsync(ViajeId, oferta.IdOferta);
+
+        if (respuesta.Error)
+        {
+            _mensajeError = await respuesta.ObtenerMensajeAsync("No se pudo contratar la propuesta.");
+        }
+        else
+        {
+            _mensajeExito = $"Viaje contratado con {oferta.NombrePrestador}.";
+            await CargarViajeAsync();
+        }
+
+        _procesando = false;
+        _ofertaEnProceso = 0;
+        StateHasChanged();
+    }
+
+    private void MostrarAvisoEmpresa()
+    {
+        _avisoEmpresa = true;
+    }
+
+    private async Task AlternarChat()
+    {
+        if (!PuedeChatear)
+        {
+            return;
+        }
+
+        _chatAbierto = !_chatAbierto;
+
+        if (_chatAbierto)
+        {
+            await CargarMensajesAsync();
+            IniciarRefrescoChat();
+        }
+        else
+        {
+            DetenerRefrescoChat();
+        }
+    }
+
+    private async Task CargarMensajesAsync()
+    {
+        if (!PuedeChatear)
+        {
+            return;
+        }
+
+        _cargandoMensajes = _mensajes.Count == 0;
+        StateHasChanged();
+
+        HttpResp<List<MensajeDTO>> respuesta = await Viajes.ObtenerMensajesAsync(ViajeId);
+
+        if (respuesta.Error)
+        {
+            if (_mensajes.Count == 0)
+            {
+                _mensajeError = await respuesta.ObtenerMensajeAsync("No se pudieron cargar los mensajes.");
+            }
+
+            _cargandoMensajes = false;
+            StateHasChanged();
+            return;
+        }
+
+        _mensajes = respuesta.Respuesta ?? new List<MensajeDTO>();
+        _cargandoMensajes = false;
+        StateHasChanged();
+
+        await ScrollAlUltimoMensaje();
+    }
+
+    // El backend no emite los mensajes por SignalR, así que mientras el chat esté abierto se refresca solo.
+    private void IniciarRefrescoChat()
+    {
+        DetenerRefrescoChat();
+        _refrescoChat = new CancellationTokenSource();
+        CancellationToken token = _refrescoChat.Token;
+
+        _ = Task.Run(async () =>
+        {
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(10), token);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+
+                if (token.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                await InvokeAsync(async () =>
+                {
+                    if (_chatAbierto)
+                    {
+                        await CargarMensajesAsync();
+                    }
+                });
+            }
+        }, token);
+    }
+
+    private void DetenerRefrescoChat()
+    {
+        if (_refrescoChat is null)
+        {
+            return;
+        }
+
+        _refrescoChat.Cancel();
+        _refrescoChat.Dispose();
+        _refrescoChat = null;
+    }
+
+    private async Task EnviarMensaje()
+    {
+        if (_enviando || string.IsNullOrWhiteSpace(_nuevoMensaje))
+        {
+            return;
+        }
+
+        _enviando = true;
+        _mensajeError = null;
+        StateHasChanged();
+
+        CrearMensajeDTO dto = new()
+        {
+            IdChat = 0, // El backend crea el chat si todavía no existe.
+            IdEmisor = Sesion.Id,
+            IdDestinatario = 0, // Lo calcula el backend a partir del emisor.
+            Contenido = _nuevoMensaje.Trim()
+        };
+
+        HttpResp<object> respuesta = await Viajes.EnviarMensajeAsync(ViajeId, dto);
+
+        if (respuesta.Error)
+        {
+            _mensajeError = await respuesta.ObtenerMensajeAsync("No se pudo enviar el mensaje.");
+        }
+        else
+        {
+            _nuevoMensaje = string.Empty;
+            await CargarMensajesAsync();
+        }
+
+        _enviando = false;
+        StateHasChanged();
+    }
+
+    private async Task TeclaChat(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter" && !string.IsNullOrWhiteSpace(_nuevoMensaje))
+        {
+            await EnviarMensaje();
+        }
+    }
+
+    private async Task ScrollAlUltimoMensaje()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("eval",
+                "const el = document.querySelector('.mr-chat__mensajes'); if (el) el.scrollTop = el.scrollHeight;");
+        }
+        catch
+        {
+            // El scroll es cosmético: si falla no hay nada que recuperar.
+        }
+    }
+
+    private void CerrarCancelacion()
+    {
+        _cancelacionAbierta = false;
+        _motivoCancelacion = string.Empty;
+        _avisoCancelacion = null;
+    }
+
+    private async Task CancelarViaje()
+    {
+        if (_viaje is null || _cancelando)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_motivoCancelacion))
+        {
+            _avisoCancelacion = "Contanos el motivo de la cancelación.";
+            return;
+        }
+
+        DateTime fechaHoraViaje = _viaje.Fecha.Date + _viaje.Hora;
+
+        if (fechaHoraViaje <= DateTime.Now.AddMinutes(30))
+        {
+            _avisoCancelacion = "No se puede cancelar el viaje con menos de 30 minutos de anticipación.";
+            return;
+        }
+
+        _cancelando = true;
+        _avisoCancelacion = null;
+        _mensajeError = null;
+        StateHasChanged();
+
+        CancelarViajeDTO dto = new() { Motivo = _motivoCancelacion.Trim() };
+        HttpResp<object> respuesta = await Viajes.CancelarViajeAsync(ViajeId, dto);
+
+        if (respuesta.Error)
+        {
+            _avisoCancelacion = await respuesta.ObtenerMensajeAsync("No se pudo cancelar el viaje.");
+        }
+        else
+        {
+            _mensajeExito = "El viaje fue cancelado.";
+            await CargarViajeAsync();
+        }
+
+        _cancelando = false;
+        StateHasChanged();
+    }
+
+    private async Task ConfigurarTiempoRealAsync()
+    {
+        try
+        {
+            await Hub.IniciarConexionAsync();
+            await Hub.UnirseAViaje(ViajeId);
+
+            Hub.NuevaOfertaRecibida += AlRecibirOferta;
+            Hub.EstadoViajeActualizado += AlCambiarEstado;
+            Hub.ViajeAsignado += AlAsignarViaje;
+        }
+        catch
+        {
+            // Sin tiempo real la pantalla sigue funcionando con la carga inicial.
+        }
+    }
+
+    private void AlRecibirOferta(NuevaOfertaDTO oferta)
+    {
+        if (oferta.IdViaje != ViajeId)
+        {
+            return;
+        }
+
+        _ = RefrescarOfertasAsync();
+    }
+
+    private void AlCambiarEstado(EstadoViajeActualizadoDTO estado)
+    {
+        if (estado.IdViaje != ViajeId)
+        {
+            return;
+        }
+
+        _ = CargarViajeAsync();
+    }
+
+    private void AlAsignarViaje(ViajeAsignadoDTO viaje)
+    {
+        if (viaje.IdViaje != ViajeId)
+        {
+            return;
+        }
+
+        _ = CargarViajeAsync();
+    }
+
+    private async Task RefrescarOfertasAsync()
+    {
+        await InvokeAsync(async () =>
+        {
+            await CargarOfertasAsync();
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        Sesion.CambioSesion -= AlCambiarSesion;
+        DetenerRefrescoChat();
+
+        Hub.NuevaOfertaRecibida -= AlRecibirOferta;
+        Hub.EstadoViajeActualizado -= AlCambiarEstado;
+        Hub.ViajeAsignado -= AlAsignarViaje;
+
+        _ = Hub.SalirDeViaje(ViajeId);
+    }
+}

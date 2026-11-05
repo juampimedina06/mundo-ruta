@@ -1,3 +1,4 @@
+@page "/servicios/fletes"
 @page "/prestadores"
 @using MundoRuta.Shared.DTO
 @inject IHttpServices Http
@@ -38,6 +39,10 @@
                         <p class="mb-0">
                             <a href="tel:@prestador.Telefono">@prestador.Telefono</a>
                         </p>
+                        <a class="btn btn-outline-primary btn-sm mt-2"
+                           href="prestadores/@prestador.Id">
+                            Ver detalle
+                        </a>
                     </article>
                 }
             </div>

@@ -1,0 +1,145 @@
+@page "/prestadores/{Id:int}"
+@using MundoRuta.Shared.DTO
+@inject IHttpServices Http
+
+<PageTitle>Detalle del prestador | Mundo Ruta</PageTitle>
+
+<div class="mr-page">
+    <div class="mr-container">
+        @if (_cargando)
+        {
+            <div class="mr-loading">Cargando prestador...</div>
+        }
+        else if (_noEncontrado)
+        {
+            <EmptyState Titulo="Prestador no encontrado"
+                        Descripcion="No encontramos ese prestador o ya no está disponible.">
+                <a class="btn btn-outline-primary" href="/servicios/fletes">Volver al catálogo</a>
+            </EmptyState>
+        }
+        else if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <div class="mr-alert mr-alert--error">@_error</div>
+        }
+        else if (_perfil is not null)
+        {
+            <PageHeader Titulo="@TituloPrestador"
+                        Descripcion="Información pública del prestador y sus vehículos." />
+
+            <article class="mr-card mr-perfil">
+                <div class="mr-perfil__fila">
+                    <span class="mr-perfil__etiqueta">Estado</span>
+                    <EstadoBadge Estado="@_perfil.Estado" />
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_perfil.RazonSocial))
+                {
+                    <div class="mr-perfil__fila">
+                        <span class="mr-perfil__etiqueta">Razón social</span>
+                        <span>@_perfil.RazonSocial</span>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(_perfil.Cuit))
+                {
+                    <div class="mr-perfil__fila">
+                        <span class="mr-perfil__etiqueta">CUIT</span>
+                        <span>@_perfil.Cuit</span>
+                    </div>
+                }
+
+                <div class="mr-perfil__fila">
+                    <span class="mr-perfil__etiqueta">Email</span>
+                    <a href="mailto:@_perfil.Email">@_perfil.Email</a>
+                </div>
+
+                <div class="mr-perfil__fila">
+                    <span class="mr-perfil__etiqueta">Teléfono</span>
+                    <a href="tel:@_perfil.Telefono">@_perfil.Telefono</a>
+                </div>
+
+                <div class="mr-perfil__fila">
+                    <span class="mr-perfil__etiqueta">Fecha de registro</span>
+                    <span>@_perfil.FechaRegistro.ToString("dd/MM/yyyy")</span>
+                </div>
+            </article>
+
+            <h2 class="mr-section-title mt-4">Vehículos</h2>
+
+            @if (_perfil.Vehiculos is null || _perfil.Vehiculos.Count == 0)
+            {
+                <EmptyState Titulo="Sin vehículos registrados"
+                            Descripcion="Este prestador todavía no tiene vehículos cargados." />
+            }
+            else
+            {
+                <div class="mr-grid">
+                    @foreach (VehiculoDTO vehiculo in _perfil.Vehiculos)
+                    {
+                        <article class="mr-card">
+                            <h3 class="mr-card__title">@vehiculo.Patente</h3>
+                            <p class="mb-1">
+                                <span class="mr-muted">Marca: </span>@vehiculo.Marca
+                            </p>
+                            <p class="mb-1">
+                                <span class="mr-muted">Licencia: </span>@vehiculo.Licencia
+                            </p>
+                            <p class="mb-0">
+                                <EstadoBadge Estado="@vehiculo.Estado" />
+                            </p>
+                        </article>
+                    }
+                </div>
+            }
+
+            <p class="mt-4 mb-0">
+                <a href="/servicios/fletes">Volver al catálogo</a>
+            </p>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private PrestadorPerfilPublicoDTO? _perfil;
+    private bool _cargando = true;
+    private bool _noEncontrado;
+    private string? _error;
+
+    private string TituloPrestador =>
+        !string.IsNullOrWhiteSpace(_perfil?.RazonSocial)
+            ? _perfil.RazonSocial
+            : $"{_perfil?.Nombre} {_perfil?.Apellido}".Trim();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Recarga cuando cambia el Id en la ruta (por ejemplo, "Ver detalle" otro prestador).
+        _cargando = true;
+        _noEncontrado = false;
+        _error = null;
+        _perfil = null;
+
+        HttpResp<PrestadorPerfilPublicoDTO> respuesta =
+            await Http.GetAsync<PrestadorPerfilPublicoDTO>($"api/prestador/{Id}/perfil-publico");
+
+        if (respuesta.Error)
+        {
+            if (respuesta.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _noEncontrado = true;
+            }
+            else
+            {
+                _error = await respuesta.ObtenerMensajeAsync("No pudimos cargar el perfil del prestador.");
+            }
+        }
+        else
+        {
+            _perfil = respuesta.Respuesta;
+        }
+
+        _cargando = false;
+    }
+}
