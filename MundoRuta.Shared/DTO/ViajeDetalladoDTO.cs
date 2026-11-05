@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -34,6 +34,10 @@ namespace MundoRuta.Shared.DTO
         public int IdPasajero { get; set; }
         public string NombrePasajero { get; set; } = string.Empty;
 
+        // Prestador / Usuario asignado
+        public int IdUsuario { get; set; }
+        public string? NombrePrestador { get; set; }
+
         // Prestador
         public int IdUsuario { get; set; }
         public string? NombrePrestador { get; set; }
@@ -44,9 +48,12 @@ namespace MundoRuta.Shared.DTO
         public int? IdChofer { get; set; }
         public string? NombreChofer { get; set; }
 
-        // Vehículo
+        // Veh�culo
         public int? IdVehiculo { get; set; }
         public string? Patente { get; set; }
         public string? Marca { get; set; }
+
+        // Calificaci�n
+        public bool CalificadoPorPasajero { get; set; }
     }
 }

@@ -200,12 +200,21 @@ namespace MundoRuta.Server.Controllers
                 DetalleCarga = v.DetalleCarga,
                 MotivoCancelacion = v.MotivoCancelacion,
                 IdPasajero = v.IdPasajero,
-                NombrePasajero = v.Pasajero?.Nombre,
+                NombrePasajero = string.IsNullOrWhiteSpace(v.Pasajero?.Nombre) && string.IsNullOrWhiteSpace(v.Pasajero?.Apellido)
+                    ? (v.Pasajero?.Email ?? string.Empty)
+                    : ((v.Pasajero?.Nombre ?? string.Empty) + " " + (v.Pasajero?.Apellido ?? string.Empty)).Trim(),
+                IdUsuario = v.IdUsuario,
+                NombrePrestador = string.IsNullOrWhiteSpace(v.Usuario?.RazonSocial)
+                    ? ((v.Usuario?.Nombre ?? string.Empty) + " " + (v.Usuario?.Apellido ?? string.Empty)).Trim()
+                    : v.Usuario?.RazonSocial,
                 IdChofer = v.IdChofer,
-                NombreChofer = v.Chofer?.Nombre,
+                NombreChofer = string.IsNullOrWhiteSpace(v.Chofer?.Nombre) && string.IsNullOrWhiteSpace(v.Chofer?.Apellido)
+                    ? (v.Chofer?.Usuario?.Email ?? string.Empty)
+                    : ((v.Chofer?.Nombre ?? string.Empty) + " " + (v.Chofer?.Apellido ?? string.Empty)).Trim(),
                 IdVehiculo = v.IdVehiculo,
                 Patente = v.Vehiculo?.Patente,
-                Marca = v.Vehiculo?.Marca
+                Marca = v.Vehiculo?.Marca,
+                CalificadoPorPasajero = v.CalificadoPorPasajero
             };
 
             return Ok(dto);
