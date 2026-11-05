@@ -34,6 +34,7 @@ namespace MundoRuta.Servicios.Extensions
             services.AddScoped<IVehiculoServicio, VehiculoServicio>();
             services.AddScoped<IAdminServicio, AdminServicio>();
             services.AddScoped<IViajeHubService, ViajeHubService>();
+            services.AddScoped<IViajePasajeroServicio, ViajePasajeroServicio>();
 
             return services;
         }
