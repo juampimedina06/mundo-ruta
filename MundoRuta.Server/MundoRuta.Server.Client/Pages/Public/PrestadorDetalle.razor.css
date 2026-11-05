@@ -1,0 +1,18 @@
+.mr-perfil__fila {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .5rem 0;
+    border-bottom: 1px solid var(--mr-borde);
+}
+
+.mr-perfil__fila:last-child {
+    border-bottom: none;
+}
+
+.mr-perfil__etiqueta {
+    min-width: 140px;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--mr-texto-suave);
+}
