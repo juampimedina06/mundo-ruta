@@ -79,8 +79,15 @@ else if (Sesion.EstaLogueado && RolPermitido())
 
         string[] roles = Permitidos.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        foreach (string rol in roles)
+        foreach (string rolConfigurado in roles)
         {
+            string rol = rolConfigurado;
+
+            if (rol.StartsWith("Roles.", StringComparison.Ordinal))
+            {
+                rol = rol.Substring("Roles.".Length);
+            }
+
             if (Sesion.TieneRol(rol))
             {
                 return true;

@@ -1,4 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos;
 using MundoRuta.BD.Datos.Entity;
 using MundoRuta.Shared;
@@ -8,6 +12,25 @@ namespace MundoRuta.Repositorio.Repositorios
 {
     public class ViajeRepositorio : Repositorio<Viaje>, IViajeRepositorio
     {
+        private static readonly Expression<Func<Viaje, ViajePrestadorDTO>> ProyeccionListado = v => new ViajePrestadorDTO
+        {
+            Id = v.Id,
+            Origen = v.Origen,
+            Destino = v.Destino,
+            TipoSolicitud = v.TipoSolicitud,
+            EsCubierto = v.EsCubierto,
+            UsaBaulera = v.UsaBaulera,
+            LlevaAcompanante = v.LlevaAcompanante,
+            Estado = v.Estado,
+            EstadoPago = v.EstadoPago,
+            Fecha = v.Fecha,
+            Hora = v.Hora,
+            Monto = v.Monto,
+            MontoEstimado = v.MontoEstimado,
+            IdPasajero = v.IdPasajero,
+            NombrePasajero = v.Pasajero.Nombre + " " + v.Pasajero.Apellido
+        };
+
         private readonly AppDbContext context;
 
         public ViajeRepositorio(AppDbContext context) : base(context)
@@ -49,14 +72,21 @@ namespace MundoRuta.Repositorio.Repositorios
         }
 
         public async Task<Viaje?> ObtenerDetalle(int viajeId, int usuarioId, bool esPrestador)
-        {
-            return await context.Viajes
-                .Include(v => v.Pasajero)
-                .Include(v => v.Usuario)
-                .Include(v => v.Chofer)
-                .ThenInclude(c => c.Usuario)
-                .Include(v => v.Vehiculo)
-                .FirstOrDefaultAsync(v => v.Id == viajeId);
+{
+    IQueryable<Viaje> query = context.Viajes
+        .Include(v => v.Pasajero)
+        .Include(v => v.Usuario)
+        .Include(v => v.Chofer)
+            .ThenInclude(c => c.Usuario)
+        .Include(v => v.Vehiculo);
+
+    if (esPrestador)
+    {
+        query = query.Where(v => v.IdUsuario == usuarioId);
+    }
+
+    return await query.FirstOrDefaultAsync(v => v.Id == viajeId);
+}
         }
 
         public async Task<List<Viaje>> SolicitudesPendientes(int prestadorId) // Obtiene las solicitudes de viaje que todavía están buscando un prestador.
@@ -68,7 +98,7 @@ namespace MundoRuta.Repositorio.Repositorios
 
         public async Task<List<ViajePrestadorDTO>> ListadoPorPrestador(int prestadorId, string? estado = null)
         {
-            var query = context.Viajes.Where(v => v.IdUsuario == prestadorId);
+            IQueryable<Viaje> query = context.Viajes.Where(v => v.IdUsuario == prestadorId);
 
             if (!string.IsNullOrEmpty(estado))
             {
@@ -77,21 +107,26 @@ namespace MundoRuta.Repositorio.Repositorios
 
             return await query
                 .OrderByDescending(v => v.Fecha)
-                .Select(v => new ViajePrestadorDTO
-                {
-                    Id = v.Id,
-                    Origen = v.Origen,
-                    Destino = v.Destino,
-                    TipoSolicitud = v.TipoSolicitud,
-                    Estado = v.Estado,
-                    EstadoPago = v.EstadoPago,
-                    Fecha = v.Fecha,
-                    Hora = v.Hora,
-                    Monto = v.Monto,
-                    MontoEstimado = v.MontoEstimado,
-                    IdPasajero = v.IdPasajero,
-                    NombrePasajero = v.Pasajero.Nombre + " " + v.Pasajero.Apellido
-                })
+                .Select(ProyeccionListado)
+                .ToListAsync();
+        }
+
+        public async Task<List<ViajePrestadorDTO>> ListadoSolicitudesDisponibles(string? estado = null)
+        {
+            IQueryable<Viaje> query = context.Viajes;
+
+            if (!string.IsNullOrEmpty(estado))
+            {
+                query = query.Where(v => v.Estado == estado);
+            }
+            else
+            {
+                query = query.Where(v => v.Estado == EstadosViaje.Buscando || v.Estado == EstadosViaje.Contraofertado);
+            }
+
+            return await query
+                .OrderByDescending(v => v.Fecha)
+                .Select(ProyeccionListado)
                 .ToListAsync();
         }
         public async Task<bool> ResponderSolicitud(int viajeId, ResponderSolicitudDTO dto)
@@ -171,6 +206,135 @@ namespace MundoRuta.Repositorio.Repositorios
         public async Task<int> ContarViajesFinalizados()
         {
             return await context.Viajes.CountAsync(v => v.Estado == EstadosViaje.Finalizado);
+        }
+
+        public async Task<int> ContarTodos()
+        {
+            return await context.Viajes.CountAsync();
+        }
+
+        public async Task<int> ContarActivos() // Cuenta los viajes que se encuentran en alguno de los estados operativos.
+        {
+            string[] estadosActivos =
+            {
+                EstadosViaje.Buscando,
+                EstadosViaje.Asignado,
+                EstadosViaje.CargaSubida,
+                EstadosViaje.EnTransito,
+                EstadosViaje.LlegadaDestino
+            };
+
+            return await context.Viajes.CountAsync(v => estadosActivos.Contains(v.Estado));
+        }
+
+        public async Task<decimal> SumarMontoTransaccionado() // Suma los montos de los viajes finalizados; devuelve 0 si no hay registros.
+        {
+            return await context.Viajes
+                .Where(v => v.Estado == EstadosViaje.Finalizado)
+                .SumAsync(v => (decimal?)v.Monto) ?? 0m;
+        }
+
+        public async Task<int> ContarViajesDeUsuario(int usuarioId) // Cuenta los viajes donde el usuario aparece como prestador, pasajero o solicitante.
+        {
+            return await context.Viajes.CountAsync(v => v.IdUsuario == usuarioId || v.IdPasajero == usuarioId || v.IdSolicitante == usuarioId);
+        }
+
+        public async Task<int> ContarViajesDeChofer(int idChofer) // Cuenta los viajes asignados a un chofer.
+        {
+            return await context.Viajes.CountAsync(v => v.IdChofer == idChofer);
+        }
+
+        public async Task<AdminComisionesReporteDTO> ObtenerReporteComisiones(AdminFiltroComisionesDTO filtro, decimal porcentajeComision)
+        {
+            IQueryable<Viaje> query = context.Viajes
+                .Include(v => v.Usuario)
+                .Include(v => v.Pasajero)
+                .AsQueryable();
+
+            if (filtro.FechaDesde.HasValue)
+            {
+                DateTime desde = filtro.FechaDesde.Value.Date;
+                query = query.Where(v => v.Fecha >= desde);
+            }
+
+            if (filtro.FechaHasta.HasValue)
+            {
+                DateTime hasta = filtro.FechaHasta.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(v => v.Fecha <= hasta);
+            }
+
+            if (filtro.PrestadorId.HasValue && filtro.PrestadorId.Value > 0)
+            {
+                query = query.Where(v => v.IdUsuario == filtro.PrestadorId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filtro.EstadoViaje))
+            {
+                string estadoNormalizado = filtro.EstadoViaje.Trim().ToUpperInvariant().Replace("-", "_");
+                query = query.Where(v => v.Estado == estadoNormalizado);
+            }
+
+            List<Viaje> viajes = await query
+                .OrderByDescending(v => v.Fecha)
+                .ThenByDescending(v => v.Id)
+                .ToListAsync();
+
+            List<AdminComisionFilaDTO> operaciones = new List<AdminComisionFilaDTO>();
+            decimal totalFacturado = 0m;
+            decimal comisionesRetenidas = 0m;
+            decimal comisionesPendientes = 0m;
+
+            foreach (Viaje v in viajes)
+            {
+                decimal montoFlete = v.Monto;
+                decimal comision = Math.Round(montoFlete * (porcentajeComision / 100m), 2);
+
+                string prestadorNombre = v.Usuario != null
+                    ? $"{v.Usuario.Nombre} {v.Usuario.Apellido}".Trim()
+                    : "Sin asignar";
+                string? razonSocial = v.Usuario?.RazonSocial;
+
+                string pasajeroNombre = v.Pasajero != null
+                    ? $"{v.Pasajero.Nombre} {v.Pasajero.Apellido}".Trim()
+                    : "Sin asignar";
+
+                string estadoPago = string.IsNullOrWhiteSpace(v.EstadoPago) ? "PENDIENTE" : v.EstadoPago.ToUpperInvariant();
+
+                operaciones.Add(new AdminComisionFilaDTO
+                {
+                    ViajeId = v.Id,
+                    PrestadorId = v.IdUsuario,
+                    PrestadorNombre = prestadorNombre,
+                    PrestadorRazonSocial = razonSocial,
+                    PasajeroId = v.IdPasajero,
+                    PasajeroNombre = pasajeroNombre,
+                    Fecha = DateTime.SpecifyKind(v.Fecha, DateTimeKind.Utc),
+                    MontoTotal = montoFlete,
+                    PorcentajeComision = porcentajeComision,
+                    MontoComision = comision,
+                    EstadoViaje = v.Estado ?? string.Empty,
+                    EstadoPago = estadoPago
+                });
+
+                totalFacturado += montoFlete;
+                if (estadoPago == "PAGADO")
+                {
+                    comisionesRetenidas += comision;
+                }
+                else
+                {
+                    comisionesPendientes += comision;
+                }
+            }
+
+            return new AdminComisionesReporteDTO
+            {
+                TotalFacturado = totalFacturado,
+                TotalComisionesRetenidas = comisionesRetenidas,
+                TotalComisionesPendientes = comisionesPendientes,
+                CantidadOperaciones = operaciones.Count,
+                Operaciones = operaciones
+            };
         }
     }
 }

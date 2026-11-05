@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos.Entity;
@@ -42,9 +42,9 @@ public class PrestadorController : ControllerBase
 
     // GET: lista de solicitudes pendientes
     [HttpGet("{prestadorId:int}/solicitudes")]
-    public async Task<ActionResult> GetSolicitudes(int prestadorId)
+    public async Task<ActionResult> GetSolicitudes(int prestadorId, [FromQuery] string? estado = null)
     {
-        var solicitudes = await _viajeRepositorio.ListadoPorPrestador(prestadorId, "PENDIENTE");
+        var solicitudes = await _viajeRepositorio.ListadoSolicitudesDisponibles(estado ?? EstadosViaje.Buscando);
         return Ok(solicitudes);
     }
 
@@ -54,6 +54,20 @@ public class PrestadorController : ControllerBase
     {
         var viajes = await _viajeRepositorio.ListadoPorPrestador(prestadorId, estado);
         return Ok(viajes);
+    }
+
+    // GET: detalle de un viaje de la empresa
+    [HttpGet("{prestadorId:int}/viajes/{viajeId:int}")] // api/prestador/{prestadorId}/viajes/{viajeId}
+    public async Task<ActionResult<ViajeDetalladoDTO>> GetViajeDetalle(int prestadorId, int viajeId)
+    {
+        var viaje = await _viajeRepositorio.ObtenerDetalle(viajeId, prestadorId, true);
+
+        if (viaje == null)
+        {
+            return NotFound("Viaje no encontrado.");
+        }
+
+        return Ok(CrearDetalleDTO(viaje));
     }
 
     // POST: El prestador agrega un nuevo chofer a la empresa
@@ -113,6 +127,7 @@ public class PrestadorController : ControllerBase
         {
             Id = v.Id,
             Patente = v.Patente,
+            Nombre = v.Nombre,
             Marca = v.Marca,
             Licencia = v.Licencia,
             Estado = v.Estado
@@ -276,6 +291,7 @@ public class PrestadorController : ControllerBase
         var entidad = new Vehiculo
         {
             Patente = dto.Patente,
+            Nombre = dto.Nombre,
             Marca = dto.Marca,
             Licencia = dto.Licencia,
             Estado = dto.Estado,
@@ -328,29 +344,10 @@ public class PrestadorController : ControllerBase
         viaje.Estado = EstadosViaje.EnTransito;
         await _viajeRepositorio.Update(viaje);
 
-        // DTO para la notificación en tiempo real
-        var estadoDto = new EstadoViajeActualizadoDTO
-        {
-            IdViaje = viaje.Id,
-            Estado = EstadosViaje.EnTransito,
-            Mensaje = "El viaje ha sido iniciado y está en curso"
-        };
-
-        // Notificaciones vía SignalR
-        await _hubContext.Clients.Group($"viaje_{viaje.Id}").SendAsync("EstadoViajeActualizado", estadoDto);
-        if (viaje.IdPasajero > 0)
-        {
-            await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("EstadoViajeActualizado", estadoDto);
-        }
-        if (viaje.IdChofer > 0)
-        {
-            await _hubContext.Clients.Group($"chofer_{viaje.IdChofer}").SendAsync("EstadoViajeActualizado", estadoDto);
-        }
+        await NotificarEstadoAsync(viaje, EstadosViaje.EnTransito, "El viaje ha sido iniciado y está en curso");
 
         return Ok(new { mensaje = "Viaje iniciado correctamente" });
     }
-
-
 
     // PUT: Finalizar un viaje
     [HttpPut("viajes/{id:int}/finalizar")]
@@ -370,21 +367,7 @@ public class PrestadorController : ControllerBase
 
         await _viajeRepositorio.FinalizarViaje(viaje);
 
-        var estadoDto = new EstadoViajeActualizadoDTO
-        {
-            IdViaje = viaje.Id,
-            Estado = EstadosViaje.Finalizado,
-            Mensaje = "Viaje finalizado correctamente"
-        };
-        await _hubContext.Clients.Group($"viaje_{viaje.Id}").SendAsync("EstadoViajeActualizado", estadoDto);
-        if (viaje.IdPasajero > 0)
-        {
-            await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("EstadoViajeActualizado", estadoDto);
-        }
-        if (viaje.IdChofer > 0)
-        {
-            await _hubContext.Clients.Group($"chofer_{viaje.IdChofer}").SendAsync("EstadoViajeActualizado", estadoDto);
-        }
+        await NotificarEstadoAsync(viaje, EstadosViaje.Finalizado, "Viaje finalizado correctamente");
 
         return Ok(new { mensaje = "Viaje finalizado correctamente" });
     }
@@ -406,19 +389,23 @@ public class PrestadorController : ControllerBase
 
         await _viajeRepositorio.Update(viaje);
 
-        var pagoDto = new EstadoViajeActualizadoDTO
-        {
-            IdViaje = viaje.Id,
-            Estado = viaje.Estado,
-            Mensaje = "Pago registrado"
-        };
-        await _hubContext.Clients.Group($"viaje_{viaje.Id}").SendAsync("EstadoViajeActualizado", pagoDto);
-        if (viaje.IdPasajero > 0)
-        {
-            await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("EstadoViajeActualizado", pagoDto);
-        }
+        await NotificarEstadoAsync(viaje, viaje.Estado, "Pago registrado");
 
         return Ok(new { mensaje = "Pago realizado con exito", viaje });
+    }
+
+    // GET: Tarifa base por km configurada por el prestador
+    [HttpGet("{id:int}/tarifa-km")]
+    public async Task<ActionResult<TarifaKmDTO>> ObtenerTarifaKm(int id)
+    {
+        var prestador = await _usuarioRepositorio.ObtenerPorId(id);
+        if (prestador == null || prestador.Rol != "Prestador")
+        {
+            return NotFound("Prestador no encontrado");
+        }
+
+        var tarifa = new TarifaKmDTO { TarifaBaseKm = prestador.TarifaBaseKm ?? 0m };
+        return Ok(tarifa);
     }
 
     // PUT: Configurar tarifa por km del prestador (opción A)
@@ -431,8 +418,163 @@ public class PrestadorController : ControllerBase
             return NotFound("Prestador no encontrado");
         }
 
+        if (dto.TarifaBaseKm < 0)
+        {
+            return BadRequest("La tarifa base por kilómetro no puede ser negativa");
+        }
+
         prestador.TarifaBaseKm = dto.TarifaBaseKm;
         await _usuarioRepositorio.Update(prestador);
         return Ok(new { mensaje = "Tarifa por km actualizada", tarifaBaseKm = prestador.TarifaBaseKm });
+    }
+
+    // GET: Obtener un chofer por id
+    [HttpGet("choferes/{choferId:int}")]
+    public async Task<IActionResult> ObtenerChoferPorId(int choferId)
+    {
+        try
+        {
+            var chofer = await _choferRepositorio.ObtenerPorIdAsync(choferId);
+
+            if (chofer == null)
+            {
+                return NotFound(new { mensaje = "El chofer solicitado no existe." });
+            }
+
+            return Ok(chofer);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { mensaje = "Error interno del servidor", detalle = ex.Message });
+        }
+    }
+
+    // PUT: Modificar datos de un chofer
+    [HttpPut("choferes/{choferId:int}")]
+    public async Task<IActionResult> ModificarChofer(int choferId, [FromBody] ChoferUpdateDto dto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var actualizado = await _choferRepositorio.ActualizarChoferAsync(choferId, dto);
+
+            if (!actualizado)
+            {
+                return NotFound(new { mensaje = "No se pudo actualizar. El chofer no existe." });
+            }
+
+            return Ok(new { mensaje = "Datos del chofer actualizados correctamente." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { mensaje = "Error al actualizar el chofer", detalle = ex.Message });
+        }
+    }
+
+    // DELETE: Baja lógica de un chofer
+    [HttpDelete("choferes/{choferId:int}")]
+    public async Task<IActionResult> BajaChofer(int choferId)
+    {
+        try
+        {
+            var tieneViajesPendientes = await _choferRepositorio.TieneViajesEnTransitoAsync(choferId);
+
+            if (tieneViajesPendientes)
+            {
+                return BadRequest(new { mensaje = "No se puede dar de baja. El chofer tiene viajes en tránsito asignados." });
+            }
+
+            var bajaExitosa = await _choferRepositorio.BajaLogicaAsync(choferId);
+
+            if (!bajaExitosa)
+            {
+                return NotFound(new { mensaje = "No se pudo dar de baja. El chofer no existe o ya está inactivo." });
+            }
+
+            return Ok(new { mensaje = "Chofer dado de baja exitosamente." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { mensaje = "Error al intentar dar de baja al chofer", detalle = ex.Message });
+        }
+    }
+
+    private async Task NotificarEstadoAsync(Viaje viaje, string estado, string mensaje)
+    {
+        var estadoDto = new EstadoViajeActualizadoDTO
+        {
+            IdViaje = viaje.Id,
+            Estado = estado,
+            Mensaje = mensaje
+        };
+
+        await _hubContext.Clients.Group($"viaje_{viaje.Id}").SendAsync("EstadoViajeActualizado", estadoDto);
+
+        if (viaje.IdUsuario > 0)
+        {
+            await _hubContext.Clients.Group($"prestador_{viaje.IdUsuario}").SendAsync("EstadoViajeActualizado", estadoDto);
+        }
+
+        if (viaje.IdPasajero > 0)
+        {
+            await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("EstadoViajeActualizado", estadoDto);
+        }
+
+        if (viaje.IdChofer > 0)
+        {
+            await _hubContext.Clients.Group($"chofer_{viaje.IdChofer}").SendAsync("EstadoViajeActualizado", estadoDto);
+        }
+    }
+
+    private static ViajeDetalladoDTO CrearDetalleDTO(Viaje viaje)
+    {
+        return new ViajeDetalladoDTO
+        {
+            Id = viaje.Id,
+            Origen = viaje.Origen,
+            Destino = viaje.Destino,
+            TipoSolicitud = viaje.TipoSolicitud,
+            Estado = viaje.Estado,
+            EstadoPago = viaje.EstadoPago,
+            Fecha = viaje.Fecha,
+            Hora = viaje.Hora,
+            FechaHoraReserva = viaje.FechaHoraReserva,
+            Monto = viaje.Monto,
+            MontoEstimado = viaje.MontoEstimado,
+            MetodoDePago = viaje.MetodoDePago,
+            EquipajeCarga = viaje.EquipajeCarga,
+            DetalleCarga = viaje.DetalleCarga,
+            MotivoCancelacion = viaje.MotivoCancelacion,
+            IdPasajero = viaje.IdPasajero,
+            NombrePasajero = viaje.Pasajero == null
+                ? string.Empty
+                : NombreCompleto(viaje.Pasajero.Nombre, viaje.Pasajero.Apellido),
+            IdUsuario = viaje.IdUsuario,
+            NombrePrestador = viaje.Usuario == null
+                ? null
+                : NombreCompleto(viaje.Usuario.Nombre, viaje.Usuario.Apellido, viaje.Usuario.RazonSocial),
+            CalificadoPorPasajero = viaje.CalificadoPorPasajero,
+            IdChofer = viaje.IdChofer > 0 ? viaje.IdChofer : null,
+            NombreChofer = viaje.Chofer == null
+                ? null
+                : NombreCompleto(viaje.Chofer.Nombre, viaje.Chofer.Apellido),
+            IdVehiculo = viaje.IdVehiculo > 0 ? viaje.IdVehiculo : null,
+            Patente = viaje.Vehiculo?.Patente,
+            Marca = viaje.Vehiculo?.Marca
+        };
+    }
+
+    private static string NombreCompleto(string? nombre, string? apellido, string? razonSocial = null)
+    {
+        if (!string.IsNullOrWhiteSpace(razonSocial))
+        {
+            return razonSocial.Trim();
+        }
+
+        return $"{nombre} {apellido}".Trim();
     }
 }

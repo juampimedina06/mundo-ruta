@@ -1,17 +1,12 @@
 @page "/admin/prestadores"
+@inject NavigationManager Navegacion
 
-<PageTitle>Prestadores pendientes | Mundo Ruta</PageTitle>
+<PageTitle>Prestadores | Mundo Ruta</PageTitle>
 
-<RoleGuard Permitidos="Roles.Admin">
-    <div class="mr-page">
-        <div class="mr-container">
-            <PageHeader Titulo="Prestadores pendientes"
-                        Descripcion="Altas que esperan aprobación." />
-
-            <EmptyState Titulo="No hay prestadores pendientes"
-                        Descripcion="Cuando una empresa se registre va a aparecer acá para aprobar o rechazar.">
-                <a class="btn btn-outline-primary" href="/admin">Volver al panel</a>
-            </EmptyState>
-        </div>
-    </div>
-</RoleGuard>
+@code {
+    // La bandeja de solicitudes vive dentro del dashboard, debajo de las métricas.
+    protected override void OnInitialized()
+    {
+        Navegacion.NavigateTo("/admin/dashboard#solicitudes-prestadores", replace: true);
+    }
+}

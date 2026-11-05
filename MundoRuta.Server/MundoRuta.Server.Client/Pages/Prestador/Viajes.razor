@@ -1,17 +1,655 @@
 @page "/prestador/viajes"
+@using System.Globalization
+@implements IDisposable
+@inject IPrestadorServicio PrestadorServicio
+@inject IViajeHubService Hub
+@inject SesionEstado Sesion
 
-<PageTitle>Viajes | Mundo Ruta</PageTitle>
+<PageTitle>Viajes de la empresa | Mundo Ruta</PageTitle>
 
-<RoleGuard Permitidos="Roles.Prestador">
+<RoleGuard Permitidos="@Roles.Prestador">
     <div class="mr-page">
         <div class="mr-container">
-            <PageHeader Titulo="Viajes"
-                        Descripcion="Servicios asignados y en curso." />
+            <PageHeader Titulo="Viajes de la empresa"
+                        Descripcion="Seguí el estado de los servicios asignados y consultá el detalle de cada viaje.">
+                <Acciones>
+                    <span class="mr-vivo @(_tiempoRealActivo ? "mr-vivo--activo" : null)">
+                        <span class="mr-vivo__punto"></span>
+                        @(_tiempoRealActivo ? "En vivo" : "Sin conexión en vivo")
+                    </span>
+                    <button type="button"
+                            class="btn btn-outline-primary btn-sm"
+                            @onclick="ActualizarAsync"
+                            disabled="@_cargando">
+                        @(_cargando ? "Actualizando..." : "Actualizar")
+                    </button>
+                </Acciones>
+            </PageHeader>
 
-            <EmptyState Titulo="Todavía no hay viajes asignados"
-                        Descripcion="Los viajes aceptados y en curso van a aparecer acá.">
-                <a class="btn btn-outline-primary" href="/prestador/solicitudes">Ver solicitudes</a>
-            </EmptyState>
+            <div class="mr-filtros">
+                <div class="mr-filtro mr-filtro--busqueda">
+                    <label for="viajes-busqueda">Buscar</label>
+                    <input id="viajes-busqueda"
+                           type="search"
+                           class="form-control"
+                           placeholder="N° de viaje, origen, destino o pasajero"
+                           @bind="_busqueda"
+                           @bind:event="oninput" />
+                </div>
+
+                <div class="mr-filtro">
+                    <label for="viajes-fecha">Fecha</label>
+                    <input id="viajes-fecha"
+                           type="date"
+                           class="form-control"
+                           value="@_fechaTexto"
+                           @onchange="CambiarFecha" />
+                </div>
+
+                <div class="mr-filtro">
+                    <label for="viajes-estado">Estado</label>
+                    <select id="viajes-estado" class="form-select" @bind="_estadoFiltro">
+                        @foreach (OpcionEstado opcion in EstadosViajeUI.Opciones)
+                        {
+                            <option value="@opcion.Valor">@opcion.Etiqueta</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mr-filtros__acciones">
+                    <button type="button" class="btn btn-outline-primary" @onclick="LimpiarFiltros">
+                        Limpiar
+                    </button>
+                </div>
+            </div>
+
+            @if (!_cargado || (_cargando && _viajes.Count == 0))
+            {
+                <div class="mr-loading">Cargando viajes...</div>
+            }
+            else if (_errorCarga is not null)
+            {
+                <div class="mr-alert mr-alert--error mr-alerta-accion">
+                    <span>@_errorCarga</span>
+                    <button type="button" class="btn btn-outline-primary btn-sm" @onclick="ActualizarAsync">
+                        Reintentar
+                    </button>
+                </div>
+            }
+            else if (_viajes.Count == 0)
+            {
+                <EmptyState Titulo="Todavía no hay viajes asignados"
+                            Descripcion="Los viajes aceptados y en curso van a aparecer acá.">
+                    <a class="btn btn-outline-primary" href="/prestador/solicitudes">Ver solicitudes</a>
+                </EmptyState>
+            }
+            else if (ViajesFiltrados.Count == 0)
+            {
+                <EmptyState Titulo="No encontramos viajes"
+                            Descripcion="Probá con otra búsqueda, fecha o estado.">
+                    <button type="button" class="btn btn-outline-primary" @onclick="LimpiarFiltros">Limpiar filtros</button>
+                </EmptyState>
+            }
+            else
+            {
+                <div class="mr-tabla-wrapper">
+                    <table class="table align-middle mr-tabla-viajes">
+                        <thead>
+                            <tr>
+                                <th scope="col">N°</th>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Hora</th>
+                                <th scope="col">Recorrido</th>
+                                <th scope="col">Pasajero</th>
+                                <th scope="col">Estado</th>
+                                <th scope="col" class="text-end">Monto</th>
+                                <th scope="col" class="text-end">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (ViajePrestadorDTO viaje in ViajesFiltrados)
+                            {
+                                <tr @key="viaje.Id">
+                                    <td class="fw-semibold">#@viaje.Id</td>
+                                    <td>@FormatearFecha(viaje.Fecha)</td>
+                                    <td>@FormatearHora(viaje.Hora)</td>
+                                    <td>
+                                        <div class="mr-recorrido">
+                                            <span>@viaje.Origen</span>
+                                            <span class="mr-recorrido__flecha" aria-hidden="true">→</span>
+                                            <span>@viaje.Destino</span>
+                                        </div>
+                                    </td>
+                                    <td>@viaje.NombrePasajero</td>
+                                    <td>
+                                        <EstadoBadge Estado="@viaje.Estado"
+                                                     Texto="@EstadosViajeUI.Etiqueta(viaje.Estado)" />
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="fw-semibold">@FormatearMonto(MontoVisible(viaje))</div>
+                                        <small class="mr-muted">@EtiquetaPago(viaje.EstadoPago)</small>
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="button"
+                                                class="btn btn-outline-primary btn-sm"
+                                                @onclick="() => AbrirDetalleAsync(viaje.Id)">
+                                            Ver detalle
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     </div>
+
+    @if (_detalleAbierto)
+    {
+        <div class="mr-modal-fondo" @onclick="CerrarDetalle">
+            <div class="mr-modal"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="viaje-detalle-titulo"
+                 @onclick="DetenerEvento"
+                 @onclick:stopPropagation="true">
+                <div class="mr-modal__cabecera">
+                    <div>
+                        <p class="mr-modal__eyebrow">Detalle del viaje</p>
+                        <h2 id="viaje-detalle-titulo">Viaje #@_viajeDetalleId</h2>
+                    </div>
+                    <button type="button" class="btn-close" aria-label="Cerrar" @onclick="CerrarDetalle"></button>
+                </div>
+
+                <div class="mr-modal__cuerpo">
+                    @if (_cargandoDetalle)
+                    {
+                        <div class="mr-loading">Cargando detalle...</div>
+                    }
+                    else if (_errorDetalle is not null)
+                    {
+                        <div class="mr-alert mr-alert--error mr-alerta-accion">
+                            <span>@_errorDetalle</span>
+                            <button type="button"
+                                    class="btn btn-outline-primary btn-sm"
+                                    @onclick="() => CargarDetalleAsync(_viajeDetalleId)">
+                                Reintentar
+                            </button>
+                        </div>
+                    }
+                    else if (_detalle is ViajeDetalladoDTO detalle)
+                    {
+                        <div class="mr-detalle-grid">
+                            <section class="mr-detalle-bloque">
+                                <h3>Recorrido</h3>
+                                <dl>
+                                    <div class="mr-detalle-item">
+                                        <dt>Origen</dt>
+                                        <dd>@detalle.Origen</dd>
+                                    </div>
+                                    <div class="mr-detalle-item">
+                                        <dt>Destino</dt>
+                                        <dd>@detalle.Destino</dd>
+                                    </div>
+                                    <div class="mr-detalle-item">
+                                        <dt>Tipo de solicitud</dt>
+                                        <dd>@detalle.TipoSolicitud</dd>
+                                    </div>
+                                </dl>
+                            </section>
+
+                            <section class="mr-detalle-bloque">
+                                <h3>Estado y pago</h3>
+                                <dl>
+                                    <div class="mr-detalle-item">
+                                        <dt>Estado</dt>
+                                        <dd>
+                                            <EstadoBadge Estado="@detalle.Estado"
+                                                         Texto="@EstadosViajeUI.Etiqueta(detalle.Estado)" />
+                                        </dd>
+                                    </div>
+                                    <div class="mr-detalle-item">
+                                        <dt>Pago</dt>
+                                        <dd>@EtiquetaPago(detalle.EstadoPago)</dd>
+                                    </div>
+                                    <div class="mr-detalle-item">
+                                        <dt>Fecha</dt>
+                                        <dd>@FormatearFecha(detalle.Fecha)</dd>
+                                    </div>
+                                    <div class="mr-detalle-item">
+                                        <dt>Hora</dt>
+                                        <dd>@FormatearHora(detalle.Hora)</dd>
+                                    </div>
+                                    <div class="mr-detalle-item">
+                                        <dt>Reserva</dt>
+                                        <dd>@FormatearFechaHora(detalle.FechaHoraReserva)</dd>
+                                    </div>
+                                    <div class="mr-detalle-item">
+                                        <dt>Monto</dt>
+                                        <dd>@FormatearMonto(MontoVisible(detalle))</dd>
+                                    </div>
+                                    <div class="mr-detalle-item">
+                                        <dt>Monto estimado</dt>
+                                        <dd>@FormatearMonto(detalle.MontoEstimado)</dd>
+                                    </div>
+                                    <div class="mr-detalle-item">
+                                        <dt>Método de pago</dt>
+                                        <dd>@TextoOpcional(detalle.MetodoDePago)</dd>
+                                    </div>
+                                </dl>
+                            </section>
+
+                            <section class="mr-detalle-bloque">
+                                <h3>Cliente</h3>
+                                <dl>
+                                    <div class="mr-detalle-item">
+                                        <dt>Pasajero</dt>
+                                        <dd>#@detalle.IdPasajero</dd>
+                                    </div>
+                                    <div class="mr-detalle-item">
+                                        <dt>Nombre</dt>
+                                        <dd>@TextoOpcional(detalle.NombrePasajero)</dd>
+                                    </div>
+                                </dl>
+                            </section>
+
+                            <section class="mr-detalle-bloque">
+                                <h3>Chofer y vehículo</h3>
+                                <dl>
+                                    <div class="mr-detalle-item">
+                                        <dt>Chofer</dt>
+                                        <dd>@TextoOpcional(detalle.NombreChofer)</dd>
+                                    </div>
+                                    <div class="mr-detalle-item">
+                                        <dt>Patente</dt>
+                                        <dd>@TextoOpcional(detalle.Patente)</dd>
+                                    </div>
+                                    <div class="mr-detalle-item">
+                                        <dt>Marca</dt>
+                                        <dd>@TextoOpcional(detalle.Marca)</dd>
+                                    </div>
+                                </dl>
+                            </section>
+
+                            <section class="mr-detalle-bloque mr-detalle-bloque--ancho">
+                                <h3>Carga</h3>
+                                <dl>
+                                    <div class="mr-detalle-item">
+                                        <dt>Equipaje o carga</dt>
+                                        <dd>@SiNo(detalle.EquipajeCarga)</dd>
+                                    </div>
+                                    <div class="mr-detalle-item">
+                                        <dt>Detalle</dt>
+                                        <dd>@TextoOpcional(detalle.DetalleCarga)</dd>
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(detalle.MotivoCancelacion))
+                                    {
+                                        <div class="mr-detalle-item">
+                                            <dt>Motivo de cancelación</dt>
+                                            <dd>@detalle.MotivoCancelacion</dd>
+                                        </div>
+                                    }
+                                </dl>
+                            </section>
+                        </div>
+                    }
+                </div>
+
+                <div class="mr-modal__pie">
+                    <button type="button" class="btn btn-outline-primary" @onclick="CerrarDetalle">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
 </RoleGuard>
+
+@code {
+    private static readonly CultureInfo Cultura = CultureInfo.GetCultureInfo("es-AR");
+
+    private readonly List<ViajePrestadorDTO> _viajes = new();
+
+    private bool _inicializado;
+    private bool _cargando;
+    private bool _cargado;
+    private string? _errorCarga;
+
+    private string _busqueda = string.Empty;
+    private string _fechaTexto = string.Empty;
+    private string _estadoFiltro = EstadosViajeUI.Todos;
+
+    private bool _tiempoRealActivo;
+    private bool _suscripcionesActivas;
+
+    private int _viajeDetalleId;
+    private bool _detalleAbierto;
+    private bool _cargandoDetalle;
+    private string? _errorDetalle;
+    private ViajeDetalladoDTO? _detalle;
+
+    private List<ViajePrestadorDTO> ViajesFiltrados
+    {
+        get
+        {
+            IEnumerable<ViajePrestadorDTO> resultado = _viajes;
+            string busqueda = _busqueda.Trim();
+
+            if (!string.IsNullOrWhiteSpace(busqueda))
+            {
+                resultado = resultado.Where(v => CoincideBusqueda(v, busqueda));
+            }
+
+            DateTime? fecha = ObtenerFechaFiltro();
+            if (fecha.HasValue)
+            {
+                resultado = resultado.Where(v => v.Fecha.Date == fecha.Value.Date);
+            }
+
+            if (!string.Equals(_estadoFiltro, EstadosViajeUI.Todos, StringComparison.OrdinalIgnoreCase))
+            {
+                resultado = resultado.Where(v => EstadosViajeUI.Coincide(v.Estado, _estadoFiltro));
+            }
+
+            return resultado.ToList();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Sesion.CambioSesion += AlCambiarSesion;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_inicializado || !Sesion.Restaurada || !Sesion.TieneRol(Roles.Prestador))
+        {
+            return;
+        }
+
+        _inicializado = true;
+        await CargarAsync();
+        await ConfigurarTiempoRealAsync();
+    }
+
+    private async Task ActualizarAsync()
+    {
+        await CargarAsync();
+
+        if (!_tiempoRealActivo)
+        {
+            await ConfigurarTiempoRealAsync();
+        }
+    }
+
+    private async Task CargarAsync()
+    {
+        if (_cargando || !Sesion.TieneRol(Roles.Prestador))
+        {
+            return;
+        }
+
+        _cargando = true;
+        _errorCarga = null;
+        StateHasChanged();
+
+        HttpResp<List<ViajePrestadorDTO>> respuesta = await PrestadorServicio.ObtenerViajesAsync(Sesion.Id);
+
+        if (respuesta.Error)
+        {
+            _errorCarga = await respuesta.ObtenerMensajeAsync("No pudimos cargar los viajes.");
+        }
+        else
+        {
+            _viajes.Clear();
+            _viajes.AddRange(respuesta.Respuesta ?? new List<ViajePrestadorDTO>());
+        }
+
+        _cargando = false;
+        _cargado = true;
+        StateHasChanged();
+    }
+
+    private async Task ConfigurarTiempoRealAsync()
+    {
+        if (!Sesion.TieneRol(Roles.Prestador))
+        {
+            return;
+        }
+
+        if (!_suscripcionesActivas)
+        {
+            Hub.EstadoViajeActualizado += AlCambiarEstado;
+            Hub.ViajeAsignado += AlAsignarViaje;
+            Hub.EstadoConexionCambiado += AlCambiarConexion;
+            _suscripcionesActivas = true;
+        }
+
+        try
+        {
+            await Hub.IniciarConexionAsync();
+            await Hub.UnirseAPrestador(Sesion.Id);
+
+            _tiempoRealActivo = Hub.EstaConectado;
+        }
+        catch
+        {
+            _tiempoRealActivo = false;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task AbrirDetalleAsync(int viajeId)
+    {
+        _viajeDetalleId = viajeId;
+        _detalleAbierto = true;
+        _detalle = null;
+        _errorDetalle = null;
+        _cargandoDetalle = true;
+        StateHasChanged();
+
+        await CargarDetalleAsync(viajeId);
+    }
+
+    private async Task CargarDetalleAsync(int viajeId)
+    {
+        _cargandoDetalle = true;
+        _errorDetalle = null;
+        StateHasChanged();
+
+        HttpResp<ViajeDetalladoDTO> respuesta = await PrestadorServicio.ObtenerDetalleViajeAsync(Sesion.Id, viajeId);
+
+        if (respuesta.Error)
+        {
+            _errorDetalle = await respuesta.ObtenerMensajeAsync("No pudimos cargar el detalle del viaje.");
+        }
+        else if (respuesta.Respuesta is null)
+        {
+            _errorDetalle = "No se encontró el detalle del viaje.";
+        }
+        else
+        {
+            _detalle = respuesta.Respuesta;
+        }
+
+        _cargandoDetalle = false;
+        StateHasChanged();
+    }
+
+    private void AlCambiarEstado(EstadoViajeActualizadoDTO estado)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            ViajePrestadorDTO? viaje = _viajes.FirstOrDefault(v => v.Id == estado.IdViaje);
+
+            if (viaje is null)
+            {
+                await CargarAsync();
+                return;
+            }
+
+            viaje.Estado = estado.Estado;
+
+            if (_detalleAbierto && _viajeDetalleId == estado.IdViaje)
+            {
+                await CargarDetalleAsync(estado.IdViaje);
+            }
+
+            StateHasChanged();
+        });
+    }
+
+    private void AlAsignarViaje(ViajeAsignadoDTO viajeAsignado)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            ViajePrestadorDTO? viaje = _viajes.FirstOrDefault(v => v.Id == viajeAsignado.IdViaje);
+
+            if (viaje is null)
+            {
+                await CargarAsync();
+                return;
+            }
+
+            viaje.Estado = viajeAsignado.Estado;
+
+            if (viajeAsignado.Monto > 0)
+            {
+                viaje.Monto = viajeAsignado.Monto;
+            }
+
+            StateHasChanged();
+        });
+    }
+
+    private void AlCambiarConexion(bool conectado)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            _tiempoRealActivo = conectado;
+
+            if (conectado)
+            {
+                try
+                {
+                    await Hub.UnirseAPrestador(Sesion.Id);
+                    await CargarAsync();
+                }
+                catch
+                {
+                    _tiempoRealActivo = false;
+                }
+            }
+
+            StateHasChanged();
+        });
+    }
+
+    private void AlCambiarSesion()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void CambiarFecha(ChangeEventArgs args)
+    {
+        _fechaTexto = args.Value?.ToString() ?? string.Empty;
+    }
+
+    private void LimpiarFiltros()
+    {
+        _busqueda = string.Empty;
+        _fechaTexto = string.Empty;
+        _estadoFiltro = EstadosViajeUI.Todos;
+    }
+
+    private void CerrarDetalle()
+    {
+        _detalleAbierto = false;
+        _detalle = null;
+        _errorDetalle = null;
+        _cargandoDetalle = false;
+    }
+
+    private void DetenerEvento()
+    {
+    }
+
+    private static bool CoincideBusqueda(ViajePrestadorDTO viaje, string busqueda)
+    {
+        return viaje.Id.ToString().Contains(busqueda, StringComparison.OrdinalIgnoreCase)
+            || viaje.Origen.Contains(busqueda, StringComparison.OrdinalIgnoreCase)
+            || viaje.Destino.Contains(busqueda, StringComparison.OrdinalIgnoreCase)
+            || viaje.TipoSolicitud.Contains(busqueda, StringComparison.OrdinalIgnoreCase)
+            || viaje.NombrePasajero.Contains(busqueda, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private DateTime? ObtenerFechaFiltro()
+    {
+        if (DateTime.TryParseExact(_fechaTexto, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime fecha))
+        {
+            return fecha;
+        }
+
+        return null;
+    }
+
+    private static decimal MontoVisible(ViajePrestadorDTO viaje)
+    {
+        return viaje.Monto > 0 ? viaje.Monto : viaje.MontoEstimado;
+    }
+
+    private static decimal MontoVisible(ViajeDetalladoDTO viaje)
+    {
+        return viaje.Monto > 0 ? viaje.Monto : viaje.MontoEstimado;
+    }
+
+    private static string FormatearFecha(DateTime fecha)
+    {
+        return fecha.ToString("dd/MM/yyyy", Cultura);
+    }
+
+    private static string FormatearHora(TimeSpan hora)
+    {
+        return hora.ToString(@"hh\:mm");
+    }
+
+    private static string FormatearFechaHora(DateTime fecha)
+    {
+        return fecha.ToString("dd/MM/yyyy HH:mm", Cultura);
+    }
+
+    private static string FormatearMonto(decimal monto)
+    {
+        return monto.ToString("C0", Cultura);
+    }
+
+    private static string EtiquetaPago(string? estado)
+    {
+        if (string.IsNullOrWhiteSpace(estado))
+        {
+            return "Sin pago";
+        }
+
+        return string.Equals(estado, "PAGADO", StringComparison.OrdinalIgnoreCase) ? "Pagado" : estado;
+    }
+
+    private static string TextoOpcional(string? valor)
+    {
+        return string.IsNullOrWhiteSpace(valor) ? "—" : valor;
+    }
+
+    private static string SiNo(bool valor)
+    {
+        return valor ? "Sí" : "No";
+    }
+
+    public void Dispose()
+    {
+        Sesion.CambioSesion -= AlCambiarSesion;
+        Hub.EstadoViajeActualizado -= AlCambiarEstado;
+        Hub.ViajeAsignado -= AlAsignarViaje;
+        Hub.EstadoConexionCambiado -= AlCambiarConexion;
+    }
+}
