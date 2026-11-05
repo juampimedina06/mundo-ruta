@@ -1,0 +1,69 @@
+.mr-filtros {
+    padding: 1.25rem;
+}
+
+.mr-solicitudes {
+    display: grid;
+    gap: 1rem;
+}
+
+.mr-solicitud {
+    padding: 1.25rem;
+    transition: box-shadow .15s ease, transform .15s ease;
+}
+
+.mr-solicitud:hover {
+    box-shadow: 0 8px 24px rgba(15, 31, 61, .12);
+}
+
+.mr-solicitud__cabecera {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.mr-solicitud__ruta {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--mr-azul-marino);
+}
+
+.mr-solicitud__monto {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--mr-naranja);
+    white-space: nowrap;
+}
+
+.mr-solicitud__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin: .85rem 0;
+}
+
+.mr-solicitud__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-top: 1rem;
+}
+
+.mr-solicitud__panel {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--mr-borde);
+}
+
+.mr-solicitud__panel .form-label {
+    font-weight: 600;
+}
+
+@media (max-width: 575.98px) {
+    .mr-solicitud__monto {
+        font-size: 1.2rem;
+    }
+}

@@ -6,6 +6,8 @@ namespace MundoRuta.Servicios.Realtime
     {
         bool EstaConectado { get; }
 
+        event Action<bool>? EstadoConexionCambiado;
+
         event Action<NuevaOfertaDTO>? NuevaOfertaRecibida;
 
         event Action<ViajeAsignadoDTO>? ViajeAsignado;

@@ -4,7 +4,7 @@
 
 <header class="mr-navbar">
     <div class="mr-container mr-navbar__inner">
-        <a class="mr-navbar__brand" href="/">
+        <a class="mr-navbar__brand" href="@(Sesion.EstaLogueado ? RutaInicioPorRol.Obtener(Sesion.Rol) : "/")">
             <img src="img/logo-mundo-ruta.svg" alt="Mundo Ruta" />
         </a>
 
@@ -26,9 +26,19 @@
         <div class="mr-navbar__acciones">
             @if (Sesion.EstaLogueado)
             {
-                <span class="mr-navbar__usuario">@Sesion.Nombre</span>
-                <span class="mr-badge mr-badge--naranja">@Sesion.Rol</span>
-                <button type="button" class="btn btn-outline-primary btn-sm" @onclick="CerrarSesion">Cerrar sesión</button>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="d-none d-sm-flex flex-column text-end" style="line-height: 1.2;">
+                        <span class="fw-bold small text-dark">@Sesion.Nombre</span>
+                        <span class="text-muted" style="font-size: .725rem;">@Sesion.Rol</span>
+                    </div>
+                    <div class="rounded-circle text-white d-flex align-items-center justify-content-center"
+                         style="width: 34px; height: 34px; background-color: var(--mr-primary); font-size: 1rem;">
+                        <span class="material-symbols-outlined text-[18px]">person</span>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm ms-1" @onclick="CerrarSesion">
+                        Cerrar sesión
+                    </button>
+                </div>
             }
             else
             {

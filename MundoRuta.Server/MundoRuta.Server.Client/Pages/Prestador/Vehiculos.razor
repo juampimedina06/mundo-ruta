@@ -1,17 +1,565 @@
 @page "/prestador/vehiculos"
+@attribute [Authorize(Roles = "Prestador")]
+@using System.Globalization
+@using MundoRuta.Shared.DTO
+@using Microsoft.AspNetCore.Authorization
+@inject IVehiculoServicio Flota
+@inject SesionEstado Sesion
+@implements IDisposable
 
 <PageTitle>Vehículos | Mundo Ruta</PageTitle>
 
-<RoleGuard Permitidos="Roles.Prestador">
+<RoleGuard Permitidos="Prestador">
     <div class="mr-page">
         <div class="mr-container">
             <PageHeader Titulo="Vehículos"
                         Descripcion="Flota disponible para operar." />
 
-            <EmptyState Titulo="Todavía no cargaste vehículos"
-                        Descripcion="Desde acá vas a poder registrar patente, marca y modelo de cada vehículo.">
-                <a class="btn btn-outline-primary" href="/prestador">Volver al panel</a>
-            </EmptyState>
+            @if (!string.IsNullOrWhiteSpace(_mensaje))
+            {
+                <div class="mr-alert mr-alert--exito mb-3">@_mensaje</div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(_error))
+            {
+                <div class="mr-alert mr-alert--error mb-3 mr-alert--accion">
+                    <span>@_error</span>
+                    @if (_errorCarga)
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-primary" disabled="@_cargando" @onclick="ReintentarAsync">
+                            Reintentar
+                        </button>
+                    }
+                </div>
+            }
+
+            <section class="mr-card mr-bloque">
+                <h2 class="mr-card__title">Flota registrada</h2>
+
+                @if (_cargando)
+                {
+                    <div class="mr-loading">Cargando vehículos...</div>
+                }
+                else if (_vehiculos.Count == 0)
+                {
+                    <EmptyState Titulo="Todavía no cargaste vehículos"
+                                Descripcion="Registrá la unidad desde el formulario de alta para verla en el listado." />
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table mr-tabla">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Vehículo</th>
+                                    <th scope="col">Nombre</th>
+                                    <th scope="col">Tipo de vehículo</th>
+                                    <th scope="col" class="mr-tabla__acciones">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (VehiculoDTO vehiculo in _vehiculos)
+                                {
+                                    <tr>
+                                        <td>@vehiculo.Patente - @vehiculo.Marca</td>
+                                        <td>@NombreVisible(vehiculo)</td>
+                                        <td>@ValorVisible(vehiculo.TipoVehiculo)</td>
+                                        <td class="mr-tabla__acciones">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-primary mr-boton-icono"
+                                                    @onclick="() => VerDetalle(vehiculo)">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
+                                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
+                                                </svg>
+                                                Ver detalle
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </section>
+
+            <section class="mr-card mr-bloque">
+                <h2 class="mr-card__title">Registrar vehículo</h2>
+                <p class="mr-muted">Completá los datos de la unidad para sumarla a la flota.</p>
+
+                <EditForm Model="_alta" OnSubmit="RegistrarAsync">
+                    <div class="mr-form-grid">
+                        <div>
+                            <label class="form-label" for="nombre">Nombre</label>
+                            <InputText id="nombre" class="form-control" @bind-Value="_alta.Nombre" placeholder="Identificador o modelo" />
+                        </div>
+
+                        <div>
+                            <label class="form-label" for="patente">Patente</label>
+                            <InputText id="patente" class="form-control" @bind-Value="_alta.Patente" placeholder="AB123CD" />
+                        </div>
+
+                        <div>
+                            <label class="form-label" for="marca">Marca</label>
+                            <InputText id="marca" class="form-control" @bind-Value="_alta.Marca" placeholder="Ford" />
+                        </div>
+
+                        <div>
+                            <label class="form-label" for="marca-modelo">Marca y modelo</label>
+                            <InputText id="marca-modelo" class="form-control" @bind-Value="_alta.MarcaModelo" placeholder="Ford Cargo 1722" />
+                        </div>
+
+                        <div>
+                            <label class="form-label" for="tipo">Tipo de vehículo</label>
+                            <InputSelect id="tipo" class="form-select" @bind-Value="_alta.TipoVehiculo">
+                                <option value="">Seleccionar tipo</option>
+                                <option value="Camión">Camión</option>
+                                <option value="Camioneta">Camioneta</option>
+                                <option value="Utilitario">Utilitario</option>
+                                <option value="Furgón">Furgón</option>
+                                <option value="Acoplado">Acoplado</option>
+                                <option value="Otro">Otro</option>
+                            </InputSelect>
+                        </div>
+
+                        <div>
+                            <label class="form-label" for="capacidad">Capacidad de carga</label>
+                            <InputText id="capacidad" class="form-control" @bind-Value="_alta.CapacidadCarga" placeholder="1.500 kg" />
+                        </div>
+
+                        <div>
+                            <label class="form-label" for="licencia">Licencia</label>
+                            <InputText id="licencia" class="form-control" @bind-Value="_alta.Licencia" placeholder="Documentación habilitante" />
+                        </div>
+
+                        <div>
+                            <label class="form-label" for="fecha-fabricacion">Fecha de fabricación</label>
+                            <InputDate id="fecha-fabricacion" class="form-control" @bind-Value="_alta.FechaFabricación" />
+                            <p class="form-text mb-0">Fecha seleccionada: @FormatearFecha(_alta.FechaFabricación)</p>
+                        </div>
+
+                        <div>
+                            <label class="form-label" for="numero-conductor">Número de conductor</label>
+                            <InputNumber id="numero-conductor" class="form-control" @bind-Value="_alta.NumeroConductor" />
+                        </div>
+
+                        <div>
+                            <label class="form-label" for="estado">Estado</label>
+                            <InputSelect id="estado" class="form-select" @bind-Value="_alta.Estado">
+                                <option value="DISPONIBLE">Disponible</option>
+                                <option value="EN_USO">En uso</option>
+                                <option value="MANTENIMIENTO">En mantenimiento</option>
+                            </InputSelect>
+                        </div>
+
+                        <div class="mr-form-grid__ancho">
+                            <label class="form-label" for="caracteristicas">Características del conductor</label>
+                            <InputTextArea id="caracteristicas" class="form-control" rows="2" @bind-Value="_alta.CaracteristicasConductor" />
+                        </div>
+                    </div>
+
+                    <div class="mr-form-pie">
+                        <button type="submit" class="btn btn-primary" disabled="@_guardando">
+                            @(_guardando ? "Registrando..." : "Registrar vehículo")
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" disabled="@_guardando" @onclick="LimpiarAlta">
+                            Limpiar
+                        </button>
+                    </div>
+                </EditForm>
+            </section>
+
+            <section class="mr-card mr-bloque">
+                <h2 class="mr-card__title">Tarifa base</h2>
+                <p class="mr-muted">Precio base por kilómetro que se usa para tus ofertas.</p>
+
+                <div class="mr-tarifa">
+                    <div class="mr-tarifa__campo">
+                        <label class="form-label" for="tarifa">Precio por kilómetro (ARS)</label>
+                        <input id="tarifa"
+                               type="number"
+                               min="0"
+                               step="0.01"
+                               class="form-control"
+                               @bind="_tarifa"
+                               @bind:culture="CulturaInvariante" />
+                    </div>
+
+                    <button type="button" class="btn btn-primary" disabled="@_guardandoTarifa" @onclick="GuardarTarifaAsync">
+                        @(_guardandoTarifa ? "Guardando..." : "Guardar tarifa")
+                    </button>
+                </div>
+
+                @if (_tarifaCargada)
+                {
+                    <p class="mr-tarifa__actual">
+                        Tarifa actual: <strong>@FormatearMoneda(_tarifaActual)</strong> por kilómetro.
+                    </p>
+                }
+            </section>
         </div>
+
+        @if (_detalle is not null)
+        {
+            <div class="mr-modal" role="dialog" aria-modal="true" aria-labelledby="detalle-titulo">
+                <div class="mr-modal__panel">
+                    <div class="mr-modal__cabecera">
+                        <h2 id="detalle-titulo" class="mr-modal__titulo">Detalle del vehículo</h2>
+                        <button type="button" class="mr-modal__cerrar" aria-label="Cerrar detalle" @onclick="CerrarDetalle">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <dl class="mr-detalle">
+                        <div class="mr-detalle__fila">
+                            <dt>Patente</dt>
+                            <dd>@_detalle.Patente</dd>
+                        </div>
+                        <div class="mr-detalle__fila">
+                            <dt>Marca</dt>
+                            <dd>@ValorVisible(_detalle.Marca)</dd>
+                        </div>
+                        <div class="mr-detalle__fila">
+                            <dt>Nombre</dt>
+                            <dd>@NombreVisible(_detalle)</dd>
+                        </div>
+                        <div class="mr-detalle__fila">
+                            <dt>Marca y modelo</dt>
+                            <dd>@ValorVisible(_detalle.MarcaModelo)</dd>
+                        </div>
+                        <div class="mr-detalle__fila">
+                            <dt>Tipo de vehículo</dt>
+                            <dd>@ValorVisible(_detalle.TipoVehiculo)</dd>
+                        </div>
+                        <div class="mr-detalle__fila">
+                            <dt>Capacidad de carga</dt>
+                            <dd>@ValorVisible(_detalle.CapacidadCarga)</dd>
+                        </div>
+                        <div class="mr-detalle__fila">
+                            <dt>Licencia</dt>
+                            <dd>@ValorVisible(_detalle.Licencia)</dd>
+                        </div>
+                        <div class="mr-detalle__fila">
+                            <dt>Estado</dt>
+                            <dd><EstadoBadge Estado="@_detalle.Estado" /></dd>
+                        </div>
+                        <div class="mr-detalle__fila">
+                            <dt>Fecha de fabricación</dt>
+                            <dd>@FormatearFecha(_detalle.FechaFabricación)</dd>
+                        </div>
+                        <div class="mr-detalle__fila">
+                            <dt>Número de conductor</dt>
+                            <dd>@_detalle.NumeroConductor</dd>
+                        </div>
+                        <div class="mr-detalle__fila">
+                            <dt>Características del conductor</dt>
+                            <dd>@ValorVisible(_detalle.CaracteristicasConductor)</dd>
+                        </div>
+                    </dl>
+
+                    <div class="mr-modal__pie">
+                        <button type="button" class="btn btn-outline-primary" @onclick="CerrarDetalle">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 </RoleGuard>
+
+@code {
+    private const string EstadoDisponible = "DISPONIBLE";
+
+    private static readonly CultureInfo CulturaMoneda = CultureInfo.GetCultureInfo("es-AR");
+    private static readonly CultureInfo CulturaInvariante = CultureInfo.InvariantCulture;
+
+    private List<VehiculoDTO> _vehiculos = new List<VehiculoDTO>();
+    private RegistroVehiculoDTO _alta = CrearModeloAlta();
+    private VehiculoDTO? _detalle;
+    private decimal _tarifa;
+    private decimal _tarifaActual;
+    private bool _cargando = true;
+    private bool _cargado;
+    private bool _guardando;
+    private bool _guardandoTarifa;
+    private bool _tarifaCargada;
+    private bool _errorCarga;
+    private string? _mensaje;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        Sesion.CambioSesion += AlCambiarSesion;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await CargarSiCorrespondeAsync();
+    }
+
+    public void Dispose()
+    {
+        Sesion.CambioSesion -= AlCambiarSesion;
+    }
+
+    private void AlCambiarSesion()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            await CargarSiCorrespondeAsync();
+            StateHasChanged();
+        });
+    }
+
+    // Espera a que la sesión esté restaurada y con un prestador identificado.
+    private async Task CargarSiCorrespondeAsync()
+    {
+        if (_cargado || !Sesion.Restaurada || !Sesion.EstaLogueado || Sesion.Id <= 0)
+        {
+            return;
+        }
+
+        _cargado = true;
+        await CargarVehiculosAsync();
+        await CargarTarifaAsync();
+    }
+
+    private async Task CargarVehiculosAsync()
+    {
+        _cargando = true;
+        _error = null;
+
+        HttpResp<List<VehiculoDTO>> respuesta = await Flota.ListarAsync(Sesion.Id);
+
+        _cargando = false;
+
+        if (respuesta.Error)
+        {
+            _error = await respuesta.ObtenerMensajeAsync("No pudimos cargar los vehículos.");
+            _errorCarga = true;
+            return;
+        }
+
+        _vehiculos = respuesta.Respuesta ?? new List<VehiculoDTO>();
+    }
+
+    private async Task CargarTarifaAsync()
+    {
+        HttpResp<TarifaKmDTO> respuesta = await Flota.ObtenerTarifaAsync(Sesion.Id);
+
+        if (respuesta.Error || respuesta.Respuesta is null)
+        {
+            if (string.IsNullOrWhiteSpace(_error))
+            {
+                _error = await respuesta.ObtenerMensajeAsync("No pudimos cargar la tarifa base por kilómetro.");
+            }
+
+            _errorCarga = true;
+            return;
+        }
+
+        _tarifaActual = respuesta.Respuesta.TarifaBaseKm;
+        _tarifa = respuesta.Respuesta.TarifaBaseKm;
+        _tarifaCargada = true;
+    }
+
+    private async Task ReintentarAsync()
+    {
+        _error = null;
+        _errorCarga = false;
+        _cargado = false;
+
+        await CargarSiCorrespondeAsync();
+    }
+
+    private async Task RegistrarAsync()
+    {
+        _error = null;
+        _mensaje = null;
+
+        string? validacion = ValidarAlta();
+
+        if (validacion is not null)
+        {
+            _error = validacion;
+            return;
+        }
+
+        _alta.IdUsuario = Sesion.Id;
+        _alta.IdChofer = 0;
+        _alta.Nombre = _alta.Nombre?.Trim();
+        _alta.Patente = _alta.Patente.Trim().ToUpperInvariant();
+        _alta.Marca = _alta.Marca.Trim();
+        _alta.MarcaModelo = _alta.MarcaModelo.Trim();
+        _alta.Licencia = _alta.Licencia.Trim();
+        _alta.CapacidadCarga = _alta.CapacidadCarga.Trim();
+        _alta.CaracteristicasConductor = _alta.CaracteristicasConductor.Trim();
+
+        _guardando = true;
+
+        HttpResp<VehiculoDTO> respuesta = await Flota.RegistrarAsync(_alta);
+
+        _guardando = false;
+
+        if (respuesta.Error)
+        {
+            _error = await respuesta.ObtenerMensajeAsync("No pudimos registrar el vehículo.");
+            return;
+        }
+
+        _mensaje = "El vehículo se registró correctamente.";
+        _alta = CrearModeloAlta();
+        await CargarVehiculosAsync();
+    }
+
+    private async Task GuardarTarifaAsync()
+    {
+        _error = null;
+        _mensaje = null;
+
+        if (_tarifa < 0)
+        {
+            _error = "La tarifa base por kilómetro no puede ser negativa.";
+            return;
+        }
+
+        _guardandoTarifa = true;
+
+        HttpResp<TarifaKmDTO> respuesta = await Flota.GuardarTarifaAsync(Sesion.Id, _tarifa);
+
+        _guardandoTarifa = false;
+
+        if (respuesta.Error)
+        {
+            _error = await respuesta.ObtenerMensajeAsync("No pudimos guardar la tarifa base por kilómetro.");
+            return;
+        }
+
+        _tarifaActual = respuesta.Respuesta is not null ? respuesta.Respuesta.TarifaBaseKm : _tarifa;
+        _mensaje = "La tarifa base por kilómetro se guardó correctamente.";
+    }
+
+    private void LimpiarAlta()
+    {
+        _alta = CrearModeloAlta();
+        _error = null;
+        _mensaje = null;
+    }
+
+    private void VerDetalle(VehiculoDTO vehiculo)
+    {
+        _detalle = vehiculo;
+    }
+
+    private void CerrarDetalle()
+    {
+        _detalle = null;
+    }
+
+    private string? ValidarAlta()
+    {
+        if (string.IsNullOrWhiteSpace(_alta.Nombre))
+        {
+            return "Ingresá un nombre o identificador para el vehículo.";
+        }
+
+        if (string.IsNullOrWhiteSpace(_alta.Patente))
+        {
+            return "Ingresá la patente del vehículo.";
+        }
+
+        if (string.IsNullOrWhiteSpace(_alta.Marca))
+        {
+            return "Ingresá la marca del vehículo.";
+        }
+
+        if (string.IsNullOrWhiteSpace(_alta.MarcaModelo))
+        {
+            return "Ingresá la marca y el modelo del vehículo.";
+        }
+
+        if (string.IsNullOrWhiteSpace(_alta.TipoVehiculo))
+        {
+            return "Seleccioná el tipo de vehículo.";
+        }
+
+        if (string.IsNullOrWhiteSpace(_alta.CapacidadCarga))
+        {
+            return "Ingresá la capacidad de carga.";
+        }
+
+        if (string.IsNullOrWhiteSpace(_alta.Licencia))
+        {
+            return "Ingresá la licencia del vehículo.";
+        }
+
+        if (_alta.FechaFabricación == default)
+        {
+            return "Seleccioná la fecha de fabricación.";
+        }
+
+        if (_alta.FechaFabricación.Date > DateTime.Today)
+        {
+            return "La fecha de fabricación no puede ser futura.";
+        }
+
+        if (_alta.NumeroConductor < 0)
+        {
+            return "El número de conductor no puede ser negativo.";
+        }
+
+        return null;
+    }
+
+    private static RegistroVehiculoDTO CrearModeloAlta()
+    {
+        return new RegistroVehiculoDTO
+        {
+            Nombre = string.Empty,
+            Patente = string.Empty,
+            Marca = string.Empty,
+            MarcaModelo = string.Empty,
+            TipoVehiculo = string.Empty,
+            CapacidadCarga = string.Empty,
+            Licencia = string.Empty,
+            Estado = EstadoDisponible,
+            FechaFabricación = DateTime.Today,
+            NumeroConductor = 0,
+            CaracteristicasConductor = string.Empty,
+            IdUsuario = 0,
+            IdChofer = 0
+        };
+    }
+
+    // El nombre del vehículo puede no estar cargado en registros anteriores.
+    private static string NombreVisible(VehiculoDTO vehiculo)
+    {
+        if (!string.IsNullOrWhiteSpace(vehiculo.Nombre))
+        {
+            return vehiculo.Nombre;
+        }
+
+        return ValorVisible(vehiculo.MarcaModelo);
+    }
+
+    private static string ValorVisible(string? valor)
+    {
+        return string.IsNullOrWhiteSpace(valor) ? "Sin datos" : valor;
+    }
+
+    private static string FormatearFecha(DateTime? fecha)
+    {
+        return !fecha.HasValue || fecha.Value == default ? "Sin datos" : fecha.Value.ToString("dd/MM/yyyy", CulturaInvariante);
+    }
+
+    private static string FormatearMoneda(decimal valor)
+    {
+        return "$ " + valor.ToString("N2", CulturaMoneda);
+    }
+}

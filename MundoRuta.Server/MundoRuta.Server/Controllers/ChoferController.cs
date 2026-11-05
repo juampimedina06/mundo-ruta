@@ -1,8 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos;
 using MundoRuta.BD.Datos.Entity;
+using MundoRuta.Server.Hubs;
+using MundoRuta.Shared;
 using MundoRuta.Shared.DTO;
+using MundoRuta.Shared.DTO.Realtime;
 
 namespace MundoRuta.Server.Controllers
 {
@@ -11,17 +15,19 @@ namespace MundoRuta.Server.Controllers
     public class ChoferController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IHubContext<ViajeHub> _hubContext;
 
-        public ChoferController(AppDbContext context)
+        public ChoferController(AppDbContext context, IHubContext<ViajeHub> hubContext)
         {
             _context = context;
+            _hubContext = hubContext;
         }
 
         // GET {choferId}/viaje-activo: devuelve el viaje actual en curso
         [HttpGet("{choferId}/viaje-activo")]
         public async Task<ActionResult> GetViajeActivo(int choferId)
         {
-            var estadosActivos = new[] { "Asignado", "Carga-subida", "En-transito", "Llegada-destino" };
+            string[] estadosActivos = EstadosViaje.Activos;
 
             var viaje = await _context.Viajes
                 .FirstOrDefaultAsync(v => v.IdChofer == choferId && estadosActivos.Contains(v.Estado));
@@ -38,24 +44,25 @@ namespace MundoRuta.Server.Controllers
             var viaje = await _context.Viajes.FindAsync(id);
             if (viaje == null) return NotFound("Viaje no encontrado.");
 
-            switch (viaje.Estado)
+            switch (EstadosViaje.Normalizar(viaje.Estado))
             {
-                case "Asignado":
-                    viaje.Estado = "Carga-subida";
+                case "asignado":
+                    viaje.Estado = EstadosViaje.CargaSubida;
                     break;
-                case "Carga-subida":
-                    viaje.Estado = "En-transito";
+                case "carga-subida":
+                    viaje.Estado = EstadosViaje.EnTransito;
                     break;
-                case "En-transito":
-                    viaje.Estado = "Llegada-destino";
+                case "en-transito":
+                    viaje.Estado = EstadosViaje.LlegadaDestino;
                     break;
-                case "Llegada-destino":
+                case "llegada-destino":
                     return BadRequest("El viaje ya llegó a destino. El siguiente paso es validar la entrega.");
                 default:
                     return BadRequest($"Estado actual '{viaje.Estado}' no es válido para avanzar.");
             }
 
             await _context.SaveChangesAsync();
+            await NotificarEstadoAsync(viaje, $"Estado avanzado correctamente a: {viaje.Estado}");
             return Ok(new { mensaje = $"Estado avanzado correctamente a: {viaje.Estado}" });
         }
 
@@ -66,7 +73,8 @@ namespace MundoRuta.Server.Controllers
 
             var viaje = await _context.Viajes
                 .Include(v => v.Chofer)
-                .Include(v => v.Usuario) 
+                .Include(v => v.Usuario)
+                .Include(v => v.Pasajero)
                 .FirstOrDefaultAsync(v => v.Id == id);
 
             if (viaje == null) return NotFound("Viaje no encontrado.");
@@ -78,19 +86,25 @@ namespace MundoRuta.Server.Controllers
             }
 
 
-            viaje.Estado = "Finalizado";
+            viaje.Estado = EstadosViaje.Finalizado;
             if (viaje.Chofer != null) viaje.Chofer.Estado = "DISPONIBLE";
 
 
             var calificacion = new Calificacion
             {
                 IdViaje = viaje.Id,
+                IdUsuario = viaje.IdPasajero,
+                IdUsuarioPrestador = viaje.IdUsuario,
+                Viaje = viaje,
+                Usuario = viaje.Pasajero,
+                UsuarioPrestador = viaje.Usuario,
                 Puntaje = dto.PuntajePasajero,
-                Comentario = dto.Comentario
+                Comentario = dto.Comentario ?? string.Empty
             };
             _context.Calificaciones.Add(calificacion);
 
             await _context.SaveChangesAsync();
+            await NotificarEstadoAsync(viaje, "Entrega validada exitosamente. Viaje finalizado.");
             return Ok(new { mensaje = "Entrega validada exitosamente. Viaje finalizado." });
         }
 
@@ -98,8 +112,10 @@ namespace MundoRuta.Server.Controllers
         [HttpGet("{choferId}/historial")]
         public async Task<ActionResult> GetHistorial(int choferId)
         {
+            string[] estadosFinalizados = EstadosViaje.Finalizados;
+
             var viajesCompletados = await _context.Viajes
-                .Where(v => v.IdChofer == choferId && v.Estado == "Finalizado")
+                .Where(v => v.IdChofer == choferId && estadosFinalizados.Contains(v.Estado))
                 .OrderByDescending(v => v.Id)
                 .ToListAsync();
 
@@ -149,6 +165,33 @@ namespace MundoRuta.Server.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { mensaje = "Perfil actualizado correctamente." });
+        }
+
+        private async Task NotificarEstadoAsync(Viaje viaje, string mensaje)
+        {
+            var estadoDto = new EstadoViajeActualizadoDTO
+            {
+                IdViaje = viaje.Id,
+                Estado = viaje.Estado,
+                Mensaje = mensaje
+            };
+
+            await _hubContext.Clients.Group($"viaje_{viaje.Id}").SendAsync("EstadoViajeActualizado", estadoDto);
+
+            if (viaje.IdUsuario > 0)
+            {
+                await _hubContext.Clients.Group($"prestador_{viaje.IdUsuario}").SendAsync("EstadoViajeActualizado", estadoDto);
+            }
+
+            if (viaje.IdPasajero > 0)
+            {
+                await _hubContext.Clients.Group($"pasajero_{viaje.IdPasajero}").SendAsync("EstadoViajeActualizado", estadoDto);
+            }
+
+            if (viaje.IdChofer > 0)
+            {
+                await _hubContext.Clients.Group($"chofer_{viaje.IdChofer}").SendAsync("EstadoViajeActualizado", estadoDto);
+            }
         }
     }
 }

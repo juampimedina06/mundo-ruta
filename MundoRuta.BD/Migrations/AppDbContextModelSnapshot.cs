@@ -296,6 +296,9 @@ namespace MundoRuta.BD.Migrations
                     b.Property<int>("IdPrestador")
                         .HasColumnType("int");
 
+                    b.Property<int?>("IdVehiculoPropuesto")
+                        .HasColumnType("int");
+
                     b.Property<int>("IdViaje")
                         .HasColumnType("int");
 
@@ -307,6 +310,8 @@ namespace MundoRuta.BD.Migrations
                     b.HasIndex("IdChoferPropuesto");
 
                     b.HasIndex("IdPrestador");
+
+                    b.HasIndex("IdVehiculoPropuesto");
 
                     b.HasIndex("IdViaje");
 
@@ -757,6 +762,11 @@ namespace MundoRuta.BD.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("MundoRuta.BD.Datos.Entity.Vehiculo", "VehiculoPropuesto")
+                        .WithMany()
+                        .HasForeignKey("IdVehiculoPropuesto")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("MundoRuta.BD.Datos.Entity.Viaje", "Viaje")
                         .WithMany()
                         .HasForeignKey("IdViaje")
@@ -766,6 +776,8 @@ namespace MundoRuta.BD.Migrations
                     b.Navigation("ChoferPropuesto");
 
                     b.Navigation("Prestador");
+
+                    b.Navigation("VehiculoPropuesto");
 
                     b.Navigation("Viaje");
                 });
