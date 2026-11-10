@@ -1,15 +1,105 @@
 @page "/chofer/historial"
+@using MundoRuta.Shared
+@using MundoRuta.Shared.DTO
+@using MundoRuta.Servicios.Chofer
+@using MundoRuta.Servicios.Sesion
+@using MundoRuta.Server.Client.Components
+@inject IChoferServicio ChoferServicio
+@inject SesionEstado Sesion
 
-<PageTitle>Historial | Mundo Ruta</PageTitle>
+<PageTitle>Historial de Viajes | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="Roles.Chofer">
     <div class="mr-page">
-        <div class="mr-container">
-            <PageHeader Titulo="Historial"
-                        Descripcion="Viajes finalizados y calificaciones." />
+        <div class="mr-container" style="max-width: 900px; margin: 0 auto; padding: 20px 15px;">
+            <PageHeader Titulo="Historial de Viajes"
+                        Descripcion="Registro de tus servicios completados y entregas confirmadas." />
 
-            <EmptyState Titulo="Todavía no hay viajes en tu historial"
-                        Descripcion="Los servicios que completes van a quedar registrados acá." />
+            @if (_cargando)
+            {
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted mt-2">Cargando viajes completados...</p>
+                </div>
+            }
+            else if (_viajes == null || _viajes.Count == 0)
+            {
+                <EmptyState Titulo="Todavía no tenés viajes completados"
+                            Descripcion="Cada viaje que finalices con validación de DNI quedará archivado en este listado." />
+            }
+            else
+            {
+                <div class="card" style="border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; background: #ffffff;">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" style="font-size: 14px;">
+                            <thead style="background: #f8fafc; color: #475569; font-size: 12px; text-transform: uppercase;">
+                                <tr>
+                                    <th style="padding: 14px 16px;">Fecha (dd/mm/aaaa)</th>
+                                    <th style="padding: 14px 16px;">Origen</th>
+                                    <th style="padding: 14px 16px;">Destino</th>
+                                    <th style="padding: 14px 16px;">Monto Cobrado</th>
+                                    <th style="padding: 14px 16px; text-align: center;">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var v in _viajes)
+                                {
+                                    <tr>
+                                        <td style="padding: 14px 16px; font-weight: 600; color: #1e293b;">
+                                            📅 @v.FechaFormateada
+                                        </td>
+                                        <td style="padding: 14px 16px; color: #334155;">
+                                            📍 @v.Origen
+                                        </td>
+                                        <td style="padding: 14px 16px; color: #334155;">
+                                            🏁 @v.Destino
+                                        </td>
+                                        <td style="padding: 14px 16px; font-weight: 700; color: #16a34a;">
+                                            $@v.Monto.ToString("N2")
+                                        </td>
+                                        <td style="padding: 14px 16px; text-align: center;">
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 12px; padding: 5px 10px; border-radius: 6px;">
+                                                Finalizado
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
         </div>
     </div>
 </RoleGuard>
+
+@code {
+    private bool _cargando = true;
+    private List<ChoferViajeHistorialDTO> _viajes = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarHistorialAsync();
+    }
+
+    private async Task CargarHistorialAsync()
+    {
+        _cargando = true;
+        try
+        {
+            var resp = await ChoferServicio.ObtenerHistorialAsync(Sesion.Id);
+            if (!resp.Error && resp.Respuesta != null)
+            {
+                _viajes = resp.Respuesta;
+            }
+        }
+        catch
+        {
+            _viajes = new();
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+}

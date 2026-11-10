@@ -1,15 +1,206 @@
 @page "/chofer/perfil"
+@using MundoRuta.Shared
+@using MundoRuta.Shared.DTO
+@using MundoRuta.Servicios.Chofer
+@using MundoRuta.Servicios.Sesion
+@using MundoRuta.Server.Client.Components
+@inject IChoferServicio ChoferServicio
+@inject SesionEstado Sesion
 
-<PageTitle>Mi perfil | Mundo Ruta</PageTitle>
+<PageTitle>Mi Perfil de Conductor | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="Roles.Chofer">
     <div class="mr-page">
-        <div class="mr-container">
-            <PageHeader Titulo="Mi perfil"
-                        Descripcion="Tus datos y tu licencia." />
+        <div class="mr-container" style="max-width: 800px; margin: 0 auto; padding: 20px 15px;">
+            <PageHeader Titulo="Mi Perfil de Conductor"
+                        Descripcion="Información profesional, habilitación y reputación." />
 
-            <EmptyState Titulo="Perfil en preparación"
-                        Descripcion="Acá vas a poder consultar tus datos, tu licencia y tu estado." />
+            @if (_cargando)
+            {
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted mt-2">Cargando perfil...</p>
+                </div>
+            }
+            else if (_perfil == null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    No pudimos recuperar tu perfil de conductor.
+                </div>
+            }
+            else
+            {
+                @if (!string.IsNullOrWhiteSpace(_mensajeExito))
+                {
+                    <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                        ✅ @_mensajeExito
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(_mensajeError))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                        ⚠️ @_mensajeError
+                    </div>
+                }
+
+                <!-- Tarjeta de Reputación y Resumen -->
+                <div class="card mb-4" style="border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; background: #ffffff;">
+                    <div class="card-body p-4 d-flex align-items-center flex-wrap gap-4">
+                        <div style="position: relative;">
+                            @if (!string.IsNullOrWhiteSpace(_perfil.FotoPerfil))
+                            {
+                                <img src="@_perfil.FotoPerfil" alt="Foto Conductor"
+                                     style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #0284c7;" />
+                            }
+                            else
+                            {
+                                <div style="width: 100px; height: 100px; border-radius: 50%; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 38px; font-weight: 700; border: 3px solid #0284c7;">
+                                    @(_perfil.Nombre.FirstOrDefault())
+                                </div>
+                            }
+                        </div>
+
+                        <div style="flex: 1; min-width: 250px;">
+                            <h2 style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0;">
+                                @_perfil.Nombre @_perfil.Apellido
+                            </h2>
+                            <p style="font-size: 14px; color: #64748b; margin: 4px 0 10px 0;">
+                                Empresa asociada: <strong style="color: #0284c7;">@_perfil.Empresa</strong>
+                            </p>
+
+                            <!-- Promedio Destacado con Estrellas -->
+                            <div class="d-flex align-items-center gap-2">
+                                <span style="font-size: 22px; color: #eab308;">⭐</span>
+                                <span style="font-size: 22px; font-weight: 800; color: #0f172a;">@_perfil.PromedioCalificacion.ToString("0.0")</span>
+                                <span style="font-size: 13px; color: #64748b;">(@_perfil.TotalCalificaciones valoraciones)</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle p-2" style="font-size: 13px;">
+                                Estado: @_perfil.Estado
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulario de Datos y Edición -->
+                <div class="card" style="border-radius: 12px; border: 1px solid #e2e8f0; background: #ffffff;">
+                    <div class="card-header bg-white" style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9;">
+                        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">
+                            Datos Personales y de Contacto
+                        </h3>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-weight: 600; font-size: 13px; color: #475569;">Nombre</label>
+                                <input type="text" class="form-control" @bind="_editarDto.Nombre" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-weight: 600; font-size: 13px; color: #475569;">Apellido</label>
+                                <input type="text" class="form-control" @bind="_editarDto.Apellido" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-weight: 600; font-size: 13px; color: #475569;">Licencia de Conducir (No editable)</label>
+                                <input type="text" class="form-control" value="@_perfil.Licencia" disabled style="background: #f8fafc;" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-weight: 600; font-size: 13px; color: #475569;">Teléfono de Contacto</label>
+                                <input type="text" class="form-control" placeholder="+54 9 11 ..." @bind="_editarDto.Telefono" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" style="font-weight: 600; font-size: 13px; color: #475569;">URL de Foto de Perfil</label>
+                                <input type="text" class="form-control" placeholder="https://ejemplo.com/mifoto.jpg" @bind="_editarDto.FotoPerfil" />
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-4">
+                            <button class="btn btn-primary" style="padding: 10px 24px; font-weight: 600; border-radius: 8px;"
+                                    disabled="@_guardando" @onclick="GuardarCambiosAsync">
+                                @(_guardando ? "Guardando..." : "Actualizar Datos del Perfil")
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
     </div>
 </RoleGuard>
+
+@code {
+    private bool _cargando = true;
+    private bool _guardando;
+    private string? _mensajeExito;
+    private string? _mensajeError;
+    private ChoferPerfilDTO? _perfil;
+    private ActualizarPerfilDTO _editarDto = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarPerfilAsync();
+    }
+
+    private async Task CargarPerfilAsync()
+    {
+        _cargando = true;
+        _mensajeError = null;
+        try
+        {
+            var resp = await ChoferServicio.ObtenerPerfilAsync(Sesion.Id);
+            if (!resp.Error && resp.Respuesta != null)
+            {
+                _perfil = resp.Respuesta;
+                _editarDto = new ActualizarPerfilDTO
+                {
+                    Nombre = _perfil.Nombre,
+                    Apellido = _perfil.Apellido,
+                    Telefono = _perfil.Telefono,
+                    FotoPerfil = _perfil.FotoPerfil
+                };
+            }
+            else
+            {
+                _mensajeError = "No se pudo cargar el perfil del conductor.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _mensajeError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task GuardarCambiosAsync()
+    {
+        _guardando = true;
+        _mensajeExito = null;
+        _mensajeError = null;
+
+        try
+        {
+            var resp = await ChoferServicio.ActualizarPerfilAsync(Sesion.Id, _editarDto);
+            if (resp.Error)
+            {
+                _mensajeError = await resp.ObtenerMensajeAsync("Error al actualizar perfil.");
+            }
+            else
+            {
+                _mensajeExito = "Perfil actualizado correctamente.";
+                await CargarPerfilAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _mensajeError = $"Error al guardar: {ex.Message}";
+        }
+        finally
+        {
+            _guardando = false;
+        }
+    }
+}

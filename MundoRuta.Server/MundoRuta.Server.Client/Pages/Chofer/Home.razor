@@ -1,0 +1,180 @@
+@page "/chofer/home"
+@page "/chofer"
+@using MundoRuta.Shared
+@using MundoRuta.Shared.DTO
+@using MundoRuta.Servicios.Chofer
+@using MundoRuta.Servicios.Sesion
+@using MundoRuta.Servicios.Realtime
+@using MundoRuta.Server.Client.Components
+@inject IChoferServicio ChoferServicio
+@inject SesionEstado Sesion
+@inject IViajeHubService ViajeHubService
+@inject NavigationManager Navegacion
+@implements IDisposable
+
+<PageTitle>Panel Conductor | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="Roles.Chofer">
+    <div class="mr-page">
+        <div class="mr-container" style="max-width: 900px; margin: 0 auto; padding: 20px 15px;">
+
+            <!-- Header con estado del chofer -->
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3"
+                 style="background: #ffffff; padding: 20px 24px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); border-left: 5px solid #22c55e;">
+                <div>
+                    <h1 style="font-size: 22px; font-weight: 700; color: #1e293b; margin: 0;">Panel de Espera del Conductor</h1>
+                    <p style="font-size: 14px; color: #64748b; margin: 4px 0 0 0;">Hola, @(Sesion.Nombre ?? "Conductor"). Listo para despachar tus viajes.</p>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <span style="display: inline-block; width: 12px; height: 12px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);"></span>
+                    <strong style="color: #166534; font-size: 14px;">Disponible — Esperando asignación de viaje</strong>
+                </div>
+            </div>
+
+            <!-- Alerta / Tarjeta de viaje detectado -->
+            @if (_cargando)
+            {
+                <div class="text-center p-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted mt-2" style="font-size: 14px;">Sincronizando estado operativo...</p>
+                </div>
+            }
+            else if (_viajeActivo != null)
+            {
+                <div class="card mb-4" style="border: 2px solid #0284c7; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 20px rgba(2, 132, 199, 0.15);">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="background: #0284c7; color: #ffffff; padding: 14px 20px;">
+                        <span style="font-weight: 700; font-size: 15px;">🚀 ¡VIAJE EN CURSO ASIGNADO! (ID #@_viajeActivo.Id)</span>
+                        <span class="badge bg-light text-dark" style="font-size: 12px; font-weight: 600;">Estado: @_viajeActivo.Estado</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <span style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600;">Origen</span>
+                                <div style="font-size: 16px; font-weight: 600; color: #0f172a;">📍 @_viajeActivo.Origen</div>
+                            </div>
+                            <div class="col-md-6">
+                                <span style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600;">Destino</span>
+                                <div style="font-size: 16px; font-weight: 600; color: #0f172a;">🏁 @_viajeActivo.Destino</div>
+                            </div>
+                            <div class="col-md-6">
+                                <span style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600;">Pasajero</span>
+                                <div style="font-size: 15px; color: #334155;">👤 @_viajeActivo.NombrePasajero @(!string.IsNullOrEmpty(_viajeActivo.TelefonoPasajero) ? $"({_viajeActivo.TelefonoPasajero})" : "")</div>
+                            </div>
+                            <div class="col-md-6">
+                                <span style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600;">Monto a Cobrar</span>
+                                <div style="font-size: 17px; font-weight: 700; color: #16a34a;">$@_viajeActivo.Monto.ToString("N2")</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <button class="btn btn-primary btn-lg" style="font-weight: 600; padding: 10px 24px; border-radius: 8px;" @onclick="IrAlViajeActivo">
+                                Ir a la Hoja de Ruta Operativa →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Contenedor simple del mapa / radar de espera -->
+            <div class="card" style="border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; background: #ffffff;">
+                <div class="card-header d-flex justify-content-between align-items-center" style="background: #f8fafc; padding: 14px 20px;">
+                    <span style="font-weight: 600; color: #334155; font-size: 14px;">🗺️ Ubicación Actual y Radar de Operaciones</span>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="ConsultarViajeActivoAsync" disabled="@_cargando">
+                        🔄 Actualizar estado
+                    </button>
+                </div>
+
+                <div class="card-body p-0" style="position: relative; min-height: 380px; background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%); display: flex; align-items: center; justify-content: center;">
+                    <!-- Grilla y elementos visuales simulando mapa interactivo simple -->
+                    <div style="position: absolute; inset: 0; opacity: 0.15; background-size: 30px 30px; background-image: linear-gradient(to right, #0284c7 1px, transparent 1px), linear-gradient(to bottom, #0284c7 1px, transparent 1px);"></div>
+
+                    <div style="text-align: center; z-index: 2; padding: 30px;">
+                        <div style="display: inline-flex; align-items: center; justify-content: center; width: 80px; height: 80px; background: #ffffff; border-radius: 50%; box-shadow: 0 4px 25px rgba(2, 132, 199, 0.25); margin-bottom: 16px;">
+                            <span style="font-size: 38px;">📍</span>
+                        </div>
+                        <h3 style="font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
+                            GPS Activo — Posición del Vehículo Conectada
+                        </h3>
+                        <p style="font-size: 14px; color: #475569; max-width: 480px; margin: 0 auto 16px auto;">
+                            Cuando tu empresa te asigne un nuevo flete, la hoja de ruta se abrirá automáticamente para guiarte en el despacho.
+                        </p>
+                        <div class="badge bg-white text-primary border" style="font-size: 13px; padding: 8px 14px; border-radius: 20px;">
+                            📡 Monitoreo en tiempo real conectado
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</RoleGuard>
+
+@code {
+    private bool _cargando = true;
+    private ViajeChoferDTO? _viajeActivo;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ViajeHubService.EstadoViajeActualizado += OnEstadoViajeActualizado;
+        ViajeHubService.ViajeAsignado += OnViajeAsignado;
+        await ConsultarViajeActivoAsync();
+    }
+
+    private async Task ConsultarViajeActivoAsync()
+    {
+        _cargando = true;
+        try
+        {
+            var resp = await ChoferServicio.ObtenerViajeActivoAsync(Sesion.Id);
+            if (!resp.Error && resp.Respuesta != null)
+            {
+                _viajeActivo = resp.Respuesta;
+            }
+            else
+            {
+                _viajeActivo = null;
+            }
+        }
+        catch
+        {
+            _viajeActivo = null;
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private void OnEstadoViajeActualizado(EstadoViajeActualizadoDTO dto)
+    {
+        InvokeAsync(async () =>
+        {
+            await ConsultarViajeActivoAsync();
+            StateHasChanged();
+        });
+    }
+
+    private void OnViajeAsignado(ViajeAsignadoDTO dto)
+    {
+        InvokeAsync(async () =>
+        {
+            await ConsultarViajeActivoAsync();
+            StateHasChanged();
+        });
+    }
+
+    private void IrAlViajeActivo()
+    {
+        if (_viajeActivo != null)
+        {
+            Navegacion.NavigateTo($"/chofer/viaje-activo/{_viajeActivo.Id}");
+        }
+    }
+
+    public void Dispose()
+    {
+        ViajeHubService.EstadoViajeActualizado -= OnEstadoViajeActualizado;
+        ViajeHubService.ViajeAsignado -= OnViajeAsignado;
+    }
+}
