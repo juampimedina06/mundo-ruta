@@ -1,4 +1,5 @@
 @page "/prestador/vehiculos"
+@layout PrestadorLayout
 @attribute [Authorize(Roles = "Prestador")]
 @using System.Globalization
 @using MundoRuta.Shared.DTO
@@ -7,111 +8,468 @@
 @inject SesionEstado Sesion
 @implements IDisposable
 
-<PageTitle>Vehículos | Mundo Ruta</PageTitle>
+<PageTitle>Mi Flota &amp; Vehículos | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="Prestador">
-    <div class="mr-page">
-        <div class="mr-container">
-            <PageHeader Titulo="Vehículos"
-                        Descripcion="Flota disponible para operar." />
-
-            @if (!string.IsNullOrWhiteSpace(_mensaje))
-            {
-                <div class="mr-alert mr-alert--exito mb-3">@_mensaje</div>
-            }
-
-            @if (!string.IsNullOrWhiteSpace(_error))
-            {
-                <div class="mr-alert mr-alert--error mb-3 mr-alert--accion">
-                    <span>@_error</span>
-                    @if (_errorCarga)
-                    {
-                        <button type="button" class="btn btn-sm btn-outline-primary" disabled="@_cargando" @onclick="ReintentarAsync">
-                            Reintentar
-                        </button>
-                    }
+    <div class="d-flex flex-column gap-4">
+        <!-- 1. Cabecera de Página & CTAs -->
+        <div class="pr-header-block">
+            <div>
+                <div class="pr-header-meta">
+                    <span class="pr-tag pr-tag--mono">GET /api/prestador/{id}/vehiculos</span>
+                    <span class="pr-tag pr-tag--emerald">VehiculoDTO</span>
+                    <span class="badge bg-primary text-white font-label-sm px-2 py-0.5 rounded-full" style="font-size: 11px;">Flota Activa</span>
                 </div>
-            }
+                <h1 class="pr-page-title">Mi Flota &amp; Vehículos</h1>
+                <p class="pr-page-subtitle">
+                    Monitoreo de unidades habilitadas, documentación técnica y administración de tarifas por kilómetro.
+                </p>
+            </div>
+            <div class="pr-header-actions">
+                <button type="button" class="pr-btn pr-btn--outline" @onclick="AbrirModalTarifa">
+                    <span class="material-symbols-outlined text-[18px]">payments</span>
+                    <span>Tarifa Base Km</span>
+                </button>
+                <button type="button" class="pr-btn pr-btn--emerald" @onclick="AbrirModalAlta">
+                    <span class="material-symbols-outlined text-[20px]">rv_hookup</span>
+                    <span>+ Registrar Vehículo</span>
+                </button>
+            </div>
+        </div>
 
-            <section class="mr-card mr-bloque">
-                <h2 class="mr-card__title">Flota registrada</h2>
+        @if (!string.IsNullOrWhiteSpace(_mensaje))
+        {
+            <div class="pr-alert pr-alert--success">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">check_circle</span>
+                    <span>@_mensaje</span>
+                </div>
+                <button type="button" class="pr-icon-btn" @onclick="() => _mensaje = null">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+            </div>
+        }
 
-                @if (_cargando)
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <div class="pr-alert pr-alert--error">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">error</span>
+                    <span>@_error</span>
+                </div>
+                @if (_errorCarga)
                 {
-                    <div class="mr-loading">Cargando vehículos...</div>
+                    <button type="button" class="pr-btn pr-btn--outline pr-btn-sm" disabled="@_cargando" @onclick="ReintentarAsync">
+                        Reintentar
+                    </button>
                 }
-                else if (_vehiculos.Count == 0)
-                {
-                    <EmptyState Titulo="Todavía no cargaste vehículos"
-                                Descripcion="Registrá la unidad desde el formulario de alta para verla en el listado." />
-                }
-                else
-                {
-                    <div class="table-responsive">
-                        <table class="table mr-tabla">
-                            <thead>
+            </div>
+        }
+
+        <!-- 2. KPIs de Flota -->
+        <div class="pr-kpi-grid">
+            <!-- KPI 1: Total Vehículos -->
+            <div class="pr-kpi-card">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">Total Unidades</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--navy">
+                        <span class="material-symbols-outlined text-[20px]">rv_hookup</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value pr-tnum">@_vehiculos.Count</span>
+                        <span class="pr-kpi-badge pr-kpi-badge--emerald">Nómina Flota</span>
+                    </div>
+                    <div class="pr-kpi-subtext">Vehículos registrados y habilitados</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--navy" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 2: Unidades Disponibles -->
+            <div class="pr-kpi-card">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">Disponibles / Operativas</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--emerald">
+                        <span class="material-symbols-outlined text-[20px]">verified</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value pr-tnum">@TotalDisponibles</span>
+                        <span class="pr-kpi-badge pr-kpi-badge--emerald">@PorcentajeDisponibles% libres</span>
+                    </div>
+                    <div class="pr-kpi-subtext">Listas para asignación de viajes</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--emerald" style="width: @(PorcentajeDisponibles)%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 3: Tarifa Base Km -->
+            <div class="pr-kpi-card">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">Tarifa Base por Km</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--amber">
+                        <span class="material-symbols-outlined text-[20px]">payments</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value pr-tnum" style="font-size: 24px;">@(_tarifaCargada ? FormatearMoneda(_tarifaActual) : "Sin definir")</span>
+                        <span class="pr-kpi-badge pr-kpi-badge--amber">/ km</span>
+                    </div>
+                    <div class="pr-kpi-subtext">Precio base para subastas y fletes</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--amber" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 4: Tipologías en Servicio -->
+            <div class="pr-kpi-card">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">Diversidad de Flota</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--slate">
+                        <span class="material-symbols-outlined text-[20px]">local_shipping</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value pr-tnum">@TotalTipos</span>
+                        <span class="pr-kpi-badge pr-kpi-badge--emerald">categorías</span>
+                    </div>
+                    <div class="pr-kpi-subtext">Camiones, camionetas y utilitarios</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--navy" style="width: 80%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Toolbar de Búsqueda y Filtros -->
+        <div class="pr-toolbar">
+            <div class="pr-toolbar-row">
+                <!-- Search Box -->
+                <div class="pr-search-box">
+                    <span class="material-symbols-outlined">search</span>
+                    <input type="text"
+                           class="pr-search-input"
+                           placeholder="Buscar por patente, marca, nombre o tipo de unidad..."
+                           @bind="_filtroTexto"
+                           @bind:event="oninput" />
+                </div>
+
+                <!-- Filter Pills -->
+                <div class="pr-filter-pills">
+                    <button type="button"
+                            class="pr-filter-pill @(_filtroEstado == "TODOS" ? "active" : "")"
+                            @onclick='() => _filtroEstado = "TODOS"'>
+                        <span>Todos</span>
+                        <span class="pr-filter-pill__count">@_vehiculos.Count</span>
+                    </button>
+                    <button type="button"
+                            class="pr-filter-pill @(_filtroEstado == "DISPONIBLE" ? "active" : "")"
+                            @onclick='() => _filtroEstado = "DISPONIBLE"'>
+                        <span>Disponibles</span>
+                        <span class="pr-filter-pill__count">@TotalDisponibles</span>
+                    </button>
+                    <button type="button"
+                            class="pr-filter-pill @(_filtroEstado == "EN_USO" ? "active" : "")"
+                            @onclick='() => _filtroEstado = "EN_USO"'>
+                        <span>En uso</span>
+                        <span class="pr-filter-pill__count">@TotalEnUso</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Tabla Simplificada (3 columnas de datos estrictas) -->
+        @if (_cargando)
+        {
+            <div class="pr-loading">
+                <div class="pr-spinner"></div>
+                <span>Cargando flota de vehículos...</span>
+            </div>
+        }
+        else if (_vehiculos.Count == 0)
+        {
+            <div class="pr-empty-state">
+                <div class="pr-empty-icon">
+                    <span class="material-symbols-outlined">rv_hookup</span>
+                </div>
+                <h3 class="pr-empty-title">Todavía no cargaste vehículos</h3>
+                <p class="pr-empty-desc">Registra la primera unidad desde el formulario de alta para verla en el listado y poder tomar viajes.</p>
+                <button type="button" class="pr-btn pr-btn--emerald" @onclick="AbrirModalAlta">
+                    <span class="material-symbols-outlined text-[18px]">rv_hookup</span>
+                    <span>Registrar primer vehículo</span>
+                </button>
+            </div>
+        }
+        else if (!VehiculosFiltrados.Any())
+        {
+            <div class="pr-empty-state">
+                <div class="pr-empty-icon">
+                    <span class="material-symbols-outlined">search_off</span>
+                </div>
+                <h3 class="pr-empty-title">Sin unidades encontradas</h3>
+                <p class="pr-empty-desc">No se encontraron vehículos que coincidan con la búsqueda.</p>
+                <button type="button" class="pr-btn pr-btn--outline" @onclick="LimpiarFiltros">
+                    Limpiar filtros
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="pr-table-card">
+                <div class="pr-table-responsive">
+                    <table class="pr-table">
+                        <thead>
+                            <tr>
+                                <th>Patente y Marca</th>
+                                <th>Nombre / Identificador</th>
+                                <th>Tipo de Vehículo</th>
+                                <th class="text-end" style="width: 130px;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (VehiculoDTO vehiculo in VehiculosFiltrados)
+                            {
                                 <tr>
-                                    <th scope="col">Vehículo</th>
-                                    <th scope="col">Nombre</th>
-                                    <th scope="col">Tipo de vehículo</th>
-                                    <th scope="col" class="mr-tabla__acciones">Acciones</th>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--navy" style="width: 32px; height: 32px;">
+                                                <span class="material-symbols-outlined text-[18px]">local_shipping</span>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark font-monospace">@vehiculo.Patente - @vehiculo.Marca</div>
+                                                <div class="small text-muted">@ValorVisible(vehiculo.MarcaModelo)</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold text-dark" style="font-family: var(--pr-font-display);">@NombreVisible(vehiculo)</span>
+                                    </td>
+                                    <td>
+                                        <span class="pr-tag pr-tag--mono">@ValorVisible(vehiculo.TipoVehiculo)</span>
+                                        <span class="pr-status-chip @(vehiculo.Estado == "DISPONIBLE" ? "pr-status-chip--disponible" : "pr-status-chip--ocupado") ms-1">
+                                            <span class="dot"></span>
+                                            <span>@vehiculo.Estado</span>
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="button"
+                                                class="pr-btn pr-btn--outline pr-btn-sm"
+                                                @onclick="() => VerDetalle(vehiculo)">
+                                            <span class="material-symbols-outlined text-[16px]">visibility</span>
+                                            <span>Ver detalle</span>
+                                        </button>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (VehiculoDTO vehiculo in _vehiculos)
-                                {
-                                    <tr>
-                                        <td>@vehiculo.Patente - @vehiculo.Marca</td>
-                                        <td>@NombreVisible(vehiculo)</td>
-                                        <td>@ValorVisible(vehiculo.TipoVehiculo)</td>
-                                        <td class="mr-tabla__acciones">
-                                            <button type="button"
-                                                    class="btn btn-sm btn-outline-primary mr-boton-icono"
-                                                    @onclick="() => VerDetalle(vehiculo)">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
-                                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
-                                                </svg>
-                                                Ver detalle
-                                            </button>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pr-table-footer">
+                    <span>Mostrando @VehiculosFiltrados.Count de @(_vehiculos.Count) unidades en nómina</span>
+                    <div class="d-flex align-items-center gap-1">
+                        <button type="button" class="pr-btn pr-btn--subtle pr-btn-sm" disabled>Anterior</button>
+                        <button type="button" class="pr-btn pr-btn--navy pr-btn-sm">1</button>
+                        <button type="button" class="pr-btn pr-btn--subtle pr-btn-sm" disabled>Siguiente</button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- 5. Configuración de Tarifa Base por Kilómetro (Sección Estructurada) -->
+        <div class="pr-manifest-card">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pb-2 border-bottom">
+                <div>
+                    <div class="fw-bold text-dark" style="font-family: var(--pr-font-display); font-size: 16px;">
+                        Configuración de Tarifa Base por Kilómetro (PUT)
+                    </div>
+                    <div class="small text-muted">
+                        Esta tarifa define el precio base con el que se calculan tus ofertas automáticas en subastas de fletes.
+                    </div>
+                </div>
+                @if (_tarifaCargada)
+                {
+                    <div class="pr-tag pr-tag--emerald d-inline-flex align-items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">check_circle</span>
+                        <span>Vigente: @FormatearMoneda(_tarifaActual) / km</span>
                     </div>
                 }
-            </section>
+            </div>
 
-            <section class="mr-card mr-bloque">
-                <h2 class="mr-card__title">Registrar vehículo</h2>
-                <p class="mr-muted">Completá los datos de la unidad para sumarla a la flota.</p>
+            <div class="row g-3 align-items-end pt-2">
+                <div class="col-12 col-sm-6 col-md-4">
+                    <label class="pr-label" for="tarifa">Precio por kilómetro (ARS)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 fw-bold text-muted">$</span>
+                        <input id="tarifa"
+                               type="number"
+                               min="0"
+                               step="0.01"
+                               class="pr-input"
+                               @bind="_tarifa"
+                               @bind:culture="CulturaInvariante" />
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-md-4">
+                    <button type="button"
+                            class="pr-btn pr-btn--emerald"
+                            disabled="@_guardandoTarifa"
+                            @onclick="GuardarTarifaAsync">
+                        @if (_guardandoTarifa)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span>Guardando...</span>
+                        }
+                        else
+                        {
+                            <span class="material-symbols-outlined text-[18px]">save</span>
+                            <span>Guardar tarifa</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                <EditForm Model="_alta" OnSubmit="RegistrarAsync">
-                    <div class="mr-form-grid">
-                        <div>
-                            <label class="form-label" for="nombre">Nombre</label>
-                            <InputText id="nombre" class="form-control" @bind-Value="_alta.Nombre" placeholder="Identificador o modelo" />
+    <!-- 6. MODAL DETALLE DEL VEHÍCULO -->
+    @if (_detalle is not null)
+    {
+        <div class="pr-modal-backdrop" @onclick="CerrarDetalle">
+            <div class="pr-modal" style="max-width: 580px;" @onclick:stopPropagation>
+                <div class="pr-modal__stripe"></div>
+
+                <div class="pr-modal__header">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="pr-tag pr-tag--mono">VehiculoDTO</span>
+                            <span class="pr-badge-id">@_detalle.Patente</span>
+                        </div>
+                        <h2 class="pr-modal__title">Detalle Técnico de la Unidad</h2>
+                        <p class="pr-modal__subtitle">Especificaciones, capacidad y documentación registrada.</p>
+                    </div>
+                    <button type="button" class="pr-modal__close-btn" aria-label="Cerrar" @onclick="CerrarDetalle">
+                        <span class="material-symbols-outlined text-[20px]">close</span>
+                    </button>
+                </div>
+
+                <div class="pr-modal__body">
+                    <div class="d-flex flex-column gap-2">
+                        <div class="d-flex justify-content-between p-2 rounded bg-surface-subtle border">
+                            <span class="text-muted small fw-semibold">Patente:</span>
+                            <span class="fw-bold font-monospace">@_detalle.Patente</span>
+                        </div>
+                        <div class="d-flex justify-content-between p-2 rounded bg-surface-subtle border">
+                            <span class="text-muted small fw-semibold">Marca:</span>
+                            <span class="fw-bold">@ValorVisible(_detalle.Marca)</span>
+                        </div>
+                        <div class="d-flex justify-content-between p-2 rounded bg-surface-subtle border">
+                            <span class="text-muted small fw-semibold">Nombre / Identificador:</span>
+                            <span class="fw-bold">@NombreVisible(_detalle)</span>
+                        </div>
+                        <div class="d-flex justify-content-between p-2 rounded bg-surface-subtle border">
+                            <span class="text-muted small fw-semibold">Marca y modelo:</span>
+                            <span class="fw-bold">@ValorVisible(_detalle.MarcaModelo)</span>
+                        </div>
+                        <div class="d-flex justify-content-between p-2 rounded bg-surface-subtle border">
+                            <span class="text-muted small fw-semibold">Tipo de vehículo:</span>
+                            <span class="pr-tag pr-tag--mono">@ValorVisible(_detalle.TipoVehiculo)</span>
+                        </div>
+                        <div class="d-flex justify-content-between p-2 rounded bg-surface-subtle border">
+                            <span class="text-muted small fw-semibold">Capacidad de carga:</span>
+                            <span class="fw-bold text-dark">@ValorVisible(_detalle.CapacidadCarga)</span>
+                        </div>
+                        <div class="d-flex justify-content-between p-2 rounded bg-surface-subtle border">
+                            <span class="text-muted small fw-semibold">Licencia / Habilitación:</span>
+                            <span class="fw-bold">@ValorVisible(_detalle.Licencia)</span>
+                        </div>
+                        <div class="d-flex justify-content-between p-2 rounded bg-surface-subtle border">
+                            <span class="text-muted small fw-semibold">Estado actual:</span>
+                            <span class="pr-status-chip @(_detalle.Estado == "DISPONIBLE" ? "pr-status-chip--disponible" : "pr-status-chip--ocupado")">
+                                <span class="dot"></span>
+                                <span>@_detalle.Estado</span>
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between p-2 rounded bg-surface-subtle border">
+                            <span class="text-muted small fw-semibold">Fecha de fabricación:</span>
+                            <span class="fw-bold">@FormatearFecha(_detalle.FechaFabricación)</span>
+                        </div>
+                        <div class="d-flex justify-content-between p-2 rounded bg-surface-subtle border">
+                            <span class="text-muted small fw-semibold">Número de conductor:</span>
+                            <span class="fw-bold">@_detalle.NumeroConductor</span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(_detalle.CaracteristicasConductor))
+                        {
+                            <div class="p-2 rounded bg-surface-subtle border">
+                                <span class="text-muted small fw-semibold d-block mb-1">Características del conductor:</span>
+                                <span class="small">@_detalle.CaracteristicasConductor</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="pr-modal__footer">
+                    <button type="button" class="pr-btn pr-btn--navy" @onclick="CerrarDetalle">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- 7. MODAL ALTA DE VEHÍCULO (POST /api/prestador/vehiculo) -->
+    @if (_modalAltaAbierto)
+    {
+        <div class="pr-modal-backdrop" @onclick="CerrarModalAlta">
+            <div class="pr-modal" style="max-width: 680px;" @onclick:stopPropagation>
+                <div class="pr-modal__stripe"></div>
+
+                <div class="pr-modal__header">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="pr-tag pr-tag--mono">POST /api/prestador/vehiculo</span>
+                            <span class="pr-tag pr-tag--emerald">RegistroVehiculoDTO</span>
+                        </div>
+                        <h2 class="pr-modal__title">Registrar Vehículo en Flota</h2>
+                        <p class="pr-modal__subtitle">Completa las características técnicas y habilitación de la unidad.</p>
+                    </div>
+                    <button type="button" class="pr-modal__close-btn" aria-label="Cerrar" @onclick="CerrarModalAlta">
+                        <span class="material-symbols-outlined text-[20px]">close</span>
+                    </button>
+                </div>
+
+                <EditForm Model="_alta" OnSubmit="RegistrarAsync" class="pr-modal__body">
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6">
+                            <label class="pr-label" for="nombre">Nombre / Identificador <span class="required">*</span></label>
+                            <InputText id="nombre" class="pr-input" @bind-Value="_alta.Nombre" placeholder="Ej: Camión 01 o Flete Express" />
                         </div>
 
-                        <div>
-                            <label class="form-label" for="patente">Patente</label>
-                            <InputText id="patente" class="form-control" @bind-Value="_alta.Patente" placeholder="AB123CD" />
+                        <div class="col-12 col-sm-6">
+                            <label class="pr-label" for="patente">Patente <span class="required">*</span></label>
+                            <InputText id="patente" class="pr-input" @bind-Value="_alta.Patente" placeholder="AB123CD" />
                         </div>
 
-                        <div>
-                            <label class="form-label" for="marca">Marca</label>
-                            <InputText id="marca" class="form-control" @bind-Value="_alta.Marca" placeholder="Ford" />
+                        <div class="col-12 col-sm-6">
+                            <label class="pr-label" for="marca">Marca <span class="required">*</span></label>
+                            <InputText id="marca" class="pr-input" @bind-Value="_alta.Marca" placeholder="Ford" />
                         </div>
 
-                        <div>
-                            <label class="form-label" for="marca-modelo">Marca y modelo</label>
-                            <InputText id="marca-modelo" class="form-control" @bind-Value="_alta.MarcaModelo" placeholder="Ford Cargo 1722" />
+                        <div class="col-12 col-sm-6">
+                            <label class="pr-label" for="marca-modelo">Marca y modelo <span class="required">*</span></label>
+                            <InputText id="marca-modelo" class="pr-input" @bind-Value="_alta.MarcaModelo" placeholder="Ford Cargo 1722" />
                         </div>
 
-                        <div>
-                            <label class="form-label" for="tipo">Tipo de vehículo</label>
-                            <InputSelect id="tipo" class="form-select" @bind-Value="_alta.TipoVehiculo">
+                        <div class="col-12 col-sm-6">
+                            <label class="pr-label" for="tipo">Tipo de vehículo <span class="required">*</span></label>
+                            <InputSelect id="tipo" class="pr-select" @bind-Value="_alta.TipoVehiculo">
                                 <option value="">Seleccionar tipo</option>
                                 <option value="Camión">Camión</option>
                                 <option value="Camioneta">Camioneta</option>
@@ -122,150 +480,62 @@
                             </InputSelect>
                         </div>
 
-                        <div>
-                            <label class="form-label" for="capacidad">Capacidad de carga</label>
-                            <InputText id="capacidad" class="form-control" @bind-Value="_alta.CapacidadCarga" placeholder="1.500 kg" />
+                        <div class="col-12 col-sm-6">
+                            <label class="pr-label" for="capacidad">Capacidad de carga <span class="required">*</span></label>
+                            <InputText id="capacidad" class="pr-input" @bind-Value="_alta.CapacidadCarga" placeholder="1.500 kg" />
                         </div>
 
-                        <div>
-                            <label class="form-label" for="licencia">Licencia</label>
-                            <InputText id="licencia" class="form-control" @bind-Value="_alta.Licencia" placeholder="Documentación habilitante" />
+                        <div class="col-12 col-sm-6">
+                            <label class="pr-label" for="licencia">Licencia habilitante <span class="required">*</span></label>
+                            <InputText id="licencia" class="pr-input" @bind-Value="_alta.Licencia" placeholder="CNRT Habilitación" />
                         </div>
 
-                        <div>
-                            <label class="form-label" for="fecha-fabricacion">Fecha de fabricación</label>
-                            <InputDate id="fecha-fabricacion" class="form-control" @bind-Value="_alta.FechaFabricación" />
-                            <p class="form-text mb-0">Fecha seleccionada: @FormatearFecha(_alta.FechaFabricación)</p>
+                        <div class="col-12 col-sm-6">
+                            <label class="pr-label" for="fecha-fabricacion">Fecha de fabricación <span class="required">*</span></label>
+                            <InputDate id="fecha-fabricacion" class="pr-input" @bind-Value="_alta.FechaFabricación" />
                         </div>
 
-                        <div>
-                            <label class="form-label" for="numero-conductor">Número de conductor</label>
-                            <InputNumber id="numero-conductor" class="form-control" @bind-Value="_alta.NumeroConductor" />
-                        </div>
-
-                        <div>
-                            <label class="form-label" for="estado">Estado</label>
-                            <InputSelect id="estado" class="form-select" @bind-Value="_alta.Estado">
-                                <option value="DISPONIBLE">Disponible</option>
-                                <option value="EN_USO">En uso</option>
-                                <option value="MANTENIMIENTO">En mantenimiento</option>
+                        <div class="col-12 col-sm-6">
+                            <label class="pr-label" for="estado">Estado inicial <span class="required">*</span></label>
+                            <InputSelect id="estado" class="pr-select" @bind-Value="_alta.Estado">
+                                <option value="DISPONIBLE">DISPONIBLE</option>
+                                <option value="EN_USO">EN_USO</option>
+                                <option value="MANTENIMIENTO">MANTENIMIENTO</option>
                             </InputSelect>
                         </div>
 
-                        <div class="mr-form-grid__ancho">
-                            <label class="form-label" for="caracteristicas">Características del conductor</label>
-                            <InputTextArea id="caracteristicas" class="form-control" rows="2" @bind-Value="_alta.CaracteristicasConductor" />
+                        <div class="col-12 col-sm-6">
+                            <label class="pr-label" for="numero-conductor">Número de conductor asignado</label>
+                            <InputNumber id="numero-conductor" class="pr-input" @bind-Value="_alta.NumeroConductor" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="pr-label" for="caracteristicas">Características especiales de la unidad</label>
+                            <InputTextArea id="caracteristicas" class="pr-input" style="height: 60px; padding: 0.5rem;" @bind-Value="_alta.CaracteristicasConductor" placeholder="Caja térmica, rampa hidráulica, etc." />
                         </div>
                     </div>
 
-                    <div class="mr-form-pie">
-                        <button type="submit" class="btn btn-primary" disabled="@_guardando">
-                            @(_guardando ? "Registrando..." : "Registrar vehículo")
+                    <div class="pr-modal__footer">
+                        <button type="button" class="pr-btn pr-btn--subtle" @onclick="CerrarModalAlta" disabled="@_guardando">
+                            Cancelar
                         </button>
-                        <button type="button" class="btn btn-outline-primary" disabled="@_guardando" @onclick="LimpiarAlta">
-                            Limpiar
+                        <button type="submit" class="pr-btn pr-btn--emerald" disabled="@_guardando">
+                            @if (_guardando)
+                            {
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span>Registrando...</span>
+                            }
+                            else
+                            {
+                                <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                                <span>Registrar Vehículo</span>
+                            }
                         </button>
                     </div>
                 </EditForm>
-            </section>
-
-            <section class="mr-card mr-bloque">
-                <h2 class="mr-card__title">Tarifa base</h2>
-                <p class="mr-muted">Precio base por kilómetro que se usa para tus ofertas.</p>
-
-                <div class="mr-tarifa">
-                    <div class="mr-tarifa__campo">
-                        <label class="form-label" for="tarifa">Precio por kilómetro (ARS)</label>
-                        <input id="tarifa"
-                               type="number"
-                               min="0"
-                               step="0.01"
-                               class="form-control"
-                               @bind="_tarifa"
-                               @bind:culture="CulturaInvariante" />
-                    </div>
-
-                    <button type="button" class="btn btn-primary" disabled="@_guardandoTarifa" @onclick="GuardarTarifaAsync">
-                        @(_guardandoTarifa ? "Guardando..." : "Guardar tarifa")
-                    </button>
-                </div>
-
-                @if (_tarifaCargada)
-                {
-                    <p class="mr-tarifa__actual">
-                        Tarifa actual: <strong>@FormatearMoneda(_tarifaActual)</strong> por kilómetro.
-                    </p>
-                }
-            </section>
-        </div>
-
-        @if (_detalle is not null)
-        {
-            <div class="mr-modal" role="dialog" aria-modal="true" aria-labelledby="detalle-titulo">
-                <div class="mr-modal__panel">
-                    <div class="mr-modal__cabecera">
-                        <h2 id="detalle-titulo" class="mr-modal__titulo">Detalle del vehículo</h2>
-                        <button type="button" class="mr-modal__cerrar" aria-label="Cerrar detalle" @onclick="CerrarDetalle">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <dl class="mr-detalle">
-                        <div class="mr-detalle__fila">
-                            <dt>Patente</dt>
-                            <dd>@_detalle.Patente</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Marca</dt>
-                            <dd>@ValorVisible(_detalle.Marca)</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Nombre</dt>
-                            <dd>@NombreVisible(_detalle)</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Marca y modelo</dt>
-                            <dd>@ValorVisible(_detalle.MarcaModelo)</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Tipo de vehículo</dt>
-                            <dd>@ValorVisible(_detalle.TipoVehiculo)</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Capacidad de carga</dt>
-                            <dd>@ValorVisible(_detalle.CapacidadCarga)</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Licencia</dt>
-                            <dd>@ValorVisible(_detalle.Licencia)</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Estado</dt>
-                            <dd><EstadoBadge Estado="@_detalle.Estado" /></dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Fecha de fabricación</dt>
-                            <dd>@FormatearFecha(_detalle.FechaFabricación)</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Número de conductor</dt>
-                            <dd>@_detalle.NumeroConductor</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Características del conductor</dt>
-                            <dd>@ValorVisible(_detalle.CaracteristicasConductor)</dd>
-                        </div>
-                    </dl>
-
-                    <div class="mr-modal__pie">
-                        <button type="button" class="btn btn-outline-primary" @onclick="CerrarDetalle">Cerrar</button>
-                    </div>
-                </div>
             </div>
-        }
-    </div>
+        </div>
+    }
 </RoleGuard>
 
 @code {
@@ -287,6 +557,40 @@
     private bool _errorCarga;
     private string? _mensaje;
     private string? _error;
+
+    private string _filtroTexto = string.Empty;
+    private string _filtroEstado = "TODOS";
+    private bool _modalAltaAbierto;
+
+    private int TotalDisponibles => _vehiculos.Count(v => string.Equals(v.Estado, EstadoDisponible, StringComparison.OrdinalIgnoreCase));
+    private int TotalEnUso => _vehiculos.Count(v => string.Equals(v.Estado, "EN_USO", StringComparison.OrdinalIgnoreCase));
+    private int PorcentajeDisponibles => _vehiculos.Count > 0 ? (TotalDisponibles * 100 / _vehiculos.Count) : 0;
+    private int TotalTipos => _vehiculos.Select(v => v.TipoVehiculo).Where(t => !string.IsNullOrWhiteSpace(t)).Distinct().Count();
+
+    private List<VehiculoDTO> VehiculosFiltrados =>
+        _vehiculos.Where(v =>
+        {
+            if (_filtroEstado != "TODOS" && !string.Equals(v.Estado, _filtroEstado, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_filtroTexto))
+            {
+                string q = _filtroTexto.Trim().ToLowerInvariant();
+                string pat = (v.Patente ?? "").ToLowerInvariant();
+                string mar = (v.Marca ?? "").ToLowerInvariant();
+                string nom = (v.Nombre ?? "").ToLowerInvariant();
+                string tip = (v.TipoVehiculo ?? "").ToLowerInvariant();
+
+                if (!pat.Contains(q) && !mar.Contains(q) && !nom.Contains(q) && !tip.Contains(q))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }).ToList();
 
     protected override void OnInitialized()
     {
@@ -317,7 +621,6 @@
         });
     }
 
-    // Espera a que la sesión esté restaurada y con un prestador identificado.
     private async Task CargarSiCorrespondeAsync()
     {
         if (_cargado || !Sesion.Restaurada || !Sesion.EstaLogueado || Sesion.Id <= 0)
@@ -378,6 +681,31 @@
         await CargarSiCorrespondeAsync();
     }
 
+    private void AbrirModalAlta()
+    {
+        _alta = CrearModeloAlta();
+        _error = null;
+        _mensaje = null;
+        _modalAltaAbierto = true;
+    }
+
+    private void CerrarModalAlta()
+    {
+        _modalAltaAbierto = false;
+    }
+
+    private void AbrirModalTarifa()
+    {
+        _error = null;
+        _mensaje = null;
+    }
+
+    private void LimpiarFiltros()
+    {
+        _filtroTexto = string.Empty;
+        _filtroEstado = "TODOS";
+    }
+
     private async Task RegistrarAsync()
     {
         _error = null;
@@ -413,7 +741,8 @@
             return;
         }
 
-        _mensaje = "El vehículo se registró correctamente.";
+        _mensaje = "El vehículo se registró correctamente en la flota.";
+        _modalAltaAbierto = false;
         _alta = CrearModeloAlta();
         await CargarVehiculosAsync();
     }
@@ -443,13 +772,6 @@
 
         _tarifaActual = respuesta.Respuesta is not null ? respuesta.Respuesta.TarifaBaseKm : _tarifa;
         _mensaje = "La tarifa base por kilómetro se guardó correctamente.";
-    }
-
-    private void LimpiarAlta()
-    {
-        _alta = CrearModeloAlta();
-        _error = null;
-        _mensaje = null;
     }
 
     private void VerDetalle(VehiculoDTO vehiculo)
@@ -537,7 +859,6 @@
         };
     }
 
-    // El nombre del vehículo puede no estar cargado en registros anteriores.
     private static string NombreVisible(VehiculoDTO vehiculo)
     {
         if (!string.IsNullOrWhiteSpace(vehiculo.Nombre))
