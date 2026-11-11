@@ -34,7 +34,7 @@ namespace MundoRuta.Server.Client.Navigation
 
         private static readonly IReadOnlyList<MenuItem> MenuChofer = new List<MenuItem>
         {
-            new MenuItem("Mi viaje", "/chofer"),
+            new MenuItem("Inicio", "/chofer/home"),
             new MenuItem("Historial", "/chofer/historial"),
             new MenuItem("Mi perfil", "/chofer/perfil")
         };

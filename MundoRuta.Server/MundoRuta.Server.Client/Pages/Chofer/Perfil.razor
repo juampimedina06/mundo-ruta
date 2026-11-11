@@ -1,15 +1,293 @@
 @page "/chofer/perfil"
+@layout ChoferLayout
+@using MundoRuta.Shared
+@using MundoRuta.Shared.DTO
+@using MundoRuta.Servicios.Chofer
+@using MundoRuta.Servicios.Sesion
+@using MundoRuta.Server.Client.Components
+@inject IChoferServicio ChoferServicio
+@inject SesionEstado Sesion
 
-<PageTitle>Mi perfil | Mundo Ruta</PageTitle>
+<PageTitle>Mi Perfil de Conductor | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="Roles.Chofer">
-    <div class="mr-page">
-        <div class="mr-container">
-            <PageHeader Titulo="Mi perfil"
-                        Descripcion="Tus datos y tu licencia." />
+    <div class="cn-profile-container">
+        <!-- Encabezado Editorial -->
+        <div class="cn-editorial-header">
+            <div>
+                <div class="cn-breadcrumb">
+                    <a href="/chofer/home">Cabina</a>
+                    <span>/</span>
+                    <span style="color: var(--cn-primary-bright); font-weight: 600;">Mi Perfil Operativo</span>
+                </div>
+                <h1 class="cn-display mb-1" style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em;">
+                    Mi Perfil de Conductor
+                </h1>
+                <p class="mb-0" style="font-size: 14px; color: var(--cn-on-surface-variant);">
+                    Información profesional, habilitación, reputación y datos de contacto.
+                </p>
+            </div>
 
-            <EmptyState Titulo="Perfil en preparación"
-                        Descripcion="Acá vas a poder consultar tus datos, tu licencia y tu estado." />
+            <div class="cn-tab-switch">
+                <a href="/chofer/historial" class="cn-tab-switch__item">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">history</span>
+                    <span>Historial de Viajes</span>
+                </a>
+                <a href="/chofer/perfil" class="cn-tab-switch__item cn-tab-switch__item--active">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">badge</span>
+                    <span>Mi Perfil Operativo</span>
+                </a>
+            </div>
         </div>
+
+        @if (_cargando)
+        {
+            <div class="cn-card p-5 text-center">
+                <div class="spinner-border text-info mb-3" role="status"></div>
+                <p class="mb-0" style="font-size: 14px; color: var(--cn-on-surface-variant);">Cargando perfil...</p>
+            </div>
+        }
+        else if (_perfil == null)
+        {
+            <div class="cn-alert cn-alert--error">
+                <span class="material-symbols-outlined">error</span>
+                <span>No pudimos recuperar tu perfil de conductor.</span>
+            </div>
+        }
+        else
+        {
+            @if (!string.IsNullOrWhiteSpace(_mensajeExito))
+            {
+                <div class="cn-alert cn-alert--success">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>@_mensajeExito</span>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(_mensajeError))
+            {
+                <div class="cn-alert cn-alert--error">
+                    <span class="material-symbols-outlined">warning</span>
+                    <span>@_mensajeError</span>
+                </div>
+            }
+
+            <div class="cn-profile-grid">
+                <!-- Columna Izquierda (4/12): Tarjeta de Identidad y Reputación -->
+                <div class="cn-card p-4 d-flex flex-column align-items-center text-center position-relative overflow-hidden">
+                    <div class="cn-avatar-ring mb-3">
+                        @if (!string.IsNullOrWhiteSpace(_perfil.FotoPerfil))
+                        {
+                            <img src="@_perfil.FotoPerfil" alt="Foto Conductor" />
+                        }
+                        else
+                        {
+                            <div class="cn-avatar-ring__fallback">
+                                @(_perfil.Nombre.FirstOrDefault())
+                            </div>
+                        }
+                    </div>
+
+                    <h2 class="cn-display mb-1" style="font-size: 21px; font-weight: 800;">
+                        @_perfil.Nombre @_perfil.Apellido
+                    </h2>
+                    <span style="font-size: 13px; color: var(--cn-on-surface-variant);">Conductor Profesional Homologado</span>
+
+                    <div class="mt-3">
+                        <span class="cn-chip cn-chip--amber">
+                            <span class="material-symbols-outlined" style="font-size: 14px; font-variation-settings: 'FILL' 1;">verified</span>
+                            <span>Estado: @_perfil.Estado</span>
+                        </span>
+                    </div>
+
+                    <div class="cn-identity-stats">
+                        <div class="d-flex flex-column align-items-center">
+                            <div class="d-flex align-items-center gap-1" style="color: var(--cn-amber);">
+                                <span class="material-symbols-outlined" style="font-size: 17px; font-variation-settings: 'FILL' 1;">star</span>
+                                <span class="cn-display cn-tnum" style="font-size: 18px; font-weight: 800;">@_perfil.PromedioCalificacion.ToString("0.0")</span>
+                            </div>
+                            <span style="font-size: 11px; color: var(--cn-on-surface-variant);">Calificación</span>
+                        </div>
+
+                        <div class="d-flex flex-column align-items-center">
+                            <span class="cn-display cn-tnum" style="font-size: 18px; font-weight: 800; color: var(--cn-primary-bright);">
+                                @_perfil.TotalCalificaciones
+                            </span>
+                            <span style="font-size: 11px; color: var(--cn-on-surface-variant);">Valoraciones</span>
+                        </div>
+
+                        <div class="d-flex flex-column align-items-center">
+                            <span class="cn-display" style="font-size: 16px; font-weight: 800; color: var(--cn-secondary);">
+                                OK
+                            </span>
+                            <span style="font-size: 11px; color: var(--cn-on-surface-variant);">Habilitación</span>
+                        </div>
+                    </div>
+
+                    <div class="w-100 mt-4 d-flex flex-column gap-2 text-start">
+                        <div class="cn-inset p-3 d-flex align-items-center justify-content-between gap-2" style="font-size: 13px;">
+                            <span style="color: var(--cn-on-surface-variant);">Empresa asociada:</span>
+                            <strong style="color: var(--cn-primary-bright);">@_perfil.Empresa</strong>
+                        </div>
+                        <div class="cn-inset p-3 d-flex align-items-center justify-content-between gap-2" style="font-size: 13px;">
+                            <span style="color: var(--cn-on-surface-variant);">Licencia:</span>
+                            <strong style="color: var(--cn-text-white); font-family: monospace;">@_perfil.Licencia</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha (8/12): Datos Operativos y Edición -->
+                <div class="cn-card p-4 d-flex flex-column gap-4">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 pb-3" style="border-bottom: 1px solid var(--cn-surface-highest);">
+                        <div>
+                            <h3 class="cn-display mb-1" style="font-size: 18px; font-weight: 700;">
+                                Datos Personales y de Contacto
+                            </h3>
+                            <p class="mb-0" style="font-size: 13px; color: var(--cn-on-surface-variant);">
+                                Actualizá tu información de contacto y fotografía operativa visible en despachos.
+                            </p>
+                        </div>
+                        <span class="cn-chip cn-chip--sky">
+                            <span class="material-symbols-outlined" style="font-size: 15px;">shield</span>
+                            <span>Identidad Validada</span>
+                        </span>
+                    </div>
+
+                    <div class="cn-form-grid">
+                        <div class="d-flex flex-column gap-1">
+                            <label class="cn-label-caps">Nombre</label>
+                            <input type="text" class="cn-input" @bind="_editarDto.Nombre" />
+                        </div>
+
+                        <div class="d-flex flex-column gap-1">
+                            <label class="cn-label-caps">Apellido</label>
+                            <input type="text" class="cn-input" @bind="_editarDto.Apellido" />
+                        </div>
+
+                        <div class="d-flex flex-column gap-1">
+                            <label class="cn-label-caps">Teléfono de Contacto</label>
+                            <input type="text" class="cn-input" placeholder="+54 9 11 ..." @bind="_editarDto.Telefono" />
+                        </div>
+
+                        <div class="d-flex flex-column gap-1">
+                            <label class="cn-label-caps">Empresa Vinculada</label>
+                            <input type="text" class="cn-input" value="@_perfil.Empresa" disabled />
+                        </div>
+
+                        <div class="cn-form-span-2 d-flex flex-column gap-1">
+                            <label class="cn-label-caps">URL de Foto de Perfil</label>
+                            <input type="text" class="cn-input" placeholder="https://ejemplo.com/mifoto.jpg" @bind="_editarDto.FotoPerfil" />
+                        </div>
+
+                        <div class="cn-form-span-2 d-flex flex-column gap-1">
+                            <label class="cn-label-caps">Licencia de Conducir (No editable)</label>
+                            <div class="cn-credential-box">
+                                <div class="d-flex align-items-center gap-3 min-w-0">
+                                    <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(238, 152, 0, 0.18); color: var(--cn-amber); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <span class="material-symbols-outlined" style="font-size: 22px;">badge</span>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="cn-display text-truncate" style="font-size: 14px; font-weight: 700; color: var(--cn-text-white);">
+                                            Licencia N° @_perfil.Licencia
+                                        </div>
+                                        <div style="font-size: 12px; color: var(--cn-on-surface-variant);">
+                                            Credencial verificada por la empresa prestadora
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="cn-chip cn-chip--amber" style="flex-shrink: 0;">VIGENTE</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap align-items-center justify-content-end gap-3 pt-3" style="border-top: 1px solid var(--cn-surface-highest);">
+                        <button type="button" class="cn-btn cn-btn--ghost" @onclick="CargarPerfilAsync" disabled="@_guardando">
+                            Recargar
+                        </button>
+                        <button type="button" class="cn-btn cn-btn--primary" style="min-height: 46px; padding: 0 1.6rem;"
+                                disabled="@_guardando" @onclick="GuardarCambiosAsync">
+                            <span class="material-symbols-outlined" style="font-size: 19px;">save</span>
+                            <span>@(_guardando ? "Guardando..." : "Actualizar Datos del Perfil")</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 </RoleGuard>
+
+@code {
+    private bool _cargando = true;
+    private bool _guardando;
+    private string? _mensajeExito;
+    private string? _mensajeError;
+    private ChoferPerfilDTO? _perfil;
+    private ActualizarPerfilDTO _editarDto = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarPerfilAsync();
+    }
+
+    private async Task CargarPerfilAsync()
+    {
+        _cargando = true;
+        _mensajeError = null;
+        try
+        {
+            var resp = await ChoferServicio.ObtenerPerfilAsync(Sesion.Id);
+            if (!resp.Error && resp.Respuesta != null)
+            {
+                _perfil = resp.Respuesta;
+                _editarDto = new ActualizarPerfilDTO
+                {
+                    Nombre = _perfil.Nombre,
+                    Apellido = _perfil.Apellido,
+                    Telefono = _perfil.Telefono,
+                    FotoPerfil = _perfil.FotoPerfil
+                };
+            }
+            else
+            {
+                _mensajeError = "No se pudo cargar el perfil del conductor.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _mensajeError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task GuardarCambiosAsync()
+    {
+        _guardando = true;
+        _mensajeExito = null;
+        _mensajeError = null;
+
+        try
+        {
+            var resp = await ChoferServicio.ActualizarPerfilAsync(Sesion.Id, _editarDto);
+            if (resp.Error)
+            {
+                _mensajeError = await resp.ObtenerMensajeAsync("Error al actualizar perfil.");
+            }
+            else
+            {
+                _mensajeExito = "Perfil actualizado correctamente.";
+                await CargarPerfilAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _mensajeError = $"Error al guardar: {ex.Message}";
+        }
+        finally
+        {
+            _guardando = false;
+        }
+    }
+}

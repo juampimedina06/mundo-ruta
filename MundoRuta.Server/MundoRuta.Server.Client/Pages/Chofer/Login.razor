@@ -1,0 +1,124 @@
+@page "/chofer/login"
+@layout ChoferLayout
+@using MundoRuta.Shared
+@using MundoRuta.Shared.DTO
+@using MundoRuta.Servicios.Auth
+@using MundoRuta.Servicios.Sesion
+@using MundoRuta.Servicios.ServiciosHTTP
+@inject IAuthServicio Auth
+@inject SesionEstado Sesion
+@inject NavigationManager Navegacion
+
+<PageTitle>Ingreso Chofer | Mundo Ruta</PageTitle>
+
+<div class="cn-login-page">
+    <div class="cn-login-card">
+        <div class="text-center mb-4">
+            <div class="cn-login-icon">
+                <span class="material-symbols-outlined" style="font-size: 30px;">local_shipping</span>
+            </div>
+            <div class="cn-label-caps mb-1" style="color: var(--cn-sky);">Mundo Ruta • Cabina Pro</div>
+            <h1 class="cn-display mb-1" style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em;">
+                Portal del Conductor
+            </h1>
+            <p class="mb-0" style="font-size: 13.5px; color: var(--cn-on-surface-variant);">
+                Acceso exclusivo para choferes asignados
+            </p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <div class="cn-alert cn-alert--error mb-3" role="alert">
+                <span class="material-symbols-outlined">warning</span>
+                <span>@_error</span>
+            </div>
+        }
+
+        <EditForm Model="_modelo" OnSubmit="IngresarChoferAsync">
+            <div class="mb-3">
+                <label class="cn-label-caps d-block mb-1" for="email">Email del conductor</label>
+                <InputText id="email"
+                           class="cn-input"
+                           type="email"
+                           autocomplete="email"
+                           placeholder="chofer@ejemplo.com"
+                           @bind-Value="_modelo.Email" />
+            </div>
+
+            <div class="mb-4">
+                <label class="cn-label-caps d-block mb-1" for="password">Contraseña</label>
+                <InputText id="password"
+                           class="cn-input"
+                           type="password"
+                           autocomplete="current-password"
+                           placeholder="••••••••"
+                           @bind-Value="_modelo.Password" />
+            </div>
+
+            <button type="submit" class="cn-btn cn-btn--primary cn-btn--lg w-100" disabled="@_cargando">
+                <span class="material-symbols-outlined" style="font-size: 20px;">login</span>
+                <span>@(_cargando ? "Validando acceso..." : "Iniciar Sesión como Chofer")</span>
+            </button>
+        </EditForm>
+
+        <div class="mt-4 pt-3 text-center" style="border-top: 1px solid var(--cn-surface-highest); font-size: 13px;">
+            <span style="color: var(--cn-on-surface-variant);">¿Sos prestador o pasajero? </span>
+            <a href="/login" style="color: var(--cn-sky); font-weight: 700;">Ingreso general</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly LoginRequestDto _modelo = new LoginRequestDto();
+    private bool _cargando;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        if (Sesion.EstaLogueado && Sesion.Rol == Roles.Chofer)
+        {
+            Navegacion.NavigateTo("/chofer/home");
+        }
+    }
+
+    private async Task IngresarChoferAsync()
+    {
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_modelo.Email) || string.IsNullOrWhiteSpace(_modelo.Password))
+        {
+            _error = "Ingresá tu email y contraseña.";
+            return;
+        }
+
+        _cargando = true;
+
+        try
+        {
+            HttpResp<LoginResponseDto> respuesta = await Auth.LoginAsync(_modelo);
+
+            if (respuesta.Error)
+            {
+                _error = await respuesta.ObtenerMensajeAsync("Credenciales incorrectas o acceso no autorizado.");
+                return;
+            }
+
+            if (!string.Equals(Sesion.Rol, Roles.Chofer, StringComparison.OrdinalIgnoreCase))
+            {
+                Auth.Logout();
+                _error = "Esta cuenta no tiene rol de Chofer. Accedé por el login general.";
+                return;
+            }
+
+            Navegacion.NavigateTo("/chofer/home");
+        }
+        catch (Exception ex)
+        {
+            _error = $"Error de conexión: {ex.Message}";
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+}
