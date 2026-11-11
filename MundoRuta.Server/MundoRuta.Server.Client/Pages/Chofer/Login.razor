@@ -1,4 +1,5 @@
 @page "/chofer/login"
+@layout ChoferLayout
 @using MundoRuta.Shared
 @using MundoRuta.Shared.DTO
 @using MundoRuta.Servicios.Auth
@@ -10,44 +11,59 @@
 
 <PageTitle>Ingreso Chofer | Mundo Ruta</PageTitle>
 
-<div class="mr-page">
-    <div class="mr-container mr-auth">
-        <div class="mr-card mr-auth__card" style="max-width: 420px; margin: 40px auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); background: #ffffff;">
-            <div style="text-align: center; margin-bottom: 24px;">
-                <div style="display: inline-block; background: #e0f2fe; color: #0284c7; padding: 12px 18px; border-radius: 50%; font-size: 28px; margin-bottom: 12px;">
-                    🚚
-                </div>
-                <h1 style="font-size: 24px; font-weight: 700; color: #1e293b; margin: 0;">Portal del Conductor</h1>
-                <p style="font-size: 14px; color: #64748b; margin-top: 6px;">Acceso exclusivo para choferes asignados</p>
+<div class="cn-login-page">
+    <div class="cn-login-card">
+        <div class="text-center mb-4">
+            <div class="cn-login-icon">
+                <span class="material-symbols-outlined" style="font-size: 30px;">local_shipping</span>
+            </div>
+            <div class="cn-label-caps mb-1" style="color: var(--cn-sky);">Mundo Ruta • Cabina Pro</div>
+            <h1 class="cn-display mb-1" style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em;">
+                Portal del Conductor
+            </h1>
+            <p class="mb-0" style="font-size: 13.5px; color: var(--cn-on-surface-variant);">
+                Acceso exclusivo para choferes asignados
+            </p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <div class="cn-alert cn-alert--error mb-3" role="alert">
+                <span class="material-symbols-outlined">warning</span>
+                <span>@_error</span>
+            </div>
+        }
+
+        <EditForm Model="_modelo" OnSubmit="IngresarChoferAsync">
+            <div class="mb-3">
+                <label class="cn-label-caps d-block mb-1" for="email">Email del conductor</label>
+                <InputText id="email"
+                           class="cn-input"
+                           type="email"
+                           autocomplete="email"
+                           placeholder="chofer@ejemplo.com"
+                           @bind-Value="_modelo.Email" />
             </div>
 
-            @if (!string.IsNullOrWhiteSpace(_error))
-            {
-                <div class="alert alert-danger" style="border-radius: 8px; font-size: 14px; padding: 10px 14px;" role="alert">
-                    @_error
-                </div>
-            }
-
-            <EditForm Model="_modelo" OnSubmit="IngresarChoferAsync">
-                <div class="mb-3">
-                    <label class="form-label" for="email" style="font-weight: 600; font-size: 13px; color: #334155;">Email del conductor</label>
-                    <InputText id="email" class="form-control" type="email" autocomplete="email" placeholder="chofer@ejemplo.com" @bind-Value="_modelo.Email" />
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label" for="password" style="font-weight: 600; font-size: 13px; color: #334155;">Contraseña</label>
-                    <InputText id="password" class="form-control" type="password" autocomplete="current-password" placeholder="••••••••" @bind-Value="_modelo.Password" />
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100" style="padding: 10px; font-weight: 600; border-radius: 8px;" disabled="@_cargando">
-                    @(_cargando ? "Validando acceso..." : "Iniciar Sesión como Chofer")
-                </button>
-            </EditForm>
-
-            <div style="margin-top: 20px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 15px;">
-                <span style="font-size: 13px; color: #64748b;">¿Sos prestador o pasajero? </span>
-                <a href="/login" style="font-size: 13px; color: #0284c7; text-decoration: none; font-weight: 600;">Ingreso general</a>
+            <div class="mb-4">
+                <label class="cn-label-caps d-block mb-1" for="password">Contraseña</label>
+                <InputText id="password"
+                           class="cn-input"
+                           type="password"
+                           autocomplete="current-password"
+                           placeholder="••••••••"
+                           @bind-Value="_modelo.Password" />
             </div>
+
+            <button type="submit" class="cn-btn cn-btn--primary cn-btn--lg w-100" disabled="@_cargando">
+                <span class="material-symbols-outlined" style="font-size: 20px;">login</span>
+                <span>@(_cargando ? "Validando acceso..." : "Iniciar Sesión como Chofer")</span>
+            </button>
+        </EditForm>
+
+        <div class="mt-4 pt-3 text-center" style="border-top: 1px solid var(--cn-surface-highest); font-size: 13px;">
+            <span style="color: var(--cn-on-surface-variant);">¿Sos prestador o pasajero? </span>
+            <a href="/login" style="color: var(--cn-sky); font-weight: 700;">Ingreso general</a>
         </div>
     </div>
 </div>

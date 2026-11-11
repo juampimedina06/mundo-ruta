@@ -1,4 +1,5 @@
 @page "/chofer/viaje-activo/{ViajeId:int}"
+@layout ChoferLayout
 @using MundoRuta.Shared
 @using MundoRuta.Shared.DTO
 @using MundoRuta.Shared.DTO.Realtime
@@ -15,321 +16,460 @@
 <PageTitle>Hoja de Ruta Operativa #@ViajeId | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="Roles.Chofer">
-    <div class="mr-page">
-        <div class="mr-container" style="max-width: 1000px; margin: 0 auto; padding: 20px 15px;">
-
-            <!-- Header con Navegación y Estado -->
-            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                <a href="/chofer/home" class="btn btn-outline-secondary btn-sm" style="border-radius: 8px;">
-                    ← Volver al Panel
-                </a>
-                <div class="d-flex align-items-center gap-2">
-                    <span style="font-size: 13px; color: #64748b;">Estado del viaje:</span>
-                    <span class="badge" style="background: #0284c7; font-size: 13px; padding: 6px 12px; border-radius: 6px;">
-                        @(_viaje?.Estado ?? "Cargando...")
-                    </span>
+    <div class="cn-viaje-wrapper">
+        @if (_cargando)
+        {
+            <div class="cn-card p-5 text-center">
+                <div class="spinner-border text-info mb-3" role="status"></div>
+                <div class="cn-display" style="font-size: 16px; font-weight: 700;">Cargando hoja de ruta operativa...</div>
+                <p class="mb-0 mt-1" style="font-size: 13px; color: var(--cn-on-surface-variant);">Sincronizando estado del despacho #@ViajeId</p>
+            </div>
+        }
+        else if (_errorGeneral != null)
+        {
+            <div class="cn-card p-4 d-flex flex-column gap-3 align-items-start">
+                <div class="cn-alert cn-alert--error w-100">
+                    <span class="material-symbols-outlined">error</span>
+                    <span>@_errorGeneral</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="cn-btn cn-btn--primary" @onclick="CargarDatosAsync">Reintentar</button>
+                    <a href="/chofer/home" class="cn-btn cn-btn--ghost">Volver al Panel</a>
                 </div>
             </div>
+        }
+        else if (_viaje != null)
+        {
+            <div class="cn-viaje-grid">
+                <!-- Columna Izquierda (8/12): Mapa de Navegación + Progreso + Chat -->
+                <div class="cn-viaje-left">
+                    <!-- Mapa de Navegación Nocturno -->
+                    <div class="cn-nav-map-card">
+                        <div class="cn-nav-map-canvas">
+                            <!-- Top HUD Bar -->
+                            <div class="cn-nav-hud">
+                                <div class="cn-nav-hud__card d-flex align-items-center gap-3">
+                                    <div class="cn-nav-hud__turn">
+                                        <span class="material-symbols-outlined" style="font-size: 24px;">@ObtenerIconoHud()</span>
+                                    </div>
+                                    <div class="d-flex flex-column min-w-0">
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            <span class="cn-display" style="font-size: 15px; font-weight: 800; color: var(--cn-text-white);">
+                                                @ObtenerTituloHud()
+                                            </span>
+                                            <span class="cn-chip cn-chip--amber" style="padding: 2px 8px; font-size: 10px;">
+                                                VIAJE #@_viaje.Id
+                                            </span>
+                                        </div>
+                                        <span class="text-truncate" style="font-size: 12px; color: var(--cn-on-surface-variant); max-width: 360px;">
+                                            @ObtenerSubtituloHud()
+                                        </span>
+                                    </div>
+                                </div>
 
-            @if (_cargando)
-            {
-                <div class="text-center p-5">
-                    <div class="spinner-border text-primary" role="status"></div>
-                    <p class="text-muted mt-2">Cargando hoja de ruta...</p>
-                </div>
-            }
-            else if (_errorGeneral != null)
-            {
-                <div class="alert alert-danger" role="alert">
-                    @_errorGeneral
-                </div>
-                <button class="btn btn-primary" @onclick="CargarDatosAsync">Reintentar</button>
-            }
-            else if (_viaje != null)
-            {
-                <!-- Barra de Progreso / Stepper -->
-                <div class="card mb-4" style="border-radius: 12px; border: 1px solid #e2e8f0; background: #ffffff; padding: 20px;">
-                    <div class="d-flex justify-content-between position-relative flex-wrap gap-2">
-                        <div class="text-center" style="flex: 1; min-width: 80px;">
-                            <div style="@ObtenerEstiloPaso(1)">1</div>
-                            <div style="font-size: 12px; font-weight: 600; margin-top: 6px; color: #334155;">Asignado</div>
+                                <div class="cn-nav-hud__card d-flex align-items-center gap-2">
+                                    <div class="text-end">
+                                        <div class="cn-display" style="font-size: 15px; font-weight: 800; color: var(--cn-amber-bright); line-height: 1.1;">
+                                            @_viaje.Estado
+                                        </div>
+                                        <span class="cn-label-caps" style="font-size: 9px;">Estado en tiempo real</span>
+                                    </div>
+                                    <span class="cn-pulse-dot cn-pulse-dot--emerald"></span>
+                                </div>
+                            </div>
+
+                            <!-- Grilla nocturna + Curva de Ruta SVG -->
+                            <svg style="position: absolute; inset: 0; width: 100%; height: 100%;" viewBox="0 0 700 440" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <pattern id="cnNavGrid" width="44" height="44" patternUnits="userSpaceOnUse">
+                                        <path d="M 44 0 L 0 0 0 44" fill="none" stroke="rgba(56,189,248,0.08)" stroke-width="1" />
+                                    </pattern>
+                                </defs>
+                                <rect width="700" height="440" fill="url(#cnNavGrid)" />
+                                <path d="M 110 340 C 190 295, 250 310, 340 235 C 420 170, 470 190, 585 110"
+                                      fill="none" stroke="#38bdf8" stroke-linecap="round" stroke-width="14" opacity="0.28" />
+                                <path d="M 110 340 C 190 295, 250 310, 340 235 C 420 170, 470 190, 585 110"
+                                      fill="none" stroke="#feb300" stroke-dasharray="10 6" stroke-linecap="round" stroke-width="5" />
+                                <circle cx="110" cy="340" r="10" fill="#070d1e" stroke="#38bdf8" stroke-width="4" />
+                                <circle cx="585" cy="110" r="11" fill="#070d1e" stroke="#feb300" stroke-width="4" />
+                            </svg>
+
+                            <!-- Marcador del vehículo -->
+                            <div style="position: absolute; left: 48%; top: 53%; transform: translate(-50%, -50%); z-index: 15; pointer-events: none;">
+                                <div style="width: 38px; height: 38px; border-radius: 50%; background: #0a122a; border: 2px solid #feb300; display: flex; align-items: center; justify-content: center; color: #feb300; box-shadow: 0 0 22px rgba(254, 179, 0, 0.4);">
+                                    <span class="material-symbols-outlined" style="font-size: 20px; transform: rotate(45deg); font-variation-settings: 'FILL' 1;">navigation</span>
+                                </div>
+                            </div>
+
+                            <!-- Telemetría inferior del mapa -->
+                            <div class="cn-nav-bottom-pills">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <div class="cn-nav-tele-pill">
+                                        <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--cn-secondary);"></span>
+                                        <span class="text-truncate" style="max-width: 280px;">@_viaje.Origen → @_viaje.Destino</span>
+                                    </div>
+                                    <div class="cn-nav-tele-pill d-none d-sm-inline-flex" style="font-family: monospace; color: var(--cn-on-surface-variant);">
+                                        SignalR Live
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="text-center" style="flex: 1; min-width: 80px;">
-                            <div style="@ObtenerEstiloPaso(2)">2</div>
-                            <div style="font-size: 12px; font-weight: 600; margin-top: 6px; color: #334155;">Carga Subida</div>
+                    </div>
+
+                    <!-- Barra de Progreso Operativa (5 pasos) -->
+                    <div class="cn-card--nav p-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2 px-1">
+                            <span class="cn-label-caps">Hoja de Ruta Operativa</span>
+                            <span class="cn-label-caps" style="color: var(--cn-amber);">Paso @PasoActual de 5</span>
                         </div>
-                        <div class="text-center" style="flex: 1; min-width: 80px;">
-                            <div style="@ObtenerEstiloPaso(3)">3</div>
-                            <div style="font-size: 12px; font-weight: 600; margin-top: 6px; color: #334155;">En Tránsito</div>
+                        <div class="cn-stepper">
+                            @foreach (var paso in PasosFlujo)
+                            {
+                                bool completado = PasoActual > paso.Numero;
+                                bool actual = PasoActual == paso.Numero;
+                                string clasePaso = actual ? "cn-step cn-step--current" : (completado ? "cn-step cn-step--done" : "cn-step");
+
+                                <div class="@clasePaso">
+                                    <div class="cn-step__num">@paso.Numero</div>
+                                    <span class="cn-step__label">@paso.Nombre</span>
+                                </div>
+                            }
                         </div>
-                        <div class="text-center" style="flex: 1; min-width: 80px;">
-                            <div style="@ObtenerEstiloPaso(4)">4</div>
-                            <div style="font-size: 12px; font-weight: 600; margin-top: 6px; color: #334155;">En Destino</div>
+                    </div>
+
+                    <!-- Chat Directo con el Pasajero -->
+                    <div class="cn-chat-card">
+                        <div class="cn-chat-card__header">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="material-symbols-outlined" style="color: var(--cn-sky); font-size: 20px;">forum</span>
+                                <span class="cn-display" style="font-size: 14px; font-weight: 700; color: var(--cn-text-white);">
+                                    Chat con @_viaje.NombrePasajero
+                                </span>
+                            </div>
+                            <button type="button" class="cn-icon-btn" title="Actualizar mensajes" @onclick="CargarMensajesChatAsync">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">refresh</span>
+                            </button>
                         </div>
-                        <div class="text-center" style="flex: 1; min-width: 80px;">
-                            <div style="@ObtenerEstiloPaso(5)">5</div>
-                            <div style="font-size: 12px; font-weight: 600; margin-top: 6px; color: #334155;">Finalizado</div>
+
+                        <div class="cn-chat-messages">
+                            @if (_mensajes.Count == 0)
+                            {
+                                <div class="text-center my-auto py-4" style="font-size: 13px; color: var(--cn-on-surface-variant);">
+                                    No hay mensajes aún. Podés coordinar la llegada con el cliente.
+                                </div>
+                            }
+                            else
+                            {
+                                @foreach (var msg in _mensajes)
+                                {
+                                    bool esMio = msg.IdEmisor == Sesion.Id;
+                                    <div style="align-self: @(esMio ? "flex-end" : "flex-start"); max-width: 82%;">
+                                        <div class="cn-chat-bubble @(esMio ? "cn-chat-bubble--mine" : "cn-chat-bubble--other")">
+                                            @msg.Contenido
+                                        </div>
+                                        <div style="font-size: 10px; color: var(--cn-outline); text-align: @(esMio ? "right" : "left"); margin-top: 3px;">
+                                            @msg.EnviadoEn.ToString("HH:mm")
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <div class="cn-chat-input-bar">
+                            <input type="text"
+                                   class="cn-input"
+                                   style="min-height: 44px;"
+                                   placeholder="Escribí un mensaje al cliente..."
+                                   @bind="_nuevoMensaje"
+                                   @bind:event="oninput"
+                                   @onkeyup="HandleChatKeyUp"
+                                   disabled="@_enviandoMensaje" />
+                            <button type="button"
+                                    class="cn-btn cn-btn--primary"
+                                    style="min-height: 44px; padding: 0 1.1rem;"
+                                    @onclick="EnviarMensajeAsync"
+                                    disabled="@(string.IsNullOrWhiteSpace(_nuevoMensaje) || _enviandoMensaje)">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">send</span>
+                                <span>Enviar</span>
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <div class="row g-4">
-                    <!-- Columna Izquierda: Datos del Viaje y Botonera Dinámica -->
-                    <div class="col-lg-7">
-
-                        <!-- Datos de la Hoja de Ruta -->
-                        <div class="card mb-4" style="border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
-                            <div class="card-header bg-white" style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9;">
-                                <h2 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">📋 Especificaciones del Servicio</h2>
+                <!-- Columna Derecha (4/12): Panel de Control del Viaje -->
+                <div class="cn-viaje-right">
+                    <div class="cn-card--nav p-4 d-flex flex-column gap-3">
+                        <!-- Tarjeta de Pasajero / Cliente -->
+                        <div class="cn-passenger-card">
+                            <div class="d-flex align-items-center gap-3 min-w-0">
+                                <div class="cn-passenger-avatar">
+                                    @ObtenerInicial(_viaje.NombrePasajero)
+                                </div>
+                                <div class="d-flex flex-column min-w-0">
+                                    <span class="cn-label-caps" style="font-size: 9px;">Pasajero / Cliente</span>
+                                    <h2 class="cn-display text-truncate mb-0" style="font-size: 15px; font-weight: 700;">
+                                        @_viaje.NombrePasajero
+                                    </h2>
+                                    @if (!string.IsNullOrWhiteSpace(_viaje.TelefonoPasajero))
+                                    {
+                                        <span style="font-size: 12px; color: var(--cn-on-surface-variant);">
+                                            @_viaje.TelefonoPasajero
+                                        </span>
+                                    }
+                                </div>
                             </div>
-                            <div class="card-body p-4">
-                                <div class="mb-3">
-                                    <div style="font-size: 12px; color: #64748b; font-weight: 600;">PUNTO DE PARTIDA (ORIGEN)</div>
-                                    <div style="font-size: 16px; font-weight: 600; color: #0f172a;">📍 @_viaje.Origen</div>
-                                </div>
-                                <div class="mb-3">
-                                    <div style="font-size: 12px; color: #64748b; font-weight: 600;">PUNTO DE ENTREGA (DESTINO)</div>
-                                    <div style="font-size: 16px; font-weight: 600; color: #0f172a;">🏁 @_viaje.Destino</div>
-                                </div>
 
-                                <hr style="border-top: 1px dashed #cbd5e1; margin: 16px 0;" />
+                            @if (!string.IsNullOrWhiteSpace(_viaje.TelefonoPasajero))
+                            {
+                                <a href="tel:@_viaje.TelefonoPasajero"
+                                   class="cn-icon-btn"
+                                   title="Llamar al pasajero"
+                                   style="background: rgba(16, 185, 129, 0.16); border-color: var(--cn-border-emerald); color: var(--cn-secondary);">
+                                    <span class="material-symbols-outlined" style="font-size: 18px;">call</span>
+                                </a>
+                            }
+                        </div>
 
-                                <div class="row g-2 mb-3">
-                                    <div class="col-sm-6">
-                                        <div style="font-size: 12px; color: #64748b; font-weight: 600;">PASAJERO / CLIENTE</div>
-                                        <div style="font-size: 14px; font-weight: 600; color: #1e293b;">
-                                            👤 @_viaje.NombrePasajero
-                                        </div>
-                                        @if (!string.IsNullOrWhiteSpace(_viaje.TelefonoPasajero))
+                        <!-- Checkpoints de Ruta -->
+                        <div class="d-flex flex-column py-1">
+                            <div class="cn-checkpoint">
+                                <div class="cn-checkpoint__rail">
+                                    <div class="cn-checkpoint__dot cn-checkpoint__dot--origin">
+                                        <span class="material-symbols-outlined" style="font-size: 14px;">trip_origin</span>
+                                    </div>
+                                    <div class="cn-checkpoint__line"></div>
+                                </div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <span class="cn-label-caps" style="font-size: 9px;">Punto de Partida (Origen)</span>
+                                        @if (PasoActual >= 2)
                                         {
-                                            <div style="font-size: 13px; color: #0284c7;">📞 @_viaje.TelefonoPasajero</div>
+                                            <span style="font-size: 10px; font-weight: 700; color: var(--cn-secondary);">Retirado</span>
                                         }
                                     </div>
-                                    <div class="col-sm-6">
-                                        <div style="font-size: 12px; color: #64748b; font-weight: 600;">TARIFA A COBRAR</div>
-                                        <div style="font-size: 18px; font-weight: 700; color: #16a34a;">
-                                            $@_viaje.Monto.ToString("N2")
-                                        </div>
-                                        <div style="font-size: 12px; color: #64748b;">Pago: @_viaje.MetodoDePago</div>
+                                    <div class="cn-display" style="font-size: 13.5px; font-weight: 700; color: var(--cn-text-white);">
+                                        @_viaje.Origen
                                     </div>
                                 </div>
+                            </div>
 
-                                <!-- Badges de requerimientos del flete -->
-                                <div class="d-flex flex-wrap gap-2 mt-3">
+                            <div class="cn-checkpoint">
+                                <div class="cn-checkpoint__rail">
+                                    <div class="cn-checkpoint__dot cn-checkpoint__dot--dest">
+                                        <span class="material-symbols-outlined" style="font-size: 15px; font-variation-settings: 'FILL' 1;">location_on</span>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="d-flex align-items-center justify-content-between gap-2">
+                                        <span class="cn-label-caps" style="font-size: 9px;">Punto de Entrega (Destino)</span>
+                                        <span style="font-size: 10px; font-weight: 700; color: var(--cn-amber);">Destino final</span>
+                                    </div>
+                                    <div class="cn-display" style="font-size: 13.5px; font-weight: 700; color: var(--cn-text-white);">
+                                        @_viaje.Destino
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Requisitos de Carga -->
+                        @if (_viaje.EsCubierto || _viaje.UsaBaulera || _viaje.LlevaAcompanante || !string.IsNullOrWhiteSpace(_viaje.DetalleCarga))
+                        {
+                            <div class="d-flex flex-column gap-2">
+                                <div class="d-flex flex-wrap gap-2">
                                     @if (_viaje.EsCubierto)
                                     {
-                                        <span class="badge bg-light text-dark border">📦 Caja Cubierta</span>
+                                        <span class="cn-chip cn-chip--sky">Caja Cubierta</span>
                                     }
                                     @if (_viaje.UsaBaulera)
                                     {
-                                        <span class="badge bg-light text-dark border">🧳 Usa Baulera</span>
+                                        <span class="cn-chip">Usa Baulera</span>
                                     }
                                     @if (_viaje.LlevaAcompanante)
                                     {
-                                        <span class="badge bg-light text-dark border">👥 Con Acompañante</span>
+                                        <span class="cn-chip cn-chip--amber">Con Acompañante</span>
                                     }
-                                    @if (!string.IsNullOrWhiteSpace(_viaje.DetalleCarga))
-                                    {
-                                        <div class="w-100 mt-2 p-2" style="background: #f8fafc; border-radius: 6px; font-size: 13px; color: #475569;">
-                                            <strong>Detalle:</strong> @_viaje.DetalleCarga
-                                        </div>
-                                    }
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(_viaje.DetalleCarga))
+                                {
+                                    <div class="cn-inset p-2 px-3" style="font-size: 12.5px; color: var(--cn-on-surface-variant);">
+                                        <strong style="color: var(--cn-text-white);">Detalle de carga:</strong> @_viaje.DetalleCarga
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <!-- Tarifa Pactada -->
+                        <div class="cn-fare-pill">
+                            <div class="d-flex flex-column">
+                                <span class="cn-label-caps" style="font-size: 9px;">Tarifa a Cobrar</span>
+                                <span class="cn-display cn-tnum" style="font-size: 20px; font-weight: 800; color: var(--cn-amber-bright);">
+                                    $@_viaje.Monto.ToString("N2")
+                                </span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 text-end">
+                                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--cn-secondary);">account_balance_wallet</span>
+                                <div class="d-flex flex-column">
+                                    <span style="font-size: 12px; font-weight: 700; color: var(--cn-text-white);">
+                                        @(string.IsNullOrWhiteSpace(_viaje.MetodoDePago) ? "A convenir" : _viaje.MetodoDePago)
+                                    </span>
+                                    <span style="font-size: 10px; color: var(--cn-on-surface-variant);">Método de pago</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Botonera Dinámica / Panel de Acción según Estado -->
-                        <div class="card mb-4" style="border-radius: 12px; border: 2px solid #0284c7; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.08);">
-                            <div class="card-header bg-white" style="padding: 16px 20px;">
-                                <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0;">⚡ Acción de Despacho Operativo</h3>
+                        <!-- Selector visual de fase -->
+                        <div class="d-flex flex-column gap-2">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="cn-label-caps" style="font-size: 9px;">Estado de Operación</span>
+                                <span style="font-size: 10px; color: var(--cn-amber); font-weight: 700;">Flujo activo</span>
                             </div>
-                            <div class="card-body p-4">
-
-                                @if (!string.IsNullOrWhiteSpace(_errorAccion))
-                                {
-                                    <div class="alert alert-danger mb-3" role="alert">
-                                        @_errorAccion
-                                    </div>
-                                }
-
-                                @if (EstadoNormalizado == "asignado")
-                                {
-                                    <div class="text-center py-2">
-                                        <p style="font-size: 14px; color: #475569; margin-bottom: 16px;">
-                                            Dirigite al punto de origen: <strong>@_viaje.Origen</strong>. Una vez allí y con los bultos cargados en el vehículo, confirmá el inicio.
-                                        </p>
-                                        <button class="btn btn-primary btn-lg w-100" style="padding: 12px; font-weight: 700; border-radius: 8px;"
-                                                disabled="@_procesandoAccion" @onclick="AvanzarEstadoAsync">
-                                            @(_procesandoAccion ? "Registrando..." : "📦 Llegué al origen y subí la carga")
-                                        </button>
-                                    </div>
-                                }
-                                else if (EstadoNormalizado == "carga-subida")
-                                {
-                                    <div class="text-center py-2">
-                                        <p style="font-size: 14px; color: #475569; margin-bottom: 16px;">
-                                            Carga verificada y asegurada. Comenzá el recorrido hacia el destino final: <strong>@_viaje.Destino</strong>.
-                                        </p>
-                                        <button class="btn btn-success btn-lg w-100" style="padding: 12px; font-weight: 700; border-radius: 8px;"
-                                                disabled="@_procesandoAccion" @onclick="AvanzarEstadoAsync">
-                                            @(_procesandoAccion ? "Iniciando viaje..." : "🚚 Iniciar viaje hacia destino")
-                                        </button>
-                                    </div>
-                                }
-                                else if (EstadoNormalizado == "en-transito")
-                                {
-                                    <div class="text-center py-2">
-                                        <div class="badge bg-success-subtle text-success p-2 mb-2" style="font-size: 13px;">
-                                            🟢 En tránsito hacia destino...
-                                        </div>
-                                        <p style="font-size: 14px; color: #475569; margin-bottom: 16px;">
-                                            Conducí con precaución hacia <strong>@_viaje.Destino</strong>. Al arribar al punto de entrega, presioná el botón de llegada.
-                                        </p>
-                                        <button class="btn btn-warning btn-lg w-100" style="padding: 12px; font-weight: 700; border-radius: 8px; color: #000;"
-                                                disabled="@_procesandoAccion" @onclick="AvanzarEstadoAsync">
-                                            @(_procesandoAccion ? "Registrando llegada..." : "🏁 Llegué a destino")
-                                        </button>
-                                    </div>
-                                }
-                                else if (EstadoNormalizado == "llegada-destino")
-                                {
-                                    <!-- Formulario de Seguridad y Cierre de Viaje -->
-                                    <div style="background: #f8fafc; border-radius: 10px; padding: 20px; border: 1px solid #cbd5e1;">
-                                        <div class="d-flex align-items-center gap-2 mb-3">
-                                            <span style="font-size: 24px;">🔒</span>
-                                            <div>
-                                                <h4 style="font-size: 16px; font-weight: 700; margin: 0; color: #0f172a;">Validación de Entrega Obligatoria</h4>
-                                                <span style="font-size: 12px; color: #64748b;">Verificá la identidad de quien recibe antes de entregar la carga.</span>
-                                            </div>
-                                        </div>
-
-                                        @if (!string.IsNullOrWhiteSpace(_errorValidacion))
-                                        {
-                                            <div class="alert alert-danger" role="alert" style="font-size: 14px;">
-                                                ⚠️ @_errorValidacion
-                                            </div>
-                                        }
-
-                                        <div class="mb-3">
-                                            <label class="form-label" style="font-weight: 600; font-size: 13px; color: #1e293b;">
-                                                DNI del Receptor de la Carga: *
-                                            </label>
-                                            <input type="text" class="form-control form-control-lg"
-                                                   placeholder="Ingresá los números de DNI"
-                                                   @bind="_validarEntregaDto.DniIngresado" />
-                                            <small class="text-muted" style="font-size: 11px;">El DNI debe coincidir con el registrado en el viaje.</small>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <label class="form-label" style="font-weight: 600; font-size: 13px; color: #1e293b;">
-                                                Calificación al Pasajero / Cliente:
-                                            </label>
-                                            <div class="d-flex gap-2 align-items-center">
-                                                @for (int estrella = 1; estrella <= 5; estrella++)
-                                                {
-                                                    int puntaje = estrella;
-                                                    <button type="button" class="btn btn-sm"
-                                                            style="font-size: 22px; padding: 0 4px; line-height: 1; border: none; background: transparent; cursor: pointer;"
-                                                            @onclick="() => _validarEntregaDto.PuntajePasajero = puntaje">
-                                                        @(_validarEntregaDto.PuntajePasajero >= puntaje ? "⭐" : "☆")
-                                                    </button>
-                                                }
-                                                <span style="font-weight: 600; font-size: 13px; color: #475569; margin-left: 8px;">
-                                                    @_validarEntregaDto.PuntajePasajero / 5
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div class="mb-4">
-                                            <label class="form-label" style="font-weight: 600; font-size: 13px; color: #1e293b;">
-                                                Comentario sobre el servicio (opcional):
-                                            </label>
-                                            <textarea class="form-control" rows="2" placeholder="Puntualidad, trato, etc."
-                                                      @bind="_validarEntregaDto.Comentario"></textarea>
-                                        </div>
-
-                                        <button class="btn btn-success btn-lg w-100" style="padding: 12px; font-weight: 700; border-radius: 8px;"
-                                                disabled="@_procesandoAccion" @onclick="ConfirmarEntregaFinalizarAsync">
-                                            @(_procesandoAccion ? "Verificando DNI..." : "✅ Confirmar Entrega y Finalizar Viaje")
-                                        </button>
-                                    </div>
-                                }
-                                else if (EstadoNormalizado == "finalizado")
-                                {
-                                    <div class="alert alert-success text-center" role="alert">
-                                        <h4 style="font-weight: 700; margin: 0;">🎉 ¡Viaje Finalizado con Éxito!</h4>
-                                        <p style="margin-top: 8px; font-size: 14px;">La entrega fue validada y tu estado volvió a DISPONIBLE.</p>
-                                        <a href="/chofer/home" class="btn btn-primary mt-2">Volver al Panel</a>
-                                    </div>
-                                }
+                            <div class="cn-phase-tabs">
+                                <div class="cn-phase-tab @(EstadoNormalizado == "asignado" ? "cn-phase-tab--active" : string.Empty)">1. Asignado</div>
+                                <div class="cn-phase-tab @(EstadoNormalizado == "carga-subida" ? "cn-phase-tab--active" : string.Empty)">2. Carga Subida</div>
+                                <div class="cn-phase-tab @(EstadoNormalizado == "en-transito" ? "cn-phase-tab--active" : string.Empty)">3. En Tránsito</div>
                             </div>
                         </div>
 
-                    </div>
+                        @if (!string.IsNullOrWhiteSpace(_errorAccion))
+                        {
+                            <div class="cn-alert cn-alert--error">
+                                <span class="material-symbols-outlined">warning</span>
+                                <span>@_errorAccion</span>
+                            </div>
+                        }
 
-                    <!-- Columna Derecha: Chat directo con el Pasajero -->
-                    <div class="col-lg-5">
-                        <div class="card" style="border-radius: 12px; border: 1px solid #cbd5e1; height: 100%; display: flex; flex-direction: column;">
-                            <div class="card-header bg-white d-flex justify-content-between align-items-center" style="padding: 14px 18px; border-bottom: 1px solid #f1f5f9;">
+                        <!-- Botonera Dinámica según Estado -->
+                        @if (EstadoNormalizado == "asignado")
+                        {
+                            <p class="mb-0" style="font-size: 13px; color: var(--cn-on-surface-variant); line-height: 1.5;">
+                                Dirigite al punto de origen: <strong style="color: var(--cn-text-white);">@_viaje.Origen</strong>. Una vez allí y con los bultos cargados en el vehículo, confirmá el inicio.
+                            </p>
+                            <button type="button" class="cn-btn cn-btn--amber cn-btn--lg w-100"
+                                    disabled="@_procesandoAccion" @onclick="AvanzarEstadoAsync">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">check_box</span>
+                                <span>@(_procesandoAccion ? "Registrando..." : "Llegué al origen y subí la carga")</span>
+                            </button>
+                        }
+                        else if (EstadoNormalizado == "carga-subida")
+                        {
+                            <p class="mb-0" style="font-size: 13px; color: var(--cn-on-surface-variant); line-height: 1.5;">
+                                Carga verificada y asegurada. Comenzá el recorrido hacia el destino final: <strong style="color: var(--cn-text-white);">@_viaje.Destino</strong>.
+                            </p>
+                            <button type="button" class="cn-btn cn-btn--primary cn-btn--lg w-100"
+                                    disabled="@_procesandoAccion" @onclick="AvanzarEstadoAsync">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">navigation</span>
+                                <span>@(_procesandoAccion ? "Iniciando viaje..." : "Iniciar viaje hacia destino")</span>
+                            </button>
+                        }
+                        else if (EstadoNormalizado == "en-transito")
+                        {
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="cn-chip cn-chip--emerald">En tránsito hacia destino</span>
+                            </div>
+                            <p class="mb-0" style="font-size: 13px; color: var(--cn-on-surface-variant); line-height: 1.5;">
+                                Conducí con precaución hacia <strong style="color: var(--cn-text-white);">@_viaje.Destino</strong>. Al arribar al punto de entrega, presioná el botón de llegada.
+                            </p>
+                            <button type="button" class="cn-btn cn-btn--emerald cn-btn--lg w-100"
+                                    disabled="@_procesandoAccion" @onclick="AvanzarEstadoAsync">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">flag</span>
+                                <span>@(_procesandoAccion ? "Registrando llegada..." : "Llegué a destino")</span>
+                            </button>
+                        }
+                        else if (EstadoNormalizado == "llegada-destino")
+                        {
+                            <div class="cn-validation-box d-flex flex-column gap-3">
                                 <div class="d-flex align-items-center gap-2">
-                                    <span style="font-size: 20px;">💬</span>
-                                    <span style="font-weight: 700; font-size: 14px; color: #1e293b;">Chat con @_viaje.NombrePasajero</span>
+                                    <span class="material-symbols-outlined" style="font-size: 24px; color: var(--cn-sky);">verified_user</span>
+                                    <div>
+                                        <h3 class="cn-display mb-0" style="font-size: 15px; font-weight: 700;">Validación de Entrega Obligatoria</h3>
+                                        <span style="font-size: 12px; color: var(--cn-on-surface-variant);">Verificá la identidad de quien recibe antes de entregar.</span>
+                                    </div>
                                 </div>
-                                <button class="btn btn-sm btn-link text-decoration-none" @onclick="CargarMensajesChatAsync">
-                                    🔄
+
+                                @if (!string.IsNullOrWhiteSpace(_errorValidacion))
+                                {
+                                    <div class="cn-alert cn-alert--error">
+                                        <span class="material-symbols-outlined">warning</span>
+                                        <span>@_errorValidacion</span>
+                                    </div>
+                                }
+
+                                <div>
+                                    <label class="cn-label-caps d-block mb-1">DNI del Receptor de la Carga *</label>
+                                    <input type="text"
+                                           class="cn-input"
+                                           placeholder="Ingresá los números de DNI"
+                                           @bind="_validarEntregaDto.DniIngresado" />
+                                    <small style="font-size: 11px; color: var(--cn-outline);">El DNI debe coincidir con el registrado en el viaje.</small>
+                                </div>
+
+                                <div>
+                                    <label class="cn-label-caps d-block mb-1">Calificación al Pasajero / Cliente</label>
+                                    <div class="d-flex align-items-center gap-1">
+                                        @for (int estrella = 1; estrella <= 5; estrella++)
+                                        {
+                                            int puntaje = estrella;
+                                            bool activa = _validarEntregaDto.PuntajePasajero >= puntaje;
+                                            <button type="button"
+                                                    class="cn-star-btn"
+                                                    @onclick="() => _validarEntregaDto.PuntajePasajero = puntaje">
+                                                <span class="material-symbols-outlined"
+                                                      style="font-size: 26px; color: @(activa ? "var(--cn-amber-bright)" : "var(--cn-outline-variant)"); font-variation-settings: 'FILL' @(activa ? 1 : 0);">
+                                                    star
+                                                </span>
+                                            </button>
+                                        }
+                                        <span class="cn-tnum ms-2" style="font-size: 13px; font-weight: 700; color: var(--cn-amber);">
+                                            @_validarEntregaDto.PuntajePasajero / 5
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="cn-label-caps d-block mb-1">Comentario sobre el servicio (opcional)</label>
+                                    <textarea class="cn-input"
+                                              rows="2"
+                                              placeholder="Puntualidad, trato, etc."
+                                              @bind="_validarEntregaDto.Comentario"></textarea>
+                                </div>
+
+                                <button type="button"
+                                        class="cn-btn cn-btn--emerald cn-btn--lg w-100"
+                                        disabled="@_procesandoAccion"
+                                        @onclick="ConfirmarEntregaFinalizarAsync">
+                                    <span class="material-symbols-outlined" style="font-size: 20px;">task_alt</span>
+                                    <span>@(_procesandoAccion ? "Verificando DNI..." : "Confirmar Entrega y Finalizar Viaje")</span>
                                 </button>
                             </div>
-
-                            <!-- Área de Mensajes -->
-                            <div class="card-body p-3" style="flex: 1; overflow-y: auto; max-height: 400px; min-height: 250px; background: #f8fafc; display: flex; flex-direction: column; gap: 8px;">
-                                @if (_mensajes.Count == 0)
-                                {
-                                    <div class="text-center text-muted my-auto" style="font-size: 13px;">
-                                        No hay mensajes aún. Podés coordinar la llegada con el cliente.
-                                    </div>
-                                }
-                                else
-                                {
-                                    @foreach (var msg in _mensajes)
-                                    {
-                                        bool esMio = msg.IdEmisor == Sesion.Id;
-                                        <div style="align-self: @(esMio ? "flex-end" : "flex-start"); max-width: 80%;">
-                                            <div style="padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.4; background: @(esMio ? "#0284c7" : "#ffffff"); color: @(esMio ? "#ffffff" : "#1e293b"); box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: @(esMio ? "none" : "1px solid #e2e8f0");">
-                                                @msg.Contenido
-                                            </div>
-                                            <div style="font-size: 10px; color: #94a3b8; text-align: @(esMio ? "right" : "left"); margin-top: 2px;">
-                                                @msg.EnviadoEn.ToString("HH:mm")
-                                            </div>
-                                        </div>
-                                    }
-                                }
+                        }
+                        else if (EstadoNormalizado == "finalizado")
+                        {
+                            <div class="cn-alert cn-alert--success flex-column align-items-center text-center py-4">
+                                <span class="material-symbols-outlined" style="font-size: 36px;">check_circle</span>
+                                <h3 class="cn-display mb-0" style="font-size: 17px; font-weight: 800; color: #6ffbbe;">¡Viaje Finalizado con Éxito!</h3>
+                                <p class="mb-2" style="font-size: 13px;">La entrega fue validada y tu estado volvió a DISPONIBLE.</p>
+                                <a href="/chofer/home" class="cn-btn cn-btn--primary">Volver al Panel</a>
                             </div>
-
-                            <!-- Input para enviar -->
-                            <div class="card-footer bg-white p-3" style="border-top: 1px solid #f1f5f9;">
-                                <div class="input-group">
-                                    <input type="text" class="form-control" placeholder="Escribí un mensaje..."
-                                           @bind="_nuevoMensaje"
-                                           @bind:event="oninput"
-                                           @onkeyup="HandleChatKeyUp"
-                                           disabled="@_enviandoMensaje" />
-                                    <button class="btn btn-primary" @onclick="EnviarMensajeAsync" disabled="@(string.IsNullOrWhiteSpace(_nuevoMensaje) || _enviandoMensaje)">
-                                        Enviar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        }
                     </div>
                 </div>
-            }
-
-        </div>
+            </div>
+        }
     </div>
 </RoleGuard>
 
 @code {
     [Parameter]
     public int ViajeId { get; set; }
+
+    private static readonly (int Numero, string Nombre)[] PasosFlujo =
+    {
+        (1, "Asignado"),
+        (2, "Carga Subida"),
+        (3, "En Tránsito"),
+        (4, "En Destino"),
+        (5, "Finalizado")
+    };
 
     private bool _cargando = true;
     private bool _procesandoAccion;
@@ -343,6 +483,16 @@
     private ValidarEntregaDTO _validarEntregaDto = new() { PuntajePasajero = 5 };
 
     private string EstadoNormalizado => EstadosViaje.Normalizar(_viaje?.Estado);
+
+    private int PasoActual => EstadoNormalizado switch
+    {
+        "asignado" => 1,
+        "carga-subida" => 2,
+        "en-transito" => 3,
+        "llegada-destino" => 4,
+        "finalizado" => 5,
+        _ => 1
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -519,23 +669,47 @@
         });
     }
 
-    private string ObtenerEstiloPaso(int paso)
+    private string ObtenerIconoHud() => EstadoNormalizado switch
     {
-        int pasoActual = EstadoNormalizado switch
+        "asignado" => "hail",
+        "carga-subida" => "local_shipping",
+        "en-transito" => "turn_right",
+        "llegada-destino" => "verified_user",
+        "finalizado" => "flag",
+        _ => "navigation"
+    };
+
+    private string ObtenerTituloHud() => EstadoNormalizado switch
+    {
+        "asignado" => "Ir al Punto de Retiro",
+        "carga-subida" => "Carga Lista en Unidad",
+        "en-transito" => "En Ruta al Destino",
+        "llegada-destino" => "Validar Entrega con DNI",
+        "finalizado" => "Servicio Finalizado",
+        _ => "Operación en Curso"
+    };
+
+    private string ObtenerSubtituloHud()
+    {
+        if (_viaje == null) return string.Empty;
+        return EstadoNormalizado switch
         {
-            "asignado" => 1,
-            "carga-subida" => 2,
-            "en-transito" => 3,
-            "llegada-destino" => 4,
-            "finalizado" => 5,
-            _ => 1
+            "asignado" => $"Origen: {_viaje.Origen}",
+            "carga-subida" => $"Próximo destino: {_viaje.Destino}",
+            "en-transito" => $"Rumbo a: {_viaje.Destino}",
+            "llegada-destino" => $"Entrega en: {_viaje.Destino}",
+            _ => $"{_viaje.Origen} → {_viaje.Destino}"
         };
+    }
 
-        bool alcanzado = pasoActual >= paso;
-        string bg = alcanzado ? "#0284c7" : "#e2e8f0";
-        string color = alcanzado ? "#ffffff" : "#64748b";
+    private static string ObtenerInicial(string? nombre)
+    {
+        if (string.IsNullOrWhiteSpace(nombre))
+        {
+            return "P";
+        }
 
-        return $"width: 32px; height: 32px; border-radius: 50%; background: {bg}; color: {color}; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto;";
+        return char.ToUpperInvariant(nombre.Trim()[0]).ToString();
     }
 
     public void Dispose()

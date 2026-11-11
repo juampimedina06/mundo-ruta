@@ -1,0 +1,316 @@
+@inherits LayoutComponentBase
+@inject SesionPersistencia Persistencia
+@inject SesionEstado Sesion
+@inject NavigationManager Navegacion
+@implements IDisposable
+
+<div class="chofer-nocturne">
+    @if (EsLoginChofer)
+    {
+        <main class="flex-grow-1 d-flex flex-column">
+            @Body
+        </main>
+    }
+    else if (EsCabinaHome)
+    {
+        <div class="cn-cockpit-shell">
+            @if (_menuMovilAbierto)
+            {
+                <div class="cn-sidebar-backdrop cn-sidebar-backdrop--open" @onclick="CerrarMenuMovil"></div>
+            }
+
+            <aside class="cn-sidebar @(_menuMovilAbierto ? "cn-sidebar--open" : string.Empty)">
+                <div>
+                    <a href="/chofer/home" class="cn-sidebar__brand" @onclick="CerrarMenuMovil">
+                        <div class="cn-sidebar__logo">
+                            <span class="material-symbols-outlined" style="font-size: 22px;">local_shipping</span>
+                        </div>
+                        <div class="d-flex flex-column">
+                            <span class="cn-display" style="font-size: 16px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1;">MUNDO RUTA</span>
+                            <span class="cn-label-caps" style="color: var(--cn-primary); margin-top: 2px;">Cabina Pro</span>
+                        </div>
+                    </a>
+
+                    <div class="cn-sidebar__online">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="cn-pulse-dot cn-pulse-dot--emerald"></span>
+                            <span class="cn-display" style="font-size: 12px; font-weight: 700; color: var(--cn-secondary); letter-spacing: 0.04em;">EN LÍNEA</span>
+                        </div>
+                        <span class="cn-label-caps" style="color: var(--cn-on-surface-variant);">WS ACTIVO</span>
+                    </div>
+
+                    <nav class="cn-sidebar__nav">
+                        <NavLink class="cn-sidebar__link" href="/chofer/home" Match="NavLinkMatch.All" @onclick="CerrarMenuMovil">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">navigation</span>
+                            <span>Mapa en Vivo</span>
+                        </NavLink>
+                        <NavLink class="cn-sidebar__link" href="/chofer/historial" Match="NavLinkMatch.Prefix" @onclick="CerrarMenuMovil">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">route</span>
+                            <span>Historial de Viajes</span>
+                        </NavLink>
+                        <NavLink class="cn-sidebar__link" href="/chofer/perfil" Match="NavLinkMatch.Prefix" @onclick="CerrarMenuMovil">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">badge</span>
+                            <span>Mi Perfil</span>
+                        </NavLink>
+                    </nav>
+                </div>
+
+                <div class="cn-sidebar__footer">
+                    <div class="cn-sidebar__vehicle">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="cn-label-caps">Unidad en Servicio</span>
+                            <span class="cn-label-caps" style="color: var(--cn-secondary);">OK</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2" style="color: var(--cn-text-white); font-size: 13px; font-weight: 600;">
+                            <span class="material-symbols-outlined" style="font-size: 18px; color: var(--cn-primary);">airport_shuttle</span>
+                            <span class="text-truncate">@(Sesion.Nombre ?? "Conductor Activo")</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="cn-btn cn-btn--danger-ghost w-100" style="padding: 0.55rem 0.9rem; font-size: 13px;" @onclick="CerrarSesion">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">logout</span>
+                        <span>Cerrar sesión</span>
+                    </button>
+                </div>
+            </aside>
+
+            <div class="cn-cockpit-main">
+                <header class="cn-cockpit-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <button type="button" class="cn-icon-btn cn-mobile-menu-btn" aria-label="Abrir menú" @onclick="AlternarMenuMovil">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">menu</span>
+                        </button>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="cn-label-caps">Cabina:</span>
+                            <span class="cn-display" style="font-size: 13px; font-weight: 700; color: var(--cn-text-white);">Operación en Vivo</span>
+                            <span class="cn-chip cn-chip--sky d-none d-sm-inline-flex">Tiempo Real</span>
+                        </div>
+                        <div class="d-none lg-flex align-items-center gap-3 ps-3 d-none d-lg-flex" style="border-left: 1px solid var(--cn-border-hairline);">
+                            <span class="d-inline-flex align-items-center gap-1 cn-label-caps" style="color: var(--cn-secondary);">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">satellite_alt</span>
+                                GPS Óptimo
+                            </span>
+                            <span class="d-inline-flex align-items-center gap-1 cn-label-caps" style="color: var(--cn-on-surface);">
+                                <span class="material-symbols-outlined" style="font-size: 16px; color: var(--cn-primary);">sensors</span>
+                                Despacho Conectado
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="d-none d-sm-flex flex-column text-end" style="line-height: 1.15;">
+                            <span class="cn-display" style="font-size: 13px; font-weight: 700; color: var(--cn-text-white);">@(Sesion.Nombre ?? "Conductor")</span>
+                            <span class="cn-label-caps" style="color: var(--cn-on-surface-variant);">Rol Conductor</span>
+                        </div>
+                        <a href="/chofer/perfil" class="cn-driver-chip__avatar" title="Mi Perfil">
+                            @ObtenerInicial(Sesion.Nombre)
+                        </a>
+                    </div>
+                </header>
+
+                <main class="flex-grow-1 d-flex flex-column">
+                    @Body
+                </main>
+            </div>
+        </div>
+    }
+    else if (EsViajeActivo)
+    {
+        <header class="cn-topbar" style="background: rgba(10, 18, 42, 0.94); border-bottom-color: rgba(255, 255, 255, 0.09);">
+            <div class="cn-topbar__inner">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <a href="/chofer/home" class="cn-brand">
+                        <div class="cn-brand__icon" style="background: linear-gradient(135deg, #feb300 0%, #ee9800 100%); color: #281900; border: none; box-shadow: 0 4px 14px rgba(254, 179, 0, 0.25);">
+                            <span class="cn-display" style="font-weight: 800; font-size: 16px; color: #281900;">MR</span>
+                        </div>
+                        <div class="d-flex flex-column">
+                            <span class="cn-display" style="font-size: 15px; font-weight: 800; color: var(--cn-text-white); line-height: 1.1;">Mundo Ruta</span>
+                            <span style="font-size: 11px; color: var(--cn-on-surface-variant); font-weight: 500;">Consola de Navegación</span>
+                        </div>
+                    </a>
+
+                    <span class="cn-status-pill cn-status-pill--emerald d-none d-sm-inline-flex">
+                        <span class="cn-pulse-dot cn-pulse-dot--emerald"></span>
+                        <span>En Operación</span>
+                    </span>
+                </div>
+
+                <div class="cn-topbar__right">
+                    <a href="/chofer/home" class="cn-btn cn-btn--ghost" style="padding: 0.45rem 0.85rem; font-size: 12px;">
+                        <span class="material-symbols-outlined" style="font-size: 17px;">arrow_back</span>
+                        <span>Cabina</span>
+                    </a>
+                    <a href="/chofer/historial" class="cn-btn cn-btn--ghost d-none d-md-inline-flex" style="padding: 0.45rem 0.85rem; font-size: 12px;">
+                        <span class="material-symbols-outlined" style="font-size: 17px;">history</span>
+                        <span>Historial</span>
+                    </a>
+
+                    <div class="cn-driver-chip">
+                        <div class="cn-driver-chip__avatar" style="border-color: rgba(254, 179, 0, 0.45); color: var(--cn-amber);">
+                            @ObtenerInicial(Sesion.Nombre)
+                        </div>
+                        <div class="d-none d-sm-flex flex-column">
+                            <span class="cn-driver-chip__name">@(Sesion.Nombre ?? "Chofer Conectado")</span>
+                            <span class="cn-driver-chip__sub">Conductor</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="cn-icon-btn cn-icon-btn--danger" title="Cerrar sesión" @onclick="CerrarSesion">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">logout</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow-1 d-flex flex-column" style="background: var(--cn-bg-deep);">
+            @Body
+        </main>
+    }
+    else
+    {
+        <header class="cn-topbar">
+            <div class="cn-topbar__inner">
+                <a href="/chofer/home" class="cn-brand">
+                    <div class="cn-brand__icon">
+                        <span class="material-symbols-outlined" style="font-size: 22px;">local_shipping</span>
+                    </div>
+                    <div class="d-flex flex-column">
+                        <div class="cn-brand__eyebrow">
+                            <span>Mundo Ruta</span>
+                            <span class="cn-brand__badge">Pro Chofer</span>
+                        </div>
+                        <span class="cn-brand__title">Cabina Conductor</span>
+                    </div>
+                </a>
+
+                <nav class="cn-pill-nav" aria-label="Navegación del conductor">
+                    <NavLink class="cn-pill-nav__link" href="/chofer/home" Match="NavLinkMatch.All">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">dashboard</span>
+                        <span>Cabina</span>
+                    </NavLink>
+                    <NavLink class="cn-pill-nav__link" href="/chofer/historial" Match="NavLinkMatch.Prefix">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">history</span>
+                        <span>Historial</span>
+                    </NavLink>
+                    <NavLink class="cn-pill-nav__link" href="/chofer/perfil" Match="NavLinkMatch.Prefix">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">badge</span>
+                        <span>Mi Perfil</span>
+                    </NavLink>
+                </nav>
+
+                <div class="cn-topbar__right">
+                    <div class="cn-status-pill">
+                        <span class="cn-pulse-dot"></span>
+                        <span>En Servicio</span>
+                    </div>
+
+                    <div class="cn-driver-chip">
+                        <div class="cn-driver-chip__avatar">
+                            @ObtenerInicial(Sesion.Nombre)
+                        </div>
+                        <div class="d-none d-sm-flex flex-column">
+                            <span class="cn-driver-chip__name">@(Sesion.Nombre ?? "Conductor")</span>
+                            <span class="cn-driver-chip__sub">Conductor</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="cn-icon-btn cn-icon-btn--danger" title="Cerrar sesión" @onclick="CerrarSesion">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">logout</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow-1 d-flex flex-column">
+            @Body
+        </main>
+    }
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    Ocurrió un error inesperado.
+    <a href="." class="reload">Recargar</a>
+    <span class="dismiss">×</span>
+</div>
+
+@code {
+    private bool _menuMovilAbierto;
+    private string _rutaActual = string.Empty;
+
+    private bool EsLoginChofer =>
+        _rutaActual.StartsWith("chofer/login", StringComparison.OrdinalIgnoreCase);
+
+    private bool EsCabinaHome =>
+        _rutaActual.Equals("chofer", StringComparison.OrdinalIgnoreCase) ||
+        _rutaActual.StartsWith("chofer/home", StringComparison.OrdinalIgnoreCase);
+
+    private bool EsViajeActivo =>
+        _rutaActual.StartsWith("chofer/viaje-activo", StringComparison.OrdinalIgnoreCase);
+
+    protected override void OnInitialized()
+    {
+        ActualizarRuta();
+        Navegacion.LocationChanged += AlCambiarUbicacion;
+        Sesion.CambioSesion += AlCambiarSesion;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await Persistencia.RestaurarAsync();
+        StateHasChanged();
+    }
+
+    private void ActualizarRuta()
+    {
+        _rutaActual = Navegacion.ToBaseRelativePath(Navegacion.Uri).Split('?')[0].Trim('/');
+    }
+
+    private void AlCambiarUbicacion(object? sender, LocationChangedEventArgs e)
+    {
+        ActualizarRuta();
+        _menuMovilAbierto = false;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void AlCambiarSesion()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void AlternarMenuMovil()
+    {
+        _menuMovilAbierto = !_menuMovilAbierto;
+    }
+
+    private void CerrarMenuMovil()
+    {
+        _menuMovilAbierto = false;
+    }
+
+    private void CerrarSesion()
+    {
+        Sesion.Cerrar();
+        Navegacion.NavigateTo("/");
+    }
+
+    private static string ObtenerInicial(string? nombre)
+    {
+        if (string.IsNullOrWhiteSpace(nombre))
+        {
+            return "C";
+        }
+
+        return char.ToUpperInvariant(nombre.Trim()[0]).ToString();
+    }
+
+    public void Dispose()
+    {
+        Navegacion.LocationChanged -= AlCambiarUbicacion;
+        Sesion.CambioSesion -= AlCambiarSesion;
+    }
+}
