@@ -7,23 +7,51 @@
 @inject SesionEstado Sesion
 @implements IDisposable
 
-<PageTitle>Vehículos | Mundo Ruta</PageTitle>
+<PageTitle>Gestión de Vehículos y Tarifas | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="Prestador">
-    <div class="mr-page">
+    <div class="mr-page mr-fleet-page">
         <div class="mr-container">
-            <PageHeader Titulo="Vehículos"
-                        Descripcion="Flota disponible para operar." />
+            <!-- Sub-header & Action Bar -->
+            <div class="mr-fleet-header">
+                <div class="mr-fleet-header__info">
+                    <div class="mr-fleet-breadcrumb">
+                        <span>Operaciones</span>
+                        <span class="mr-fleet-breadcrumb__sep">/</span>
+                        <span class="mr-fleet-breadcrumb__current">Parque Automotor</span>
+                    </div>
+                    <h1 class="mr-fleet-title">Gestión de Vehículos y Tarifas</h1>
+                    <p class="mr-fleet-subtitle">
+                        Control de unidades operativas, tarifas base por kilómetro recorrido y recargos comerciales vigentes.
+                    </p>
+                </div>
+                <div class="mr-fleet-header__actions">
+                    <a href="#seccion-tarifa" class="btn btn-outline-primary mr-fleet-action-btn">
+                        <span class="material-symbols-outlined">tune</span>
+                        <span>Ajustar Tarifa Global</span>
+                    </a>
+                    <a href="#seccion-alta" class="btn btn-primary mr-fleet-action-btn">
+                        <span class="material-symbols-outlined">add</span>
+                        <span>+ Registrar Vehículo</span>
+                    </a>
+                </div>
+            </div>
 
             @if (!string.IsNullOrWhiteSpace(_mensaje))
             {
-                <div class="mr-alert mr-alert--exito mb-3">@_mensaje</div>
+                <div class="mr-fleet-alert mr-fleet-alert--success">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>@_mensaje</span>
+                </div>
             }
 
             @if (!string.IsNullOrWhiteSpace(_error))
             {
-                <div class="mr-alert mr-alert--error mb-3 mr-alert--accion">
-                    <span>@_error</span>
+                <div class="mr-fleet-alert mr-fleet-alert--error">
+                    <div class="mr-fleet-alert__content">
+                        <span class="material-symbols-outlined">error</span>
+                        <span>@_error</span>
+                    </div>
                     @if (_errorCarga)
                     {
                         <button type="button" class="btn btn-sm btn-outline-primary" disabled="@_cargando" @onclick="ReintentarAsync">
@@ -33,86 +61,316 @@
                 </div>
             }
 
-            <section class="mr-card mr-bloque">
-                <h2 class="mr-card__title">Flota registrada</h2>
+            <!-- Executive Metrics Grid -->
+            <div class="mr-fleet-metrics">
+                <div class="mr-fleet-metric-card">
+                    <div class="mr-fleet-metric-card__header">
+                        <span class="mr-fleet-metric-card__label">Total de Unidades Activas</span>
+                        <span class="material-symbols-outlined mr-fleet-metric-card__icon">directions_car</span>
+                    </div>
+                    <div class="mr-fleet-metric-card__body">
+                        <span class="mr-fleet-metric-card__value">@_vehiculos.Count</span>
+                        <span class="mr-fleet-metric-card__unit">unidades registradas</span>
+                    </div>
+                    <div class="mr-fleet-metric-card__footer">
+                        <span class="mr-fleet-dot mr-fleet-dot--primary"></span>
+                        <span>100% integradas telemática</span>
+                    </div>
+                </div>
+
+                <div class="mr-fleet-metric-card">
+                    <div class="mr-fleet-metric-card__header">
+                        <span class="mr-fleet-metric-card__label">Tarifa Base por KM</span>
+                        <span class="material-symbols-outlined mr-fleet-metric-card__icon">payments</span>
+                    </div>
+                    <div class="mr-fleet-metric-card__body">
+                        <span class="mr-fleet-metric-card__value mr-fleet-font-mono">@(_tarifaCargada ? FormatearMoneda(_tarifaActual) : "$ 0,00")</span>
+                        <span class="mr-fleet-metric-card__unit">/ km</span>
+                    </div>
+                    <div class="mr-fleet-metric-card__footer">
+                        <span>Piso tarifario contractual</span>
+                    </div>
+                </div>
+
+                <div class="mr-fleet-metric-card">
+                    <div class="mr-fleet-metric-card__header">
+                        <span class="mr-fleet-metric-card__label">Unidades Disponibles</span>
+                        <span class="material-symbols-outlined mr-fleet-metric-card__icon">route</span>
+                    </div>
+                    <div class="mr-fleet-metric-card__body">
+                        <span class="mr-fleet-metric-card__value mr-fleet-metric-card__value--primary">@TotalDisponibles</span>
+                        <span class="mr-fleet-metric-card__unit">en base (@PorcentajeDisponibles%)</span>
+                    </div>
+                    <div class="mr-fleet-metric-card__footer">
+                        <span>@TotalEnUso en servicio activo</span>
+                    </div>
+                </div>
+
+                <div class="mr-fleet-metric-card">
+                    <div class="mr-fleet-metric-card__header">
+                        <span class="mr-fleet-metric-card__label">Mantenimiento y Taller</span>
+                        <span class="material-symbols-outlined mr-fleet-metric-card__icon">build</span>
+                    </div>
+                    <div class="mr-fleet-metric-card__body">
+                        <span class="mr-fleet-metric-card__value">@TotalMantenimiento</span>
+                        <span class="mr-fleet-metric-card__unit">en servicio técnico</span>
+                    </div>
+                    <div class="mr-fleet-metric-card__footer">
+                        <span>@(_vehiculos.Count > 0 ? "Revisión programada" : "Sin unidades registradas")</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter & Search Bar -->
+            <div class="mr-fleet-filter-bar">
+                <div class="mr-fleet-filter-bar__inputs">
+                    <div class="mr-fleet-search">
+                        <span class="material-symbols-outlined mr-fleet-search__icon">search</span>
+                        <input type="text"
+                               class="mr-fleet-search__input"
+                               placeholder="Filtrar por unidad, placa o modelo..."
+                               @bind="_busqueda"
+                               @bind:event="oninput" />
+                    </div>
+                    <div class="mr-fleet-filter-sep"></div>
+                    <select class="mr-fleet-select" @bind="_filtroEstado">
+                        <option value="">Todos los estados</option>
+                        <option value="DISPONIBLE">Disponible en Base</option>
+                        <option value="EN_USO">En Servicio Activo</option>
+                        <option value="MANTENIMIENTO">Taller / Mantenimiento</option>
+                    </select>
+                    <select class="mr-fleet-select" @bind="_filtroTipo">
+                        <option value="">Todas las categorías</option>
+                        <option value="Camión">Camión</option>
+                        <option value="Camioneta">Camioneta</option>
+                        <option value="Utilitario">Utilitario</option>
+                        <option value="Furgón">Furgón</option>
+                        <option value="Acoplado">Acoplado</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+                <div class="mr-fleet-filter-bar__meta">
+                    <span class="mr-fleet-counter">
+                        Mostrando @VehiculosFiltrados.Count de @_vehiculos.Count unidades
+                    </span>
+                    <button type="button"
+                            class="mr-fleet-icon-btn"
+                            title="Recargar flota"
+                            disabled="@_cargando"
+                            @onclick="ReintentarAsync">
+                        <span class="material-symbols-outlined">refresh</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3-Column Strict Minimalist Data Grid -->
+            <div class="mr-fleet-grid-container">
+                <div class="mr-fleet-grid-header">
+                    <div class="mr-fleet-grid-header__col mr-fleet-grid-header__col--main">
+                        <span>Vehículo y Especificaciones</span>
+                    </div>
+                    <div class="mr-fleet-grid-header__col mr-fleet-grid-header__col--status">
+                        <span>Estado Operativo y Asignación</span>
+                    </div>
+                    <div class="mr-fleet-grid-header__col mr-fleet-grid-header__col--actions">
+                        <span>Acciones</span>
+                    </div>
+                </div>
 
                 @if (_cargando)
                 {
-                    <div class="mr-loading">Cargando vehículos...</div>
+                    <div class="mr-fleet-state-box">
+                        <span class="material-symbols-outlined mr-fleet-spin">sync</span>
+                        <span>Cargando flota de vehículos...</span>
+                    </div>
                 }
                 else if (_vehiculos.Count == 0)
                 {
-                    <EmptyState Titulo="Todavía no cargaste vehículos"
-                                Descripcion="Registrá la unidad desde el formulario de alta para verla en el listado." />
+                    <div class="mr-fleet-empty-wrap">
+                        <EmptyState Titulo="Todavía no cargaste vehículos"
+                                    Descripcion="Registrá la unidad desde el formulario de alta para verla en el listado." />
+                    </div>
+                }
+                else if (VehiculosFiltrados.Count == 0)
+                {
+                    <div class="mr-fleet-empty-wrap">
+                        <EmptyState Titulo="No se encontraron unidades"
+                                    Descripcion="Probá modificando el texto de búsqueda o los filtros seleccionados.">
+                            <button type="button" class="btn btn-outline-primary" @onclick="LimpiarFiltros">
+                                Limpiar filtros
+                            </button>
+                        </EmptyState>
+                    </div>
                 }
                 else
                 {
-                    <div class="table-responsive">
-                        <table class="table mr-tabla">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Vehículo</th>
-                                    <th scope="col">Nombre</th>
-                                    <th scope="col">Tipo de vehículo</th>
-                                    <th scope="col" class="mr-tabla__acciones">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (VehiculoDTO vehiculo in _vehiculos)
-                                {
-                                    <tr>
-                                        <td>@vehiculo.Patente - @vehiculo.Marca</td>
-                                        <td>@NombreVisible(vehiculo)</td>
-                                        <td>@ValorVisible(vehiculo.TipoVehiculo)</td>
-                                        <td class="mr-tabla__acciones">
-                                            <button type="button"
-                                                    class="btn btn-sm btn-outline-primary mr-boton-icono"
-                                                    @onclick="() => VerDetalle(vehiculo)">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
-                                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
-                                                </svg>
-                                                Ver detalle
-                                            </button>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                    <div class="mr-fleet-rows">
+                        @foreach (VehiculoDTO vehiculo in VehiculosFiltrados)
+                        {
+                            <div class="mr-fleet-row" @key="vehiculo.Id">
+                                <div class="mr-fleet-row__col mr-fleet-row__col--main">
+                                    <div class="mr-fleet-unit-badge">
+                                        <span class="material-symbols-outlined">@ObtenerIconoVehiculo(vehiculo.TipoVehiculo)</span>
+                                    </div>
+                                    <div class="mr-fleet-unit-info">
+                                        <div class="mr-fleet-unit-tags">
+                                            <span class="mr-fleet-code">V-@vehiculo.Id</span>
+                                            <span class="mr-fleet-plate">@vehiculo.Patente</span>
+                                        </div>
+                                        <div class="mr-fleet-unit-name">@NombreVisible(vehiculo)</div>
+                                        <div class="mr-fleet-unit-specs">
+                                            <span>@ValorVisible(vehiculo.TipoVehiculo)</span>
+                                            @if (!string.IsNullOrWhiteSpace(vehiculo.CapacidadCarga))
+                                            {
+                                                <span> · Cap. @vehiculo.CapacidadCarga</span>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(vehiculo.Marca))
+                                            {
+                                                <span> · @vehiculo.Marca</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mr-fleet-row__col mr-fleet-row__col--status">
+                                    <div class="mr-fleet-status-wrap">
+                                        <div class="mr-fleet-badge-pill @ObtenerClaseBadge(vehiculo.Estado)">
+                                            <span class="mr-fleet-badge-pill__dot"></span>
+                                            <span>@EtiquetaEstado(vehiculo.Estado)</span>
+                                        </div>
+                                        <div class="mr-fleet-driver-text">
+                                            @if (vehiculo.NumeroConductor > 0)
+                                            {
+                                                <span>Conductor asignado N° @vehiculo.NumeroConductor</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Sin conductor fijo asignado</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mr-fleet-row__col mr-fleet-row__col--actions">
+                                    <button type="button"
+                                            class="mr-fleet-detail-btn"
+                                            @onclick="() => VerDetalle(vehiculo)">
+                                        <span>Ver Detalle</span>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mr-fleet-grid-footer">
+                        <div class="mr-fleet-grid-footer__text">
+                            Registro de @VehiculosFiltrados.Count de @_vehiculos.Count unidades totales
+                        </div>
+                        <div class="mr-fleet-grid-footer__live">
+                            <span class="mr-fleet-dot mr-fleet-dot--live"></span>
+                            <span>Telemetría operativa activa</span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Estructura Tarifaria Asignada -->
+            <section id="seccion-tarifa" class="mr-fleet-panel">
+                <div class="mr-fleet-panel__header">
+                    <div class="mr-fleet-panel__icon">
+                        <span class="material-symbols-outlined">payments</span>
+                    </div>
+                    <div>
+                        <h2 class="mr-fleet-panel__title">Estructura Tarifaria Asignada</h2>
+                        <p class="mr-fleet-panel__desc">
+                            Precio base por kilómetro recorrido utilizado como parámetro contractual para tus ofertas de servicio.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mr-fleet-tariff-box">
+                    <div class="mr-fleet-tariff-field">
+                        <label class="mr-fleet-label" for="tarifa">Tarifa Base por KM (ARS)</label>
+                        <div class="mr-fleet-input-group">
+                            <span class="mr-fleet-input-prefix">ARS $</span>
+                            <input id="tarifa"
+                                   type="number"
+                                   min="0"
+                                   step="0.01"
+                                   class="mr-fleet-input mr-fleet-input--prefixed mr-fleet-input--bold"
+                                   @bind="_tarifa"
+                                   @bind:culture="CulturaInvariante" />
+                        </div>
+                    </div>
+
+                    <button type="button"
+                            class="btn btn-primary mr-fleet-tariff-btn"
+                            disabled="@_guardandoTarifa"
+                            @onclick="GuardarTarifaAsync">
+                        @if (_guardandoTarifa)
+                        {
+                            <span class="material-symbols-outlined mr-fleet-spin">sync</span>
+                            <span>Guardando...</span>
+                        }
+                        else
+                        {
+                            <span class="material-symbols-outlined">save</span>
+                            <span>Guardar Tarifa</span>
+                        }
+                    </button>
+                </div>
+
+                @if (_tarifaCargada)
+                {
+                    <div class="mr-fleet-tariff-summary">
+                        <span class="material-symbols-outlined">verified</span>
+                        <span>
+                            Tarifa contractual activa: <strong>@FormatearMoneda(_tarifaActual)</strong> por kilómetro recorrido.
+                        </span>
                     </div>
                 }
             </section>
 
-            <section class="mr-card mr-bloque">
-                <h2 class="mr-card__title">Registrar vehículo</h2>
-                <p class="mr-muted">Completá los datos de la unidad para sumarla a la flota.</p>
+            <!-- Registrar Unidad Operativa -->
+            <section id="seccion-alta" class="mr-fleet-panel">
+                <div class="mr-fleet-panel__header">
+                    <div class="mr-fleet-panel__icon">
+                        <span class="material-symbols-outlined">local_shipping</span>
+                    </div>
+                    <div>
+                        <h2 class="mr-fleet-panel__title">Registrar Unidad Operativa</h2>
+                        <p class="mr-fleet-panel__desc">
+                            Completá las especificaciones de la unidad para sumarla al parque automotor operativo.
+                        </p>
+                    </div>
+                </div>
 
                 <EditForm Model="_alta" OnSubmit="RegistrarAsync">
-                    <div class="mr-form-grid">
+                    <div class="mr-fleet-form-grid">
                         <div>
-                            <label class="form-label" for="nombre">Nombre</label>
-                            <InputText id="nombre" class="form-control" @bind-Value="_alta.Nombre" placeholder="Identificador o modelo" />
+                            <label class="mr-fleet-label" for="nombre">Nombre o Identificador</label>
+                            <InputText id="nombre" class="mr-fleet-input" @bind-Value="_alta.Nombre" placeholder="Ej. V-104 o Sprinter Central" />
                         </div>
 
                         <div>
-                            <label class="form-label" for="patente">Patente</label>
-                            <InputText id="patente" class="form-control" @bind-Value="_alta.Patente" placeholder="AB123CD" />
+                            <label class="mr-fleet-label" for="patente">Placa / Matrícula Oficial</label>
+                            <InputText id="patente" class="mr-fleet-input mr-fleet-font-mono" @bind-Value="_alta.Patente" placeholder="AB123CD" />
                         </div>
 
                         <div>
-                            <label class="form-label" for="marca">Marca</label>
-                            <InputText id="marca" class="form-control" @bind-Value="_alta.Marca" placeholder="Ford" />
+                            <label class="mr-fleet-label" for="marca">Marca</label>
+                            <InputText id="marca" class="mr-fleet-input" @bind-Value="_alta.Marca" placeholder="Ej. Mercedes-Benz, Ford, Scania" />
                         </div>
 
                         <div>
-                            <label class="form-label" for="marca-modelo">Marca y modelo</label>
-                            <InputText id="marca-modelo" class="form-control" @bind-Value="_alta.MarcaModelo" placeholder="Ford Cargo 1722" />
+                            <label class="mr-fleet-label" for="marca-modelo">Marca y Modelo Técnico</label>
+                            <InputText id="marca-modelo" class="mr-fleet-input" @bind-Value="_alta.MarcaModelo" placeholder="Ej. Sprinter 316 CDI Chasis" />
                         </div>
 
                         <div>
-                            <label class="form-label" for="tipo">Tipo de vehículo</label>
-                            <InputSelect id="tipo" class="form-select" @bind-Value="_alta.TipoVehiculo">
-                                <option value="">Seleccionar tipo</option>
+                            <label class="mr-fleet-label" for="tipo">Categoría de Servicio</label>
+                            <InputSelect id="tipo" class="mr-fleet-select-input" @bind-Value="_alta.TipoVehiculo">
+                                <option value="">Seleccionar categoría</option>
                                 <option value="Camión">Camión</option>
                                 <option value="Camioneta">Camioneta</option>
                                 <option value="Utilitario">Utilitario</option>
@@ -123,144 +381,170 @@
                         </div>
 
                         <div>
-                            <label class="form-label" for="capacidad">Capacidad de carga</label>
-                            <InputText id="capacidad" class="form-control" @bind-Value="_alta.CapacidadCarga" placeholder="1.500 kg" />
+                            <label class="mr-fleet-label" for="capacidad">Capacidad de Carga</label>
+                            <InputText id="capacidad" class="mr-fleet-input" @bind-Value="_alta.CapacidadCarga" placeholder="Ej. 3.500 kg o 24 Ton" />
                         </div>
 
                         <div>
-                            <label class="form-label" for="licencia">Licencia</label>
-                            <InputText id="licencia" class="form-control" @bind-Value="_alta.Licencia" placeholder="Documentación habilitante" />
+                            <label class="mr-fleet-label" for="licencia">Licencia Habilitante</label>
+                            <InputText id="licencia" class="mr-fleet-input" @bind-Value="_alta.Licencia" placeholder="Documentación habilitante CNRT" />
                         </div>
 
                         <div>
-                            <label class="form-label" for="fecha-fabricacion">Fecha de fabricación</label>
-                            <InputDate id="fecha-fabricacion" class="form-control" @bind-Value="_alta.FechaFabricación" />
-                            <p class="form-text mb-0">Fecha seleccionada: @FormatearFecha(_alta.FechaFabricación)</p>
+                            <label class="mr-fleet-label" for="fecha-fabricacion">Fecha de Fabricación</label>
+                            <InputDate id="fecha-fabricacion" class="mr-fleet-input" @bind-Value="_alta.FechaFabricación" />
+                            <div class="mr-fleet-input-hint">Fecha seleccionada: @FormatearFecha(_alta.FechaFabricación)</div>
                         </div>
 
                         <div>
-                            <label class="form-label" for="numero-conductor">Número de conductor</label>
-                            <InputNumber id="numero-conductor" class="form-control" @bind-Value="_alta.NumeroConductor" />
+                            <label class="mr-fleet-label" for="numero-conductor">Número de Conductor</label>
+                            <InputNumber id="numero-conductor" class="mr-fleet-input mr-fleet-font-mono" @bind-Value="_alta.NumeroConductor" />
                         </div>
 
                         <div>
-                            <label class="form-label" for="estado">Estado</label>
-                            <InputSelect id="estado" class="form-select" @bind-Value="_alta.Estado">
-                                <option value="DISPONIBLE">Disponible</option>
-                                <option value="EN_USO">En uso</option>
-                                <option value="MANTENIMIENTO">En mantenimiento</option>
+                            <label class="mr-fleet-label" for="estado">Estado Operativo</label>
+                            <InputSelect id="estado" class="mr-fleet-select-input" @bind-Value="_alta.Estado">
+                                <option value="DISPONIBLE">Disponible en Base</option>
+                                <option value="EN_USO">En Servicio Activo</option>
+                                <option value="MANTENIMIENTO">Taller / Mantenimiento</option>
                             </InputSelect>
                         </div>
 
-                        <div class="mr-form-grid__ancho">
-                            <label class="form-label" for="caracteristicas">Características del conductor</label>
-                            <InputTextArea id="caracteristicas" class="form-control" rows="2" @bind-Value="_alta.CaracteristicasConductor" />
+                        <div class="mr-fleet-form-grid__full">
+                            <label class="mr-fleet-label" for="caracteristicas">Características del Conductor y Observaciones</label>
+                            <InputTextArea id="caracteristicas"
+                                           class="mr-fleet-textarea"
+                                           rows="3"
+                                           @bind-Value="_alta.CaracteristicasConductor"
+                                           placeholder="Habilitaciones especiales, permisos o bitácora inicial de la unidad..." />
                         </div>
                     </div>
 
-                    <div class="mr-form-pie">
-                        <button type="submit" class="btn btn-primary" disabled="@_guardando">
-                            @(_guardando ? "Registrando..." : "Registrar vehículo")
+                    <div class="mr-fleet-form-actions">
+                        <button type="submit" class="btn btn-primary mr-fleet-btn-primary" disabled="@_guardando">
+                            @if (_guardando)
+                            {
+                                <span class="material-symbols-outlined mr-fleet-spin">sync</span>
+                                <span>Registrando...</span>
+                            }
+                            else
+                            {
+                                <span class="material-symbols-outlined">add_task</span>
+                                <span>Registrar Vehículo</span>
+                            }
                         </button>
                         <button type="button" class="btn btn-outline-primary" disabled="@_guardando" @onclick="LimpiarAlta">
-                            Limpiar
+                            Limpiar Formulario
                         </button>
                     </div>
                 </EditForm>
             </section>
-
-            <section class="mr-card mr-bloque">
-                <h2 class="mr-card__title">Tarifa base</h2>
-                <p class="mr-muted">Precio base por kilómetro que se usa para tus ofertas.</p>
-
-                <div class="mr-tarifa">
-                    <div class="mr-tarifa__campo">
-                        <label class="form-label" for="tarifa">Precio por kilómetro (ARS)</label>
-                        <input id="tarifa"
-                               type="number"
-                               min="0"
-                               step="0.01"
-                               class="form-control"
-                               @bind="_tarifa"
-                               @bind:culture="CulturaInvariante" />
-                    </div>
-
-                    <button type="button" class="btn btn-primary" disabled="@_guardandoTarifa" @onclick="GuardarTarifaAsync">
-                        @(_guardandoTarifa ? "Guardando..." : "Guardar tarifa")
-                    </button>
-                </div>
-
-                @if (_tarifaCargada)
-                {
-                    <p class="mr-tarifa__actual">
-                        Tarifa actual: <strong>@FormatearMoneda(_tarifaActual)</strong> por kilómetro.
-                    </p>
-                }
-            </section>
         </div>
 
+        <!-- MODAL DETALLE DE UNIDAD -->
         @if (_detalle is not null)
         {
-            <div class="mr-modal" role="dialog" aria-modal="true" aria-labelledby="detalle-titulo">
-                <div class="mr-modal__panel">
-                    <div class="mr-modal__cabecera">
-                        <h2 id="detalle-titulo" class="mr-modal__titulo">Detalle del vehículo</h2>
-                        <button type="button" class="mr-modal__cerrar" aria-label="Cerrar detalle" @onclick="CerrarDetalle">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
-                            </svg>
+            <div class="mr-fleet-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="detalle-titulo">
+                <div class="mr-fleet-modal-panel">
+                    <!-- Modal Header -->
+                    <div class="mr-fleet-modal-header">
+                        <div class="mr-fleet-modal-header__info">
+                            <div class="mr-fleet-modal-icon">
+                                <span class="material-symbols-outlined">@ObtenerIconoVehiculo(_detalle.TipoVehiculo)</span>
+                            </div>
+                            <div>
+                                <div class="mr-fleet-modal-title-row">
+                                    <h2 id="detalle-titulo" class="mr-fleet-modal-title">Detalle y Edición de Unidad</h2>
+                                    <span class="mr-fleet-modal-tag">V-@_detalle.Id</span>
+                                </div>
+                                <div class="mr-fleet-modal-status-line">
+                                    <span class="mr-fleet-dot mr-fleet-dot--@(ObtenerColorDot(_detalle.Estado))"></span>
+                                    <span>Estado Operativo: @EtiquetaEstado(_detalle.Estado)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button"
+                                class="mr-fleet-modal-close"
+                                aria-label="Cerrar detalle"
+                                @onclick="CerrarDetalle"
+                                title="Cerrar ventana">
+                            <span class="material-symbols-outlined">close</span>
                         </button>
                     </div>
 
-                    <dl class="mr-detalle">
-                        <div class="mr-detalle__fila">
-                            <dt>Patente</dt>
-                            <dd>@_detalle.Patente</dd>
+                    <!-- Modal Body -->
+                    <div class="mr-fleet-modal-body">
+                        <!-- Identity Group -->
+                        <div class="mr-fleet-modal-grid-2">
+                            <div>
+                                <label class="mr-fleet-label">Placa / Matrícula Oficial</label>
+                                <div class="mr-fleet-modal-box mr-fleet-font-mono">
+                                    @_detalle.Patente
+                                </div>
+                            </div>
+                            <div>
+                                <label class="mr-fleet-label">Categoría de Servicio</label>
+                                <div class="mr-fleet-modal-box">
+                                    @ValorVisible(_detalle.TipoVehiculo)
+                                </div>
+                            </div>
                         </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Marca</dt>
-                            <dd>@ValorVisible(_detalle.Marca)</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Nombre</dt>
-                            <dd>@NombreVisible(_detalle)</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Marca y modelo</dt>
-                            <dd>@ValorVisible(_detalle.MarcaModelo)</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Tipo de vehículo</dt>
-                            <dd>@ValorVisible(_detalle.TipoVehiculo)</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Capacidad de carga</dt>
-                            <dd>@ValorVisible(_detalle.CapacidadCarga)</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Licencia</dt>
-                            <dd>@ValorVisible(_detalle.Licencia)</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Estado</dt>
-                            <dd><EstadoBadge Estado="@_detalle.Estado" /></dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Fecha de fabricación</dt>
-                            <dd>@FormatearFecha(_detalle.FechaFabricación)</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Número de conductor</dt>
-                            <dd>@_detalle.NumeroConductor</dd>
-                        </div>
-                        <div class="mr-detalle__fila">
-                            <dt>Características del conductor</dt>
-                            <dd>@ValorVisible(_detalle.CaracteristicasConductor)</dd>
-                        </div>
-                    </dl>
 
-                    <div class="mr-modal__pie">
-                        <button type="button" class="btn btn-outline-primary" @onclick="CerrarDetalle">Cerrar</button>
+                        <div>
+                            <label class="mr-fleet-label">Marca, Modelo y Especificación Técnica</label>
+                            <div class="mr-fleet-modal-box">
+                                @_detalle.Marca - @ValorVisible(_detalle.MarcaModelo)
+                                @if (!string.IsNullOrWhiteSpace(_detalle.Nombre))
+                                {
+                                    <span class="mr-fleet-text-variant"> (@_detalle.Nombre)</span>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Structured Tech Panel -->
+                        <div class="mr-fleet-modal-tech-box">
+                            <div class="mr-fleet-modal-tech-title">Estructura Operativa y Habilitación</div>
+                            <div class="mr-fleet-modal-tech-grid">
+                                <div>
+                                    <span class="mr-fleet-tech-label">Capacidad de Carga</span>
+                                    <span class="mr-fleet-tech-value">@ValorVisible(_detalle.CapacidadCarga)</span>
+                                </div>
+                                <div>
+                                    <span class="mr-fleet-tech-label">Licencia Habilitante</span>
+                                    <span class="mr-fleet-tech-value">@ValorVisible(_detalle.Licencia)</span>
+                                </div>
+                                <div>
+                                    <span class="mr-fleet-tech-label">Fecha de Fabricación</span>
+                                    <span class="mr-fleet-tech-value mr-fleet-font-mono">@FormatearFecha(_detalle.FechaFabricación)</span>
+                                </div>
+                                <div>
+                                    <span class="mr-fleet-tech-label">Número de Conductor</span>
+                                    <span class="mr-fleet-tech-value mr-fleet-font-mono">@_detalle.NumeroConductor</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Technical Remarks -->
+                        <div>
+                            <label class="mr-fleet-label">Observaciones Técnicas y Bitácora de Operación</label>
+                            <div class="mr-fleet-modal-textarea-box">
+                                @(string.IsNullOrWhiteSpace(_detalle.CaracteristicasConductor)
+                                    ? "Unidad habilitada para traslados y fletes sin observaciones técnicas adicionales registradas."
+                                    : _detalle.CaracteristicasConductor)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="mr-fleet-modal-footer">
+                        <div class="mr-fleet-modal-footer__meta">
+                            Mundo Ruta · Registro de Flota Operativa
+                        </div>
+                        <div class="mr-fleet-modal-footer__actions">
+                            <button type="button" class="btn btn-outline-primary" @onclick="CerrarDetalle">
+                                Cerrar
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -287,6 +571,51 @@
     private bool _errorCarga;
     private string? _mensaje;
     private string? _error;
+
+    // Filtros de búsqueda y categorización operativa
+    private string _busqueda = string.Empty;
+    private string _filtroEstado = string.Empty;
+    private string _filtroTipo = string.Empty;
+
+    private List<VehiculoDTO> VehiculosFiltrados
+    {
+        get
+        {
+            IEnumerable<VehiculoDTO> consulta = _vehiculos;
+
+            if (!string.IsNullOrWhiteSpace(_busqueda))
+            {
+                string b = _busqueda.Trim();
+                consulta = consulta.Where(v =>
+                    (!string.IsNullOrEmpty(v.Nombre) && v.Nombre.Contains(b, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(v.Patente) && v.Patente.Contains(b, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(v.Marca) && v.Marca.Contains(b, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(v.MarcaModelo) && v.MarcaModelo.Contains(b, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(v.Licencia) && v.Licencia.Contains(b, StringComparison.OrdinalIgnoreCase))
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(_filtroEstado))
+            {
+                consulta = consulta.Where(v => string.Equals(v.Estado, _filtroEstado, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(_filtroTipo))
+            {
+                consulta = consulta.Where(v => string.Equals(v.TipoVehiculo, _filtroTipo, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return consulta.ToList();
+        }
+    }
+
+    private int TotalDisponibles => _vehiculos.Count(v => string.Equals(v.Estado, EstadoDisponible, StringComparison.OrdinalIgnoreCase));
+
+    private int TotalEnUso => _vehiculos.Count(v => string.Equals(v.Estado, "EN_USO", StringComparison.OrdinalIgnoreCase));
+
+    private int TotalMantenimiento => _vehiculos.Count(v => string.Equals(v.Estado, "MANTENIMIENTO", StringComparison.OrdinalIgnoreCase));
+
+    private int PorcentajeDisponibles => _vehiculos.Count == 0 ? 0 : (int)Math.Round((double)TotalDisponibles / _vehiculos.Count * 100);
 
     protected override void OnInitialized()
     {
@@ -452,6 +781,13 @@
         _mensaje = null;
     }
 
+    private void LimpiarFiltros()
+    {
+        _busqueda = string.Empty;
+        _filtroEstado = string.Empty;
+        _filtroTipo = string.Empty;
+    }
+
     private void VerDetalle(VehiculoDTO vehiculo)
     {
         _detalle = vehiculo;
@@ -561,5 +897,69 @@
     private static string FormatearMoneda(decimal valor)
     {
         return "$ " + valor.ToString("N2", CulturaMoneda);
+    }
+
+    private static string ObtenerIconoVehiculo(string? tipo)
+    {
+        if (string.IsNullOrWhiteSpace(tipo))
+        {
+            return "directions_car";
+        }
+
+        string t = tipo.ToLowerInvariant();
+        if (t.Contains("camión") || t.Contains("camion") || t.Contains("acoplado") || t.Contains("furgón") || t.Contains("furgon") || t.Contains("carga"))
+        {
+            return "local_shipping";
+        }
+
+        return "directions_car";
+    }
+
+    private static string EtiquetaEstado(string? estado)
+    {
+        if (string.IsNullOrWhiteSpace(estado))
+        {
+            return "Sin estado";
+        }
+
+        return estado.ToUpperInvariant() switch
+        {
+            "DISPONIBLE" => "Disponible en Base",
+            "EN_USO" => "En Servicio Activo",
+            "MANTENIMIENTO" => "Taller / Mantenimiento",
+            _ => estado
+        };
+    }
+
+    private static string ObtenerClaseBadge(string? estado)
+    {
+        if (string.IsNullOrWhiteSpace(estado))
+        {
+            return "mr-fleet-badge-pill--neutral";
+        }
+
+        return estado.ToUpperInvariant() switch
+        {
+            "DISPONIBLE" => "mr-fleet-badge-pill--disponible",
+            "EN_USO" => "mr-fleet-badge-pill--en-uso",
+            "MANTENIMIENTO" => "mr-fleet-badge-pill--mantenimiento",
+            _ => "mr-fleet-badge-pill--neutral"
+        };
+    }
+
+    private static string ObtenerColorDot(string? estado)
+    {
+        if (string.IsNullOrWhiteSpace(estado))
+        {
+            return "neutral";
+        }
+
+        return estado.ToUpperInvariant() switch
+        {
+            "DISPONIBLE" => "secondary",
+            "EN_USO" => "primary",
+            "MANTENIMIENTO" => "amber",
+            _ => "neutral"
+        };
     }
 }
