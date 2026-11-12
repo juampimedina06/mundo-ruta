@@ -1,22 +1,1118 @@
 @page "/usuario/viajes/{ViajeId:int}"
+@using MundoRuta.Shared.DTO
+@using MundoRuta.Shared.DTO.Realtime
+@using System.Globalization
+@implements IDisposable
+@inject IViajePasajeroServicio Viajes
+@inject IViajeHubService Hub
+@inject SesionEstado Sesion
+@inject NavigationManager Navegacion
+@inject IJSRuntime JS
 
-<PageTitle>Detalle del viaje | Mundo Ruta</PageTitle>
+<PageTitle>Seguimiento del Viaje #@ViajeId | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="Roles.Usuario">
-    <div class="mr-page">
-        <div class="mr-container">
-            <PageHeader Titulo="@("Viaje #" + ViajeId)"
-                        Descripcion="Detalle, chofer y estado del servicio." />
+    <div class="sv-surface">
+        <div class="sv-main-container">
 
-            <EmptyState Titulo="Detalle en preparación"
-                        Descripcion="Acá vas a ver origen, destino, chofer asignado, vehículo, estado y pago.">
-                <a class="btn btn-outline-primary" href="/usuario/viajes">Volver a mis viajes</a>
-            </EmptyState>
+            @if (!string.IsNullOrWhiteSpace(_mensajeExito))
+            {
+                <div class="sv-banner sv-banner--success">
+                    <span class="material-symbols-outlined sv-icon-20">check_circle</span>
+                    <span>@_mensajeExito</span>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(_mensajeError))
+            {
+                <div class="sv-banner sv-banner--error">
+                    <span class="material-symbols-outlined sv-icon-20">error</span>
+                    <span>@_mensajeError</span>
+                </div>
+            }
+
+            @if (_cargando)
+            {
+                <div class="sv-card sv-loading-card">
+                    <div class="sv-spinner" aria-hidden="true"></div>
+                    <p class="sv-loading-text">Cargando seguimiento del viaje...</p>
+                </div>
+            }
+            else if (_viaje is null)
+            {
+                <div class="sv-card sv-empty-card">
+                    <div class="sv-empty-card__icon">
+                        <span class="material-symbols-outlined sv-icon-28">route</span>
+                    </div>
+                    <h2 class="sv-empty-card__title">No pudimos cargar el viaje</h2>
+                    <p class="sv-empty-card__desc">@(_errorCarga ?? "Verificá el identificador del viaje e intentá nuevamente.")</p>
+                    <a class="sv-btn-primary" href="/usuario/viajes">
+                        <span class="material-symbols-outlined sv-icon-18">arrow_back</span>
+                        Volver a mis viajes
+                    </a>
+                </div>
+            }
+            else
+            {
+                <!-- Top Breadcrumbs & Estado en Vivo -->
+                <div class="sv-topbar">
+                    <div class="sv-breadcrumbs">
+                        <a class="sv-breadcrumbs__link" href="/usuario/viajes">
+                            <span class="material-symbols-outlined sv-icon-16">arrow_back</span>
+                            Mis Viajes
+                        </a>
+                        <span class="sv-breadcrumbs__sep">/</span>
+                        <span class="sv-breadcrumbs__current">Viaje en Curso #MR-@_viaje.Id</span>
+                    </div>
+
+                    <div class="sv-topbar__actions">
+                        <div class="sv-live-pill">
+                            <span class="sv-live-pill__dot-wrap">
+                                <span class="sv-live-pill__ping"></span>
+                                <span class="sv-live-pill__dot"></span>
+                            </span>
+                            <span>@EtiquetaEstadoVivo</span>
+                            <span class="sv-live-pill__time">Actualizado: hace 4s</span>
+                        </div>
+
+                        <button type="button" class="sv-btn-share-top" @onclick="CompartirViajeAsync">
+                            <span class="material-symbols-outlined sv-icon-18">share</span>
+                            Compartir Seguimiento
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Título y Tarjeta de Estado ETA Superior -->
+                <div class="sv-card sv-hero-card">
+                    <div class="sv-hero-card__top">
+                        <div class="sv-hero-card__info">
+                            <div class="sv-hero-card__title-row">
+                                <h1 class="sv-hero-card__title">Viaje en Curso #MR-@_viaje.Id</h1>
+                                <span class="sv-type-badge">
+                                    @(!string.IsNullOrWhiteSpace(_viaje.TipoSolicitud) ? $"Mudanza • {_viaje.TipoSolicitud}" : "Mudanza • Flete Express")
+                                </span>
+                            </div>
+                            <p class="sv-hero-card__subtitle">
+                                Seguimiento de carga asignada • Operador autorizado: @NombreOperadorDisplay
+                                · @_viaje.Fecha.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) (@_viaje.Hora.ToString(@"hh\:mm") hs)
+                            </p>
+                        </div>
+
+                        <div class="sv-eta-card">
+                            <div class="sv-eta-card__icon-box">
+                                <span class="material-symbols-outlined sv-icon-28">schedule</span>
+                            </div>
+                            <div class="sv-eta-card__content">
+                                <span class="sv-eta-card__label">Tiempo Estimado de Arribo</span>
+                                <div class="sv-eta-card__values">
+                                    <span class="sv-eta-card__main">@TiempoEstimadoTexto</span>
+                                    <span class="sv-eta-card__sub">(@HoraEstimadaArribo hs)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Progreso del Itinerario -->
+                    <div class="sv-progress-section">
+                        <div class="sv-progress-labels">
+                            <span class="sv-progress-endpoint">
+                                <span class="material-symbols-outlined sv-icon-16 sv-text-secondary">trip_origin</span>
+                                @_viaje.Origen (Origen)
+                            </span>
+                            <span class="sv-progress-center">
+                                @PorcentajeRecorrido% Recorrido Completado (@EstadosViajeUI.EtiquetaSeguimiento(_viaje.Estado))
+                            </span>
+                            <span class="sv-progress-endpoint">
+                                <span class="material-symbols-outlined sv-icon-16 sv-text-primary-container">location_on</span>
+                                @_viaje.Destino (Destino)
+                            </span>
+                        </div>
+                        <div class="sv-progress-track">
+                            <div class="sv-progress-fill" style="width: @(PorcentajeRecorrido)%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Layout Dividido de Monitoreo -->
+                <div class="sv-monitor-grid">
+                    <!-- COLUMNA IZQUIERDA: Mapa Dinámico y Telemetría Satelital (7 Cols) -->
+                    <div class="sv-col-left">
+                        <!-- Contenedor del Mapa en Vivo -->
+                        <div class="sv-map-card">
+                            <!-- Banner de Cabecera del Mapa -->
+                            <div class="sv-map-header">
+                                <div class="sv-map-header__left">
+                                    <span class="material-symbols-outlined sv-icon-20 sv-text-primary-container">fmd_good</span>
+                                    <span class="sv-map-header__title">Visualización Telemetría GPS</span>
+                                </div>
+                                <div class="sv-map-header__badge">
+                                    <span class="material-symbols-outlined sv-icon-14">sensors</span>
+                                    Señal Satelital Alta
+                                </div>
+                            </div>
+
+                            <!-- Lienzo Interactivo del Mapa -->
+                            <div class="sv-map-canvas">
+                                <svg class="sv-map-svg" preserveAspectRatio="xMidYMid slice" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+                                    <defs>
+                                        <linearGradient id="routeGradientDetalle" x1="0%" x2="100%" y1="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#006c49"></stop>
+                                            <stop offset="65%" stop-color="#6cf8bb"></stop>
+                                            <stop offset="100%" stop-color="#0a2240"></stop>
+                                        </linearGradient>
+                                        <filter height="140%" id="glowDetalle" width="140%" x="-20%" y="-20%">
+                                            <feDropShadow dx="0" dy="2" flood-color="#0a2240" flood-opacity="0.3" stdDeviation="4"></feDropShadow>
+                                        </filter>
+                                    </defs>
+                                    <!-- Manzanas urbanas sutiles -->
+                                    <rect fill="#e9effa" height="100%" width="100%"></rect>
+                                    <path d="M-20,90 Q120,40 280,120 T540,80 T850,150" fill="none" opacity="0.6" stroke="#d5e3ff" stroke-width="42"></path>
+                                    <path d="M120,-30 L190,520" fill="none" opacity="0.5" stroke="#d5e3ff" stroke-width="32"></path>
+                                    <path d="M410,-20 L460,520" fill="none" opacity="0.5" stroke="#d5e3ff" stroke-width="28"></path>
+                                    <path d="M600,-40 L690,530" fill="none" opacity="0.5" stroke="#d5e3ff" stroke-width="26"></path>
+                                    <path d="M-40,320 L840,240" fill="none" opacity="0.6" stroke="#dce9ff" stroke-width="20"></path>
+                                    <path d="M-50,450 L850,390" fill="none" opacity="0.6" stroke="#dce9ff" stroke-width="16"></path>
+                                    <!-- Río / Costa norte en diagonal -->
+                                    <path d="M480,-20 Q620,110 760,200 L850,-20 Z" fill="#cbdbf5" opacity="0.7"></path>
+                                    <!-- Trazado de Ruta Oficial -->
+                                    <path d="M130,410 C 240,380 340,320 420,240 S 520,130 670,85" fill="none" stroke="#0a2240" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"></path>
+                                    <path d="M130,410 C 240,380 340,320 420,240" fill="none" stroke="#006c49" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"></path>
+                                    <path d="M420,240 S 520,130 670,85" fill="none" stroke="#758aad" stroke-dasharray="8 6" stroke-linecap="round" stroke-width="5"></path>
+                                    <!-- Punto de Origen -->
+                                    <circle cx="130" cy="410" fill="#006c49" r="10"></circle>
+                                    <circle cx="130" cy="410" fill="#ffffff" r="4"></circle>
+                                    <text fill="#0a2240" font-family="Plus Jakarta Sans, sans-serif" font-size="12" font-weight="700" text-anchor="middle" x="150" y="440">Origen: @TruncarTexto(_viaje.Origen, 26)</text>
+                                    <!-- Punto de Destino -->
+                                    <circle cx="670" cy="85" fill="#0a2240" r="10"></circle>
+                                    <circle cx="670" cy="85" fill="#ffffff" r="4"></circle>
+                                    <text fill="#0a2240" font-family="Plus Jakarta Sans, sans-serif" font-size="12" font-weight="700" text-anchor="middle" x="640" y="65">Destino: @TruncarTexto(_viaje.Destino, 26)</text>
+                                    <!-- Vehículo Flete Actual en Ruta -->
+                                    <g transform="translate(420, 240)">
+                                        <circle cx="0" cy="0" fill="#6cf8bb" opacity="0.35" r="24">
+                                            <animate attributeName="r" dur="2s" repeatCount="indefinite" values="16;28;16"></animate>
+                                            <animate attributeName="opacity" dur="2s" repeatCount="indefinite" values="0.6;0.1;0.6"></animate>
+                                        </circle>
+                                        <circle cx="0" cy="0" fill="#0a2240" filter="url(#glowDetalle)" r="16"></circle>
+                                        <svg fill="#ffffff" height="20" viewBox="0 0 24 24" width="20" x="-10" y="-10">
+                                            <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"></path>
+                                        </svg>
+                                    </g>
+                                </svg>
+
+                                <!-- Tooltip Flotante del Conductor sobre el Mapa -->
+                                <div class="sv-map-tooltip">
+                                    <div class="sv-map-tooltip__box">
+                                        <span class="sv-map-tooltip__dot"></span>
+                                        <span class="sv-map-tooltip__driver">@NombreChoferDisplay</span>
+                                        <span class="sv-map-tooltip__status">• @EstadosViajeUI.EtiquetaSeguimiento(_viaje.Estado) hacia @TruncarTexto(_viaje.Destino, 20)</span>
+                                    </div>
+                                    <div class="sv-map-tooltip__arrow"></div>
+                                </div>
+
+                                <!-- Botones de Control de Mapa (Zoom & Recenter) -->
+                                <div class="sv-map-controls">
+                                    <button type="button" class="sv-map-control-btn" title="Centrar Vehículo">
+                                        <span class="material-symbols-outlined sv-icon-20">my_location</span>
+                                    </button>
+                                    <button type="button" class="sv-map-control-btn" title="Acercar">
+                                        <span class="material-symbols-outlined sv-icon-20">add</span>
+                                    </button>
+                                    <button type="button" class="sv-map-control-btn" title="Alejar">
+                                        <span class="material-symbols-outlined sv-icon-20">remove</span>
+                                    </button>
+                                </div>
+
+                                <!-- Alerta Flotante de Tráfico sobre el mapa -->
+                                <div class="sv-map-traffic-alert">
+                                    <div class="sv-map-traffic-alert__icon">
+                                        <span class="material-symbols-outlined sv-icon-16">traffic</span>
+                                    </div>
+                                    <div class="sv-map-traffic-alert__text">
+                                        <span class="sv-map-traffic-alert__title">Tráfico fluido en corredor norte</span>
+                                        <span class="sv-map-traffic-alert__sub">Sin demoras detectadas</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cronograma de Hitos del Viaje (Vertical Stepper) -->
+                        <div class="sv-card sv-itinerary-card">
+                            <div class="sv-itinerary-header">
+                                <h2 class="sv-itinerary-header__title">Itinerario y Estados de Ruta</h2>
+                                <span class="sv-itinerary-header__meta">@EstadosViajeUI.Secuencia.Count etapas registradas</span>
+                            </div>
+
+                            <ViajeProgreso Estado="@_viaje.Estado"
+                                           Origen="@_viaje.Origen"
+                                           Destino="@_viaje.Destino"
+                                           NombreChofer="@_viaje.NombreChofer"
+                                           MarcaVehiculo="@_viaje.Marca"
+                                           DetalleCarga="@_viaje.DetalleCarga"
+                                           HoraBase="@_viaje.Hora" />
+                        </div>
+                    </div>
+
+                    <!-- COLUMNA DERECHA: Chofer, Vehículo, Carga y Acciones Rápidas (5 Cols) -->
+                    <div class="sv-col-right">
+                        <!-- Ficha del Conductor / Prestador Asignado -->
+                        <div class="sv-card sv-provider-card">
+                            <div class="sv-card-toprow">
+                                <span class="sv-section-label">Prestador Asignado</span>
+                                <span class="sv-verified-pill">
+                                    <span class="material-symbols-outlined sv-icon-14">verified</span>
+                                    Operador Verificado
+                                </span>
+                            </div>
+
+                            <!-- Tarjeta de Contacto Directo con el Prestador -->
+                            <div class="sv-base-box">
+                                <div class="sv-base-box__top">
+                                    <div class="sv-base-box__brand">
+                                        <div class="sv-base-box__icon">
+                                            <span class="material-symbols-outlined sv-icon-20">business</span>
+                                        </div>
+                                        <div class="sv-base-box__info">
+                                            <span class="sv-base-box__label">Base de Operaciones</span>
+                                            <h3 class="sv-base-box__name">@NombreOperadorDisplay</h3>
+                                        </div>
+                                    </div>
+                                    <span class="sv-base-box__id">ID: OP-@(_viaje.IdUsuario > 0 ? _viaje.IdUsuario.ToString("D4") : "4402")</span>
+                                </div>
+
+                                <div class="sv-base-box__actions">
+                                    <button type="button" class="sv-btn-call" @onclick="MostrarAvisoEmpresa">
+                                        <span class="material-symbols-outlined sv-icon-18">call</span>
+                                        Llamar a Base
+                                    </button>
+                                    <button type="button"
+                                            class="sv-btn-chat"
+                                            disabled="@(!PuedeChatear)"
+                                            @onclick="AlternarChat">
+                                        <span class="material-symbols-outlined sv-icon-18">chat</span>
+                                        Chat chofer
+                                    </button>
+                                </div>
+
+                                @if (_avisoEmpresa)
+                                {
+                                    <p class="sv-contact-hint">
+                                        El número directo de la base operativa se habilitará próximamente (Central: 0800-555-RUTA).
+                                    </p>
+                                }
+
+                                @if (!PuedeChatear)
+                                {
+                                    <p class="sv-contact-hint">
+                                        El chat con el chofer estará disponible cuando el viaje sea asignado.
+                                    </p>
+                                }
+                            </div>
+
+                            @if (_chatAbierto)
+                            {
+                                <div class="mr-chat">
+                                    <div class="mr-chat__mensajes" @ref="_panelMensajes">
+                                        @if (_cargandoMensajes)
+                                        {
+                                            <p class="sv-chat-placeholder">Cargando mensajes...</p>
+                                        }
+                                        else if (_mensajes.Count == 0)
+                                        {
+                                            <p class="sv-chat-placeholder">Todavía no hay mensajes. Escribí el primero.</p>
+                                        }
+                                        else
+                                        {
+                                            @foreach (MensajeDTO mensaje in _mensajes)
+                                            {
+                                                bool mio = mensaje.IdEmisor == Sesion.Id;
+
+                                                <div class="mr-chat__mensaje @(mio ? "mr-chat__mensaje--mio" : null)">
+                                                    <span class="mr-chat__texto">@mensaje.Contenido</span>
+                                                    <span class="mr-chat__hora">@mensaje.EnviadoEn.ToString("dd/MM HH:mm", CultureInfo.InvariantCulture)</span>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+
+                                    <div class="mr-chat__envio">
+                                        <input class="sv-chat-input"
+                                               placeholder="Escribí un mensaje al chofer..."
+                                               maxlength="500"
+                                               @bind="_nuevoMensaje"
+                                               @bind:event="oninput"
+                                               @onkeydown="TeclaChat" />
+                                        <button type="button"
+                                                class="sv-chat-send-btn"
+                                                disabled="@(_enviando || string.IsNullOrWhiteSpace(_nuevoMensaje))"
+                                                @onclick="EnviarMensaje">
+                                            <span class="material-symbols-outlined sv-icon-18">send</span>
+                                            Enviar
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Información del Chofer (Solo Informativa / Operativa) -->
+                            <div class="sv-driver-section">
+                                <span class="sv-section-label">Unidad en Tránsito • Conductor</span>
+                                <div class="sv-driver-row">
+                                    <div class="sv-driver-avatar">
+                                        <img class="sv-driver-avatar__img"
+                                             alt="Conductor asignado"
+                                             src="https://lh3.googleusercontent.com/aida-public/AB6AXuAa-xwyZXQE4ipkkBaQivEtpFMyexMuQ8o_Lz39dXdfrSCZaZVnLH5RJm1doEV1zpVXxK5iIVMY1_qWSecvbKOg0Ddo3rgO6iLbcqgLlK_UVvK8XxJBz9RguT_E4ojwX0hMKf8kJwtdDaJtcIeI0szBB_Droqjkbv7tFYqs3pbsMcvTa7YgBPAb0VS-dTG0juv2o-ltSU5EkqbqGwBQ5nuFEa3f4aTiiunVvLgG7pjr1v9TTsc-X3fS" />
+                                    </div>
+                                    <div class="sv-driver-info">
+                                        <div class="sv-driver-info__top">
+                                            <h4 class="sv-driver-name">@NombreChoferDisplay</h4>
+                                            <span class="sv-driver-rating">★ 4.9 <span class="sv-driver-rating__sub">(142 viajes)</span></span>
+                                        </div>
+                                        <span class="sv-driver-meta">Conductor asignado por @NombreOperadorDisplay</span>
+                                    </div>
+                                </div>
+
+                                <div class="sv-safety-banner">
+                                    <span class="material-symbols-outlined sv-icon-16 sv-safety-banner__icon">shield_with_heart</span>
+                                    <span class="sv-safety-banner__text">Por protocolos de seguridad vial, el chofer en tránsito no atiende llamados directos. Comuníquese con la base operativa.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ficha del Vehículo & Documentación -->
+                        <div class="sv-card sv-vehicle-card">
+                            <span class="sv-section-label">Vehículo Asignado</span>
+                            <div class="sv-vehicle-top">
+                                <div class="sv-vehicle-brand">
+                                    <div class="sv-vehicle-icon">
+                                        <span class="material-symbols-outlined sv-icon-26">airport_shuttle</span>
+                                    </div>
+                                    <div class="sv-vehicle-text">
+                                        <span class="sv-vehicle-name">@MarcaVehiculoDisplay</span>
+                                        <span class="sv-vehicle-sub">Furgón Techo Elevado</span>
+                                    </div>
+                                </div>
+
+                                <!-- Patente Destacada -->
+                                <div class="sv-plate-badge">
+                                    <span class="sv-plate-badge__country">Argentina</span>
+                                    <span class="sv-plate-badge__number">@PatenteDisplay</span>
+                                </div>
+                            </div>
+
+                            <!-- Badges de Documentación y Seguridad -->
+                            <div class="sv-doc-badges">
+                                <span class="sv-doc-badge sv-doc-badge--warm">
+                                    <span class="material-symbols-outlined sv-icon-14">task_alt</span>
+                                    VTV Vigente (Sep 2025)
+                                </span>
+                                <span class="sv-doc-badge sv-doc-badge--warm">
+                                    <span class="material-symbols-outlined sv-icon-14">shield</span>
+                                    Seguro de Carga Activo
+                                </span>
+                                <span class="sv-doc-badge sv-doc-badge--navy">
+                                    <span class="material-symbols-outlined sv-icon-14">description</span>
+                                    R.N.R. Aprobado
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Ficha de Resumen de Carga & Modalidad de Pago -->
+                        <div class="sv-card sv-cargo-card">
+                            <div class="sv-card-toprow">
+                                <span class="sv-section-label">Detalle de la Carga &amp; Tarifa</span>
+                                <span class="sv-cargo-count">@(_viaje.EquipajeCarga ? "Carga declarada" : "Servicio estándar")</span>
+                            </div>
+
+                            <div class="sv-cargo-box">
+                                <span class="material-symbols-outlined sv-icon-20 sv-text-primary-container sv-cargo-box__icon">inventory_2</span>
+                                <div class="sv-cargo-box__content">
+                                    <span class="sv-cargo-box__title">@(!string.IsNullOrWhiteSpace(_viaje.TipoSolicitud) ? $"Mudanza / Flete {_viaje.TipoSolicitud}" : "Mudanza / Flete Semi-completo")</span>
+                                    <span class="sv-cargo-box__desc">
+                                        @(!string.IsNullOrWhiteSpace(_viaje.DetalleCarga) ? _viaje.DetalleCarga : "Traslado supervisado con protocolo de carga segura.")
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="sv-rate-row">
+                                <div class="sv-rate-info">
+                                    <span class="sv-rate-label">Tarifa Pactada</span>
+                                    <span class="sv-rate-amount">$@_viaje.Monto.ToString("N0", CultureInfo.InvariantCulture) ARS</span>
+                                </div>
+                                <div class="sv-payment-pill">
+                                    <span class="material-symbols-outlined sv-icon-18">payments</span>
+                                    <span>@(!string.IsNullOrWhiteSpace(_viaje.MetodoDePago) ? _viaje.MetodoDePago : "Mercado Pago / Efectivo")</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción de Seguridad & Compartir -->
+                        <div class="sv-quick-actions">
+                            <button type="button" class="sv-btn-share-full" @onclick="CompartirViajeAsync">
+                                <span class="material-symbols-outlined sv-icon-20">share_location</span>
+                                Compartir Link de Viaje en Vivo
+                            </button>
+
+                            <button type="button" class="sv-btn-sos" @onclick="AbrirModalSos">
+                                <span class="material-symbols-outlined sv-icon-20 sv-text-error">emergency</span>
+                                Centro de Ayuda / SOS en Ruta
+                            </button>
+                        </div>
+
+                        @* --- Cancelación --- *@
+                        @if (PuedeCancelar)
+                        {
+                            <div class="sv-card sv-cancel-card">
+                                <div class="sv-card-toprow">
+                                    <h3 class="sv-cancel-card__title">Cancelar el viaje</h3>
+                                    <span class="material-symbols-outlined sv-icon-18 sv-text-error">event_busy</span>
+                                </div>
+
+                                @if (!_cancelacionAbierta)
+                                {
+                                    <p class="sv-cancel-card__desc">
+                                        Podés cancelar sin cargo hasta 30 minutos antes del horario pactado de salida.
+                                    </p>
+                                    <button type="button" class="sv-btn-cancel-outline" @onclick="() => _cancelacionAbierta = true">
+                                        <span class="material-symbols-outlined sv-icon-16">cancel</span>
+                                        Solicitar cancelación
+                                    </button>
+                                }
+                                else
+                                {
+                                    @if (!string.IsNullOrWhiteSpace(_avisoCancelacion))
+                                    {
+                                        <div class="sv-banner sv-banner--error">
+                                            <span class="material-symbols-outlined sv-icon-18">error</span>
+                                            <span>@_avisoCancelacion</span>
+                                        </div>
+                                    }
+
+                                    <label class="sv-section-label" for="motivo-cancelacion-detalle">Motivo de la cancelación</label>
+                                    <textarea id="motivo-cancelacion-detalle"
+                                              class="sv-cancel-textarea"
+                                              rows="3"
+                                              maxlength="300"
+                                              placeholder="Contanos por qué necesitás cancelar el viaje"
+                                              @bind="_motivoCancelacion"></textarea>
+
+                                    <div class="sv-cancel-actions">
+                                        <button type="button"
+                                                class="sv-btn-cancel-confirm"
+                                                disabled="@_cancelando"
+                                                @onclick="CancelarViaje">
+                                            @(_cancelando ? "Cancelando..." : "Confirmar cancelación")
+                                        </button>
+                                        <button type="button" class="sv-btn-cancel-back" @onclick="CerrarCancelacion">
+                                            Volver
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Sección de Información de Destino y Contacto del Receptor -->
+                <div class="sv-card sv-footer-bar">
+                    <div class="sv-footer-bar__item">
+                        <div class="sv-footer-bar__icon">
+                            <span class="material-symbols-outlined sv-icon-22">pin_drop</span>
+                        </div>
+                        <div class="sv-footer-bar__text">
+                            <span class="sv-section-label">Punto de Entrega</span>
+                            <span class="sv-footer-bar__title">@_viaje.Destino</span>
+                            <span class="sv-footer-bar__sub">Destino confirmado en orden</span>
+                        </div>
+                    </div>
+
+                    <div class="sv-footer-bar__item">
+                        <div class="sv-footer-bar__icon">
+                            <span class="material-symbols-outlined sv-icon-22">person_pin</span>
+                        </div>
+                        <div class="sv-footer-bar__text">
+                            <span class="sv-section-label">Receptor Autorizado</span>
+                            <span class="sv-footer-bar__title">@(!string.IsNullOrWhiteSpace(_viaje.NombrePasajero) ? _viaje.NombrePasajero : Sesion.Nombre ?? "Pasajero Registrado")</span>
+                            <span class="sv-footer-bar__sub">Validación con DNI en entrega</span>
+                        </div>
+                    </div>
+
+                    <div class="sv-footer-bar__support">
+                        <button type="button" class="sv-support-link" @onclick="AbrirModalSos">
+                            <span class="material-symbols-outlined sv-icon-18">support_agent</span>
+                            ¿Dudas con la entrega? Contactar al prestador o soporte
+                        </button>
+                    </div>
+                </div>
+            }
         </div>
+    </div>
+
+    <!-- Modal SOS / Asistencia en Ruta -->
+    @if (_sosModalAbierto && _viaje is not null)
+    {
+        <div class="sv-modal-backdrop" @onclick="CerrarModalSos">
+            <div class="sv-modal" @onclick:stopPropagation="true">
+                <div class="sv-modal__header">
+                    <div class="sv-modal__title-wrap">
+                        <span class="material-symbols-outlined sv-icon-28 sv-text-error">report_problem</span>
+                        <h3 class="sv-modal__title">Asistencia y Emergencia</h3>
+                    </div>
+                    <button type="button" class="sv-modal__close" @onclick="CerrarModalSos">
+                        <span class="material-symbols-outlined sv-icon-24">close</span>
+                    </button>
+                </div>
+
+                <p class="sv-modal__desc">
+                    Si detectaste un incidente vial, una desviación injustificada o una emergencia durante el traslado del viaje <strong>#MR-@_viaje.Id</strong>, el equipo de respuesta rápida de Mundo Ruta está activo las 24 hs.
+                </p>
+
+                <div class="sv-modal__actions">
+                    <a class="sv-modal__call-btn" href="tel:08005559111">
+                        <div class="sv-modal__btn-left">
+                            <span class="material-symbols-outlined">call</span>
+                            <span class="sv-modal__call-title">Línea SOS Central 24/7</span>
+                        </div>
+                        <span class="sv-modal__call-number">0800-555-RUTA</span>
+                    </a>
+
+                    <button type="button" class="sv-modal__report-btn" @onclick="ReportarDemoraBase">
+                        <div class="sv-modal__btn-left">
+                            <span class="material-symbols-outlined">sync_problem</span>
+                            <span>Reportar desvío o demora excesiva</span>
+                        </div>
+                        <span class="material-symbols-outlined sv-icon-18">chevron_right</span>
+                    </button>
+                </div>
+
+                <div class="sv-modal__footer">
+                    <button type="button" class="sv-modal__cancel-btn" @onclick="CerrarModalSos">
+                        Volver al Monitoreo
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Toast Notificación Copiado Link -->
+    <div class="sv-toast @(_mostrarToast ? "sv-toast--visible" : string.Empty)">
+        <span class="material-symbols-outlined sv-toast__icon">check_circle</span>
+        <span>Enlace de rastreo satelital copiado al portapapeles</span>
     </div>
 </RoleGuard>
 
 @code {
     [Parameter]
     public int ViajeId { get; set; }
+
+    private ViajeDetalladoDTO? _viaje;
+    private List<MensajeDTO> _mensajes = new();
+
+    private bool _cargando = true;
+    private bool _chatAbierto;
+    private bool _cargandoMensajes;
+    private bool _enviando;
+    private string _nuevoMensaje = string.Empty;
+    private ElementReference _panelMensajes;
+
+    private bool _avisoEmpresa;
+    private bool _sosModalAbierto;
+    private bool _mostrarToast;
+
+    private bool _cancelacionAbierta;
+    private bool _cancelando;
+    private string _motivoCancelacion = string.Empty;
+    private string? _avisoCancelacion;
+
+    private string? _mensajeExito;
+    private string? _mensajeError;
+    private string? _errorCarga;
+
+    private CancellationTokenSource? _refrescoChat;
+    private bool _cargado;
+
+    private bool PuedeChatear => _viaje is not null && EstadosViajeUI.ChatHabilitado(_viaje.Estado);
+
+    private string NombreOperadorDisplay =>
+        !string.IsNullOrWhiteSpace(_viaje?.NombrePrestador)
+            ? _viaje.NombrePrestador
+            : "TransLog Express S.A.";
+
+    private string NombreChoferDisplay =>
+        !string.IsNullOrWhiteSpace(_viaje?.NombreChofer)
+            ? _viaje.NombreChofer
+            : "Carlos Gómez";
+
+    private string MarcaVehiculoDisplay =>
+        !string.IsNullOrWhiteSpace(_viaje?.Marca)
+            ? _viaje.Marca
+            : "Mercedes-Benz Sprinter 415";
+
+    private string PatenteDisplay =>
+        !string.IsNullOrWhiteSpace(_viaje?.Patente)
+            ? _viaje.Patente
+            : "AD 188 ZP";
+
+    private string EtiquetaEstadoVivo
+    {
+        get
+        {
+            if (_viaje is null)
+            {
+                return "En Ruta Satelital";
+            }
+
+            if (EstadosViajeUI.EstaCancelado(_viaje.Estado))
+            {
+                return "Viaje Cancelado";
+            }
+
+            if (EstadosViajeUI.Termino(_viaje.Estado))
+            {
+                return "Servicio Finalizado";
+            }
+
+            return "En Ruta Satelital";
+        }
+    }
+
+    private int PorcentajeRecorrido
+    {
+        get
+        {
+            if (_viaje is null)
+            {
+                return 0;
+            }
+
+            EtapaViaje? etapa = EstadosViajeUI.ObtenerEtapa(_viaje.Estado);
+            if (!etapa.HasValue)
+            {
+                return EstadosViajeUI.Termino(_viaje.Estado) ? 100 : 0;
+            }
+
+            return etapa.Value switch
+            {
+                EtapaViaje.Buscando => 15,
+                EtapaViaje.Asignado => 35,
+                EtapaViaje.CargaSubida => 50,
+                EtapaViaje.EnTransito => 65,
+                EtapaViaje.LlegadaDestino => 100,
+                _ => 65
+            };
+        }
+    }
+
+    private string TiempoEstimadoTexto
+    {
+        get
+        {
+            if (_viaje is null)
+            {
+                return "22 min";
+            }
+
+            EtapaViaje? etapa = EstadosViajeUI.ObtenerEtapa(_viaje.Estado);
+            return etapa switch
+            {
+                EtapaViaje.Buscando => "En subasta",
+                EtapaViaje.Asignado => "35 min",
+                EtapaViaje.CargaSubida => "28 min",
+                EtapaViaje.EnTransito => "22 min",
+                EtapaViaje.LlegadaDestino => "En destino",
+                _ => EstadosViajeUI.Termino(_viaje.Estado) ? "Completado" : "22 min"
+            };
+        }
+    }
+
+    private string HoraEstimadaArribo
+    {
+        get
+        {
+            if (_viaje is null)
+            {
+                return "18:45";
+            }
+
+            TimeSpan arribo = _viaje.Hora.Add(TimeSpan.FromMinutes(65));
+            return $"{(int)arribo.TotalHours % 24:D2}:{arribo.Minutes:D2}";
+        }
+    }
+
+    private bool PuedeCancelar
+    {
+        get
+        {
+            if (_viaje is null)
+            {
+                return false;
+            }
+
+            if (EstadosViajeUI.EstaCancelado(_viaje.Estado) || EstadosViajeUI.Termino(_viaje.Estado))
+            {
+                return false;
+            }
+
+            return (_viaje.Fecha.Date + _viaje.Hora) > DateTime.Now.AddMinutes(30);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Sesion.CambioSesion += AlCambiarSesion;
+        _ = IntentarCargarAsync();
+    }
+
+    private async Task IntentarCargarAsync()
+    {
+        if (_cargado || !Sesion.Restaurada || Sesion.Id <= 0)
+        {
+            return;
+        }
+
+        _cargado = true;
+        await CargarViajeAsync();
+        await ConfigurarTiempoRealAsync();
+    }
+
+    private void AlCambiarSesion()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            await IntentarCargarAsync();
+            StateHasChanged();
+        });
+    }
+
+    private async Task CargarViajeAsync()
+    {
+        _cargando = true;
+        StateHasChanged();
+
+        HttpResp<ViajeDetalladoDTO> respuesta = await Viajes.ObtenerViajeAsync(Sesion.Id, ViajeId);
+
+        if (respuesta.Error)
+        {
+            int? status = respuesta.Response is null ? null : (int)respuesta.Response.StatusCode;
+
+            if (status == 403)
+            {
+                _errorCarga = "Este viaje finalizó y todavía no lo calificaste. Calificalo para ver su detalle.";
+            }
+            else if (status == 404)
+            {
+                _errorCarga = "El viaje que buscás no existe.";
+            }
+            else
+            {
+                _errorCarga = await respuesta.ObtenerMensajeAsync("No se pudo cargar el viaje.");
+            }
+
+            _viaje = null;
+        }
+        else
+        {
+            _viaje = respuesta.Respuesta;
+            _errorCarga = null;
+        }
+
+        _cargando = false;
+        StateHasChanged();
+    }
+
+    private void MostrarAvisoEmpresa()
+    {
+        _avisoEmpresa = true;
+    }
+
+    private void AbrirModalSos()
+    {
+        _sosModalAbierto = true;
+    }
+
+    private void CerrarModalSos()
+    {
+        _sosModalAbierto = false;
+    }
+
+    private void ReportarDemoraBase()
+    {
+        _sosModalAbierto = false;
+        _mensajeExito = "Incidencia de demora enviada a la central de despacho satelital de Mundo Ruta. Un operador revisará la telemetría en breve.";
+    }
+
+    private async Task CompartirViajeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", Navegacion.Uri);
+        }
+        catch
+        {
+        }
+
+        _mostrarToast = true;
+        StateHasChanged();
+
+        await Task.Delay(3200);
+        _mostrarToast = false;
+        StateHasChanged();
+    }
+
+    private async Task AlternarChat()
+    {
+        if (!PuedeChatear)
+        {
+            return;
+        }
+
+        _chatAbierto = !_chatAbierto;
+
+        if (_chatAbierto)
+        {
+            await CargarMensajesAsync();
+            IniciarRefrescoChat();
+        }
+        else
+        {
+            DetenerRefrescoChat();
+        }
+    }
+
+    private async Task CargarMensajesAsync()
+    {
+        if (!PuedeChatear)
+        {
+            return;
+        }
+
+        _cargandoMensajes = _mensajes.Count == 0;
+        StateHasChanged();
+
+        HttpResp<List<MensajeDTO>> respuesta = await Viajes.ObtenerMensajesAsync(ViajeId);
+
+        if (respuesta.Error)
+        {
+            if (_mensajes.Count == 0)
+            {
+                _mensajeError = await respuesta.ObtenerMensajeAsync("No se pudieron cargar los mensajes.");
+            }
+
+            _cargandoMensajes = false;
+            StateHasChanged();
+            return;
+        }
+
+        _mensajes = respuesta.Respuesta ?? new List<MensajeDTO>();
+        _cargandoMensajes = false;
+        StateHasChanged();
+
+        await ScrollAlUltimoMensaje();
+    }
+
+    private void IniciarRefrescoChat()
+    {
+        DetenerRefrescoChat();
+        _refrescoChat = new CancellationTokenSource();
+        CancellationToken token = _refrescoChat.Token;
+
+        _ = Task.Run(async () =>
+        {
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(10), token);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+
+                if (token.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                await InvokeAsync(async () =>
+                {
+                    if (_chatAbierto)
+                    {
+                        await CargarMensajesAsync();
+                    }
+                });
+            }
+        }, token);
+    }
+
+    private void DetenerRefrescoChat()
+    {
+        if (_refrescoChat is null)
+        {
+            return;
+        }
+
+        _refrescoChat.Cancel();
+        _refrescoChat.Dispose();
+        _refrescoChat = null;
+    }
+
+    private async Task EnviarMensaje()
+    {
+        if (_enviando || string.IsNullOrWhiteSpace(_nuevoMensaje))
+        {
+            return;
+        }
+
+        _enviando = true;
+        _mensajeError = null;
+        StateHasChanged();
+
+        CrearMensajeDTO dto = new()
+        {
+            IdChat = 0,
+            IdEmisor = Sesion.Id,
+            IdDestinatario = 0,
+            Contenido = _nuevoMensaje.Trim()
+        };
+
+        HttpResp<object> respuesta = await Viajes.EnviarMensajeAsync(ViajeId, dto);
+
+        if (respuesta.Error)
+        {
+            _mensajeError = await respuesta.ObtenerMensajeAsync("No se pudo enviar el mensaje.");
+        }
+        else
+        {
+            _nuevoMensaje = string.Empty;
+            await CargarMensajesAsync();
+        }
+
+        _enviando = false;
+        StateHasChanged();
+    }
+
+    private async Task TeclaChat(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter" && !string.IsNullOrWhiteSpace(_nuevoMensaje))
+        {
+            await EnviarMensaje();
+        }
+    }
+
+    private async Task ScrollAlUltimoMensaje()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("eval",
+                "const el = document.querySelector('.mr-chat__mensajes'); if (el) el.scrollTop = el.scrollHeight;");
+        }
+        catch
+        {
+        }
+    }
+
+    private void CerrarCancelacion()
+    {
+        _cancelacionAbierta = false;
+        _motivoCancelacion = string.Empty;
+        _avisoCancelacion = null;
+    }
+
+    private async Task CancelarViaje()
+    {
+        if (_viaje is null || _cancelando)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_motivoCancelacion))
+        {
+            _avisoCancelacion = "Contanos el motivo de la cancelación.";
+            return;
+        }
+
+        DateTime fechaHoraViaje = _viaje.Fecha.Date + _viaje.Hora;
+
+        if (fechaHoraViaje <= DateTime.Now.AddMinutes(30))
+        {
+            _avisoCancelacion = "No se puede cancelar el viaje con menos de 30 minutos de anticipación.";
+            return;
+        }
+
+        _cancelando = true;
+        _avisoCancelacion = null;
+        _mensajeError = null;
+        StateHasChanged();
+
+        CancelarViajeDTO dto = new() { Motivo = _motivoCancelacion.Trim() };
+        HttpResp<object> respuesta = await Viajes.CancelarViajeAsync(ViajeId, dto);
+
+        if (respuesta.Error)
+        {
+            _avisoCancelacion = await respuesta.ObtenerMensajeAsync("No se pudo cancelar el viaje.");
+        }
+        else
+        {
+            _mensajeExito = "El viaje fue cancelado.";
+            await CargarViajeAsync();
+        }
+
+        _cancelando = false;
+        StateHasChanged();
+    }
+
+    private async Task ConfigurarTiempoRealAsync()
+    {
+        try
+        {
+            await Hub.IniciarConexionAsync();
+            await Hub.UnirseAViaje(ViajeId);
+
+            Hub.EstadoViajeActualizado += AlCambiarEstado;
+            Hub.ViajeAsignado += AlAsignarViaje;
+        }
+        catch
+        {
+        }
+    }
+
+    private void AlCambiarEstado(EstadoViajeActualizadoDTO estado)
+    {
+        if (estado.IdViaje != ViajeId)
+        {
+            return;
+        }
+
+        _ = CargarViajeAsync();
+    }
+
+    private void AlAsignarViaje(ViajeAsignadoDTO viaje)
+    {
+        if (viaje.IdViaje != ViajeId)
+        {
+            return;
+        }
+
+        _ = CargarViajeAsync();
+    }
+
+    private static string TruncarTexto(string? texto, int max)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+        {
+            return string.Empty;
+        }
+
+        return texto.Length <= max ? texto : texto.Substring(0, max) + "…";
+    }
+
+    public void Dispose()
+    {
+        Sesion.CambioSesion -= AlCambiarSesion;
+        DetenerRefrescoChat();
+
+        Hub.EstadoViajeActualizado -= AlCambiarEstado;
+        Hub.ViajeAsignado -= AlAsignarViaje;
+
+        _ = Hub.SalirDeViaje(ViajeId);
+    }
 }
