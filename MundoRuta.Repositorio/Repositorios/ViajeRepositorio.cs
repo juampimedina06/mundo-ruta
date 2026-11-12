@@ -87,7 +87,6 @@ namespace MundoRuta.Repositorio.Repositorios
 
     return await query.FirstOrDefaultAsync(v => v.Id == viajeId);
 }
-        }
 
         public async Task<List<Viaje>> SolicitudesPendientes(int prestadorId) // Obtiene las solicitudes de viaje que todavía están buscando un prestador.
         {
