@@ -1,4 +1,5 @@
 @page "/viajes/{ViajeId:int}"
+@using System.Globalization
 @inject IHttpServices Http
 @inject SesionEstado Sesion
 @inject NavigationManager Navegacion
@@ -6,125 +7,512 @@
 <PageTitle>Detalle del viaje | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="Roles.Usuario">
-    <div class="mr-page">
-        <div class="mr-container">
-            @if (_cargando)
-            {
-                <div class="mr-loading">Cargando detalle del viaje...</div>
-            }
-            else if (_requiereCalificacion && _viajeId > 0)
-            {
-                <PageHeader Titulo="@("Calificar viaje #" + _viajeId)"
-                            Descripcion="Para ver el resumen completo, primero debés calificar el servicio." />
+    <div class="mr-detalle-page">
+        @if (_cargando)
+        {
+            <div class="mr-detalle-container">
+                <div class="mr-loading-card">
+                    <span class="material-symbols-outlined mr-spin">progress_activity</span>
+                    <span>Cargando detalle del viaje...</span>
+                </div>
+            </div>
+        }
+        else if (_requiereCalificacion && _viajeId > 0)
+        {
+            <!-- FONDO DIFUMINADO ACORDE AL PROTOTIPO -->
+            <div class="mr-detalle-container mr-backdrop-preview" aria-hidden="true">
+                <div class="mr-top-banner">
+                    <div class="mr-top-banner-left">
+                        <div class="mr-breadcrumb">
+                            <span>Mis Viajes</span>
+                            <span class="material-symbols-outlined mr-breadcrumb-sep">chevron_right</span>
+                            <span>Viaje #@_viajeId</span>
+                            <span class="material-symbols-outlined mr-breadcrumb-sep">chevron_right</span>
+                            <span class="mr-breadcrumb-active">Resumen del Servicio</span>
+                        </div>
+                        <div class="mr-title-row">
+                            <h1 class="mr-page-title">¡Viaje Finalizado con Éxito!</h1>
+                            <span class="mr-status-pill mr-status-pill--pending">
+                                <span class="mr-status-dot"></span>
+                                <span>Completado / Pendiente de Calificar</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mr-header-actions">
+                        <span class="mr-btn-navy">
+                            <span class="material-symbols-outlined mr-icon-star-filled">star</span>
+                            <span>Calificar Servicio</span>
+                        </span>
+                    </div>
+                </div>
 
-                <div class="mr-card mr-card--center" style="max-width: 420px; margin: 0 auto;">
-                    <div class="mr-card__body">
-                        <div class="mb-3 text-center">
-                            <div class="mb-2" style="font-weight: 600;">¿Cómo fue tu experiencia?</div>
-                            <div class="d-flex justify-content-center gap-2">
-                                @for (int i = 1; i <= 5; i++)
-                                {
-                                    int estrella = i;
-                                    <button type="button"
-                                            class="btn @(estrella <= _puntaje ? "btn-warning" : "btn-outline-secondary")"
-                                            style="font-size: 1.5rem; padding: 0.25rem 0.5rem;"
-                                            @onclick="() => SeleccionarEstrella(estrella)">
-                                        ★
-                                    </button>
-                                }
+                <div class="mr-detalle-grid">
+                    <div class="mr-col-main">
+                        <div class="mr-card-surface">
+                            <div class="mr-card-top-band">
+                                <div class="mr-service-header">
+                                    <div class="mr-service-icon-box">
+                                        <span class="material-symbols-outlined">local_shipping</span>
+                                    </div>
+                                    <div>
+                                        <div class="mr-service-title-row">
+                                            <span class="mr-service-title">Servicio de Traslado #@_viajeId</span>
+                                            <span class="mr-tag-pill">Flete</span>
+                                        </div>
+                                        <p class="mr-service-subtitle">Viaje finalizado • Pendiente de calificación para desbloquear el resumen</p>
+                                    </div>
+                                </div>
+                                <div class="mr-amount-box">
+                                    <span class="mr-label-micro">Monto Total</span>
+                                    <p class="mr-amount-value">•••• <span class="mr-amount-currency">ARS</span></p>
+                                </div>
                             </div>
-                            <div class="mt-2 text-muted" style="font-size: 0.9rem;">@_puntaje de 5</div>
+
+                            <div class="mr-card-body-padded">
+                                <div class="mr-driver-strip">
+                                    <div class="mr-driver-info">
+                                        <div class="mr-avatar-circle">
+                                            <span class="material-symbols-outlined">person</span>
+                                        </div>
+                                        <div>
+                                            <div class="mr-driver-name">Prestador y Chofer Asignados</div>
+                                            <div class="mr-driver-meta">Detalle disponible luego de calificar</div>
+                                        </div>
+                                    </div>
+                                    <div class="mr-vehicle-info">
+                                        <div>
+                                            <span class="mr-label-micro">Unidad Asignada</span>
+                                            <div class="mr-vehicle-name">Vehículo del viaje</div>
+                                        </div>
+                                        <div class="mr-vehicle-icon-box">
+                                            <span class="material-symbols-outlined">local_shipping</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mr-route-section">
+                                    <h3 class="mr-label-micro">Recorrido del Flete</h3>
+                                    <div class="mr-stepper">
+                                        <div class="mr-step">
+                                            <span class="mr-step-marker mr-step-marker--origin">
+                                                <span class="mr-step-inner-dot"></span>
+                                            </span>
+                                            <div>
+                                                <div class="mr-step-title">Origen</div>
+                                                <div class="mr-step-address">Punto de partida registrado en la solicitud</div>
+                                            </div>
+                                        </div>
+                                        <div class="mr-step">
+                                            <span class="mr-step-marker mr-step-marker--dest">
+                                                <span class="material-symbols-outlined">location_on</span>
+                                            </span>
+                                            <div>
+                                                <div class="mr-step-title mr-step-title--dest">Destino Final</div>
+                                                <div class="mr-step-address">Entrega completada en destino</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Comentario (opcional)</label>
-                            <textarea class="form-control" rows="3" @bind="_comentario" placeholder="Contanos tu experiencia..."></textarea>
+                    <div class="mr-col-side">
+                        <div class="mr-card-surface mr-side-card">
+                            <div class="mr-side-header">
+                                <span class="mr-side-title">Comprobante del Servicio</span>
+                                <span class="mr-badge-soft">Viaje #@_viajeId</span>
+                            </div>
+                            <div class="mr-side-rows">
+                                <div class="mr-side-row"><span>Estado:</span><span>FINALIZADO</span></div>
+                                <div class="mr-side-row"><span>Calificación:</span><span>Pendiente</span></div>
+                            </div>
                         </div>
+                        <div class="mr-callout-card">
+                            <div class="mr-callout-eyebrow">
+                                <span class="material-symbols-outlined">workspace_premium</span>
+                                <span>Tu calificación importa</span>
+                            </div>
+                            <h3 class="mr-callout-title">Valorá el servicio</h3>
+                            <p class="mr-callout-desc">
+                                Las calificaciones construyen reputación verificada para los transportistas y aseguran tarifas justas y seguras en toda la comunidad Mundo Ruta.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                        @if (!string.IsNullOrWhiteSpace(_errorCalificacion))
-                        {
-                            <div class="mr-alert mr-alert--error mb-3">@_errorCalificacion</div>
-                        }
+            <!-- MODAL DE CALIFICACIÓN OBLIGATORIA (ADELANTE) -->
+            <div class="mr-rating-overlay" role="dialog" aria-modal="true" aria-labelledby="ratingModalTitle">
+                <div class="mr-rating-modal">
+                    <div class="mr-modal-header">
+                        <div class="mr-modal-heading">
+                            <h2 id="ratingModalTitle" class="mr-modal-title">Calificar el servicio</h2>
+                            <p class="mr-modal-subtitle">
+                                ¿Cómo estuvo tu experiencia en el viaje #@_viajeId? Para ver el resumen completo, primero calificá el servicio.
+                            </p>
+                        </div>
+                        <a href="/usuario/viajes" class="mr-modal-close" aria-label="Volver a mis viajes" title="Volver a mis viajes">
+                            <span class="material-symbols-outlined">close</span>
+                        </a>
+                    </div>
 
-                        <button class="btn btn-primary w-100" disabled="@_enviandoCalificacion" @onclick="EnviarCalificacion">
+                    <div class="mr-stars-section">
+                        <div class="mr-stars-row" role="group" aria-label="Calificación con estrellas">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                int estrella = i;
+                                bool seleccionada = estrella <= _puntaje;
+                                <button type="button"
+                                        class="mr-star-btn @(seleccionada ? "mr-star-btn--active" : "")"
+                                        aria-label="@($"{estrella} estrella{(estrella == 1 ? "" : "s")}")"
+                                        @onclick="() => SeleccionarEstrella(estrella)">
+                                    <span class="material-symbols-outlined mr-star-icon">star</span>
+                                </button>
+                            }
+                        </div>
+                        <div class="mr-rating-feedback">@TextoFeedbackPuntaje</div>
+                    </div>
+
+                    <div class="mr-comment-section">
+                        <label class="mr-sr-only" for="reviewComment">Comentario (opcional)</label>
+                        <textarea id="reviewComment"
+                                  class="mr-comment-textarea"
+                                  rows="4"
+                                  maxlength="500"
+                                  @bind="_comentario"
+                                  placeholder="Comparte detalles sobre tu experiencia con el flete (opcional)..."></textarea>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(_errorCalificacion))
+                    {
+                        <div class="mr-modal-error" role="alert">
+                            <span class="material-symbols-outlined">error</span>
+                            <span>@_errorCalificacion</span>
+                        </div>
+                    }
+
+                    <div class="mr-modal-footer">
+                        <a href="/usuario/viajes" class="mr-modal-cancel">Cancelar</a>
+                        <button type="button"
+                                class="mr-modal-submit"
+                                disabled="@_enviandoCalificacion"
+                                @onclick="EnviarCalificacion">
                             @if (_enviandoCalificacion)
                             {
-                                <span>Enviando...</span>
+                                <span class="material-symbols-outlined mr-spin">sync</span>
+                                <span>Guardando...</span>
                             }
                             else
                             {
-                                <span>Enviar</span>
+                                <span class="material-symbols-outlined">send</span>
+                                <span>Publicar</span>
                             }
                         </button>
                     </div>
                 </div>
-            }
-            else if (!string.IsNullOrWhiteSpace(_error))
-            {
-                <div class="mr-alert mr-alert--error">@_error</div>
-                <a class="btn btn-outline-primary mt-3" href="/usuario/viajes">Volver a mis viajes</a>
-            }
-            else if (_detalle is not null)
-            {
-                <PageHeader Titulo="@("Viaje #" + _detalle.Id)"
-                            Descripcion="Resumen completo del viaje." />
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <div class="mr-detalle-container">
+                <div class="mr-error-card" role="alert">
+                    <span class="material-symbols-outlined">error</span>
+                    <span>@_error</span>
+                </div>
+                <div class="mr-mt-3">
+                    <a class="mr-btn-secondary" href="/usuario/viajes">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                        <span>Volver a mis viajes</span>
+                    </a>
+                </div>
+            </div>
+        }
+        else if (_detalle is not null)
+        {
+            <div class="mr-detalle-container">
+                <!-- TOP ACTION BREADCRUMBS & BANNER -->
+                <div class="mr-top-banner">
+                    <div class="mr-top-banner-left">
+                        <nav class="mr-breadcrumb" aria-label="Breadcrumb">
+                            <a href="/usuario/viajes" class="mr-breadcrumb-link">Mis Viajes</a>
+                            <span class="material-symbols-outlined mr-breadcrumb-sep">chevron_right</span>
+                            <span>Viaje #@_detalle.Id</span>
+                            <span class="material-symbols-outlined mr-breadcrumb-sep">chevron_right</span>
+                            <span class="mr-breadcrumb-active">Resumen del Servicio</span>
+                        </nav>
 
-                <div class="mr-card mb-3">
-                    <div class="mr-card__header">
-                        <h2 class="mr-card__title mb-0">Recorrido</h2>
+                        <div class="mr-title-row">
+                            <h1 class="mr-page-title">@TituloPantallaDetalle</h1>
+                            <span class="mr-status-pill @(EsViajeFinalizado ? "mr-status-pill--success" : "mr-status-pill--neutral")">
+                                <span class="mr-status-dot"></span>
+                                <span>@TextoEstadoBanner</span>
+                            </span>
+                        </div>
                     </div>
-                    <div class="mr-card__body">
-                        <div class="mb-2"><strong>Origen:</strong> @_detalle.Origen</div>
-                        <div class="mb-2"><strong>Destino:</strong> @_detalle.Destino</div>
-                        <div class="mb-0"><strong>Tipo de solicitud:</strong> @_detalle.TipoSolicitud</div>
+
+                    <div class="mr-header-actions">
+                        <a class="mr-btn-surface" href="/usuario/viajes">
+                            <span class="material-symbols-outlined">arrow_back</span>
+                            <span>Volver a Mis Viajes</span>
+                        </a>
                     </div>
                 </div>
 
-                <div class="mr-card mb-3">
-                    <div class="mr-card__header">
-                        <h2 class="mr-card__title mb-0">Chofer y vehículo</h2>
-                    </div>
-                    <div class="mr-card__body">
-                        <div class="mb-2"><strong>Prestador:</strong> @(_detalle.NombrePrestador ?? "-")</div>
-                        <div class="mb-2"><strong>Chofer:</strong> @(_detalle.NombreChofer ?? "-")</div>
-                        <div class="mb-0"><strong>Vehículo:</strong> @FormatVehiculo()</div>
-                    </div>
-                </div>
+                <!-- MAIN CONTENT 8:4 DASHBOARD -->
+                <div class="mr-detalle-grid">
+                    <!-- LEFT COLUMN: PRIMARY TRIP CARD & LOGISTICS INFO -->
+                    <div class="mr-col-main">
+                        <section class="mr-card-surface">
+                            <!-- TOP CARD HEADER -->
+                            <div class="mr-card-top-band">
+                                <div class="mr-service-header">
+                                    <div class="mr-service-icon-box">
+                                        <span class="material-symbols-outlined">local_shipping</span>
+                                    </div>
+                                    <div>
+                                        <div class="mr-service-title-row">
+                                            <span class="mr-service-title">Servicio de Traslado #@_detalle.Id</span>
+                                            @if (!string.IsNullOrWhiteSpace(_detalle.TipoSolicitud))
+                                            {
+                                                <span class="mr-tag-pill">@_detalle.TipoSolicitud</span>
+                                            }
+                                        </div>
+                                        <p class="mr-service-subtitle">
+                                            Reservado el @_detalle.FechaHoraReserva.ToString("dd/MM/yyyy HH:mm") hs • Servicio del @_detalle.Fecha.ToString("dd/MM/yyyy") a las @_detalle.Hora.ToString(@"hh\:mm") hs
+                                        </p>
+                                    </div>
+                                </div>
 
-                <div class="mr-card mb-3">
-                    <div class="mr-card__header">
-                        <h2 class="mr-card__title mb-0">Fechas y estado</h2>
-                    </div>
-                    <div class="mr-card__body">
-                        <div class="mb-2"><strong>Fecha:</strong> @_detalle.Fecha.ToString("dd/MM/yyyy")</div>
-                        <div class="mb-2"><strong>Hora:</strong> @_detalle.Hora.ToString(@"hh\:mm")</div>
-                        <div class="mb-2"><strong>Reservado:</strong> @_detalle.FechaHoraReserva.ToString("dd/MM/yyyy HH:mm")</div>
-                        <div class="mb-2"><strong>Estado:</strong> @_detalle.Estado</div>
-                        <div class="mb-0"><strong>Estado de pago:</strong> @_detalle.EstadoPago</div>
-                    </div>
-                </div>
+                                <div class="mr-amount-box">
+                                    <span class="mr-label-micro">Monto Total</span>
+                                    <p class="mr-amount-value">
+                                        @FormatearMonto(_detalle.Monto) <span class="mr-amount-currency">ARS</span>
+                                    </p>
+                                    <span class="mr-paid-badge">
+                                        <span class="material-symbols-outlined">verified</span>
+                                        <span>@TextoPagoDetalle</span>
+                                    </span>
+                                </div>
+                            </div>
 
-                <div class="mr-card mb-3">
-                    <div class="mr-card__header">
-                        <h2 class="mr-card__title mb-0">Montos</h2>
-                    </div>
-                    <div class="mr-card__body">
-                        <div class="mb-2"><strong>Monto estimado:</strong> $@_detalle.MontoEstimado.ToString("N2")</div>
-                        <div class="mb-0"><strong>Monto:</strong> $@_detalle.Monto.ToString("N2")</div>
-                    </div>
-                </div>
+                            <div class="mr-card-body-padded">
+                                <!-- CARRIER & DRIVER ROW -->
+                                <div class="mr-driver-strip">
+                                    <div class="mr-driver-info">
+                                        <div class="mr-avatar-circle">
+                                            <span>@ObtenerIniciales(NombreChoferOPrestador)</span>
+                                        </div>
+                                        <div>
+                                            <div class="mr-driver-name-row">
+                                                <span class="mr-driver-name">@(!string.IsNullOrWhiteSpace(_detalle.NombreChofer) ? _detalle.NombreChofer : "Chofer asignado")</span>
+                                                <span class="material-symbols-outlined mr-verified-icon">verified</span>
+                                            </div>
+                                            <p class="mr-driver-meta">
+                                                Prestador: @(!string.IsNullOrWhiteSpace(_detalle.NombrePrestador) ? _detalle.NombrePrestador : "-")
+                                            </p>
+                                        </div>
+                                    </div>
 
-                <div class="d-flex gap-2">
-                    <a class="btn btn-outline-primary" href="/usuario/viajes">Volver a mis viajes</a>
+                                    <div class="mr-vehicle-info">
+                                        <div>
+                                            <span class="mr-label-micro">Unidad Asignada</span>
+                                            <p class="mr-vehicle-name">@(!string.IsNullOrWhiteSpace(_detalle.Marca) ? _detalle.Marca : FormatVehiculo())</p>
+                                            <div class="mr-vehicle-meta">
+                                                @if (!string.IsNullOrWhiteSpace(_detalle.Patente))
+                                                {
+                                                    <span class="mr-plate-badge">@_detalle.Patente</span>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(_detalle.TipoSolicitud))
+                                                {
+                                                    <span class="mr-vehicle-type">• @_detalle.TipoSolicitud</span>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="mr-vehicle-icon-box">
+                                            <span class="material-symbols-outlined">local_shipping</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- DOTTED ROUTE STEPPER -->
+                                <div class="mr-route-section">
+                                    <h3 class="mr-label-micro">Recorrido del Flete</h3>
+                                    <div class="mr-stepper">
+                                        <div class="mr-step">
+                                            <span class="mr-step-marker mr-step-marker--origin">
+                                                <span class="mr-step-inner-dot"></span>
+                                            </span>
+                                            <div>
+                                                <div class="mr-step-header">
+                                                    <span class="mr-step-title">Origen</span>
+                                                    <span class="mr-step-time">@_detalle.Hora.ToString(@"hh\:mm") hs</span>
+                                                </div>
+                                                <p class="mr-step-address">@_detalle.Origen</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="mr-step">
+                                            <span class="mr-step-marker mr-step-marker--dest">
+                                                <span class="material-symbols-outlined">location_on</span>
+                                            </span>
+                                            <div>
+                                                <div class="mr-step-header">
+                                                    <span class="mr-step-title mr-step-title--dest">Destino Final</span>
+                                                    <span class="mr-step-time">@_detalle.Fecha.ToString("dd/MM/yyyy")</span>
+                                                </div>
+                                                <p class="mr-step-address">@_detalle.Destino</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- SPECIFICATIONS GRID -->
+                                <div class="mr-specs-grid">
+                                    <div class="mr-spec-tile">
+                                        <span class="mr-label-micro">Fecha</span>
+                                        <p class="mr-spec-value">@_detalle.Fecha.ToString("dd/MM/yyyy")</p>
+                                    </div>
+                                    <div class="mr-spec-tile">
+                                        <span class="mr-label-micro">Hora</span>
+                                        <p class="mr-spec-value">@_detalle.Hora.ToString(@"hh\:mm") hs</p>
+                                    </div>
+                                    <div class="mr-spec-tile">
+                                        <span class="mr-label-micro">Estado</span>
+                                        <p class="mr-spec-value">@_detalle.Estado</p>
+                                    </div>
+                                    <div class="mr-spec-tile">
+                                        <span class="mr-label-micro">Estado de Pago</span>
+                                        <p class="mr-spec-value">@_detalle.EstadoPago</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- SECONDARY CARD: DETALLE DE CARGA Y RESERVA -->
+                        <section class="mr-card-surface">
+                            <div class="mr-secondary-header">
+                                <div class="mr-secondary-title-wrap">
+                                    <span class="material-symbols-outlined">inventory_2</span>
+                                    <span class="mr-secondary-title">Detalle de Carga y Reserva</span>
+                                </div>
+                                <span class="mr-secondary-badge">
+                                    @(_detalle.EquipajeCarga ? "Con equipaje / carga" : "Sin equipaje adicional")
+                                </span>
+                            </div>
+                            <div class="mr-secondary-body">
+                                <div class="mr-info-grid">
+                                    <div>
+                                        <span class="mr-label-micro">Pasajero Solicitante</span>
+                                        <p class="mr-info-text">@(!string.IsNullOrWhiteSpace(_detalle.NombrePasajero) ? _detalle.NombrePasajero : "-")</p>
+                                    </div>
+                                    <div>
+                                        <span class="mr-label-micro">Fecha y Hora de Reserva</span>
+                                        <p class="mr-info-text">@_detalle.FechaHoraReserva.ToString("dd/MM/yyyy HH:mm") hs</p>
+                                    </div>
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(_detalle.DetalleCarga))
+                                {
+                                    <div class="mr-carga-box">
+                                        <span class="mr-label-micro">Descripción de la Carga</span>
+                                        <p class="mr-info-text">@_detalle.DetalleCarga</p>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(_detalle.MotivoCancelacion))
+                                {
+                                    <div class="mr-cancel-box">
+                                        <span class="mr-label-micro">Motivo de Cancelación</span>
+                                        <p class="mr-info-text">@_detalle.MotivoCancelacion</p>
+                                    </div>
+                                }
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- RIGHT COLUMN: RECEIPT SUMMARY & RATING CALLOUT -->
+                    <div class="mr-col-side">
+                        <section class="mr-card-surface mr-side-card">
+                            <div class="mr-side-header">
+                                <span class="mr-side-title">Resumen de Montos</span>
+                                <span class="mr-badge-soft">Viaje #@_detalle.Id</span>
+                            </div>
+
+                            <div class="mr-side-rows">
+                                <div class="mr-side-row">
+                                    <span>Monto estimado:</span>
+                                    <span class="mr-side-val mr-numeric">@FormatearMonto(_detalle.MontoEstimado) ARS</span>
+                                </div>
+                                <div class="mr-side-row">
+                                    <span>Monto final:</span>
+                                    <span class="mr-side-val mr-numeric">@FormatearMonto(_detalle.Monto) ARS</span>
+                                </div>
+                                <div class="mr-side-row">
+                                    <span>Método de pago:</span>
+                                    <span class="mr-side-val">@(!string.IsNullOrWhiteSpace(_detalle.MetodoDePago) ? _detalle.MetodoDePago : "-")</span>
+                                </div>
+                                <div class="mr-side-row">
+                                    <span>Estado de pago:</span>
+                                    <span class="mr-side-val mr-side-val--green">@_detalle.EstadoPago</span>
+                                </div>
+                                <div class="mr-side-row">
+                                    <span>Vehículo:</span>
+                                    <span class="mr-side-val">@FormatVehiculo()</span>
+                                </div>
+                            </div>
+
+                            <a href="/usuario/viajes" class="mr-btn-side-action">
+                                <span class="material-symbols-outlined">list_alt</span>
+                                <span>Volver a Mis Viajes</span>
+                            </a>
+                        </section>
+
+                        <section class="mr-callout-card">
+                            <div class="mr-callout-glow" aria-hidden="true"></div>
+                            <div class="mr-callout-eyebrow">
+                                <span class="material-symbols-outlined">workspace_premium</span>
+                                <span>@(_detalle.CalificadoPorPasajero ? "Calificación registrada" : "Tu calificación importa")</span>
+                            </div>
+                            <h3 class="mr-callout-title">
+                                @(_detalle.CalificadoPorPasajero
+                                    ? $"Gracias por valorar a {NombreChoferOPrestador}"
+                                    : $"Servicio de {NombreChoferOPrestador}")
+                            </h3>
+                            <p class="mr-callout-desc">
+                                Las calificaciones construyen reputación verificada para los transportistas y aseguran tarifas justas y seguras en toda la comunidad Mundo Ruta.
+                            </p>
+                            @if (_detalle.CalificadoPorPasajero)
+                            {
+                                <div class="mr-rated-pill">
+                                    <span class="material-symbols-outlined mr-icon-star-filled">check_circle</span>
+                                    <span>Servicio Calificado</span>
+                                </div>
+                            }
+                        </section>
+                    </div>
                 </div>
-            }
-        </div>
+            </div>
+        }
+
+        @if (_mostrarToastCalificado)
+        {
+            <div class="mr-toast" role="status" aria-live="polite">
+                <span class="material-symbols-outlined mr-toast-icon">check_circle</span>
+                <div>
+                    <p class="mr-toast-title">¡Calificación enviada!</p>
+                    <p class="mr-toast-subtitle">Muchas gracias por compartir tu experiencia.</p>
+                </div>
+            </div>
+        }
     </div>
 </RoleGuard>
 
 @code {
     [Parameter]
     public int ViajeId { get; set; }
+
+    private static readonly CultureInfo CulturaArgentina = new CultureInfo("es-AR");
 
     private int _viajeId;
     private ViajeDetalladoDTO? _detalle;
@@ -135,6 +523,69 @@
     private string _comentario = string.Empty;
     private bool _enviandoCalificacion;
     private string? _errorCalificacion;
+    private bool _mostrarToastCalificado;
+
+    private bool EsViajeFinalizado => _detalle is not null
+        && string.Equals(_detalle.Estado, "FINALIZADO", StringComparison.OrdinalIgnoreCase);
+
+    private string TituloPantallaDetalle => EsViajeFinalizado
+        ? "¡Viaje Finalizado con Éxito!"
+        : $"Detalle del Viaje #{_detalle?.Id}";
+
+    private string TextoEstadoBanner => _detalle is null
+        ? string.Empty
+        : EsViajeFinalizado
+            ? (_detalle.CalificadoPorPasajero ? "Completado • Calificado" : "Completado")
+            : _detalle.Estado;
+
+    private string TextoPagoDetalle
+    {
+        get
+        {
+            if (_detalle is null)
+            {
+                return string.Empty;
+            }
+
+            string estadoPago = string.IsNullOrWhiteSpace(_detalle.EstadoPago) ? "Registrado" : _detalle.EstadoPago;
+            return string.IsNullOrWhiteSpace(_detalle.MetodoDePago)
+                ? estadoPago
+                : $"{estadoPago} vía {_detalle.MetodoDePago.ToUpperInvariant()}";
+        }
+    }
+
+    private string NombreChoferOPrestador
+    {
+        get
+        {
+            if (_detalle is null)
+            {
+                return "el transportista";
+            }
+
+            if (!string.IsNullOrWhiteSpace(_detalle.NombreChofer))
+            {
+                return _detalle.NombreChofer;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_detalle.NombrePrestador))
+            {
+                return _detalle.NombrePrestador;
+            }
+
+            return "el transportista";
+        }
+    }
+
+    private string TextoFeedbackPuntaje => _puntaje switch
+    {
+        1 => "Muy insatisfecho. Hubo inconvenientes graves.",
+        2 => "Regular. El servicio puede mejorar bastante.",
+        3 => "Aceptable. El traslado se completó.",
+        4 => "¡Muy buen servicio! Conforme y profesional.",
+        5 => "¡Excelente servicio!",
+        _ => "Seleccioná una calificación entre 1 y 5 estrellas"
+    };
 
     protected override async Task OnParametersSetAsync()
     {
@@ -240,6 +691,34 @@
         // Al calificar correctamente, recargamos el detalle para mostrarlo completo
         await CargarDetalleAsync();
         _enviandoCalificacion = false;
+        _mostrarToastCalificado = true;
+        StateHasChanged();
+
+        await Task.Delay(3200);
+        _mostrarToastCalificado = false;
+        StateHasChanged();
+    }
+
+    private static string FormatearMonto(decimal monto)
+    {
+        string formato = decimal.Truncate(monto) == monto ? "N0" : "N2";
+        return "$" + monto.ToString(formato, CulturaArgentina);
+    }
+
+    private static string ObtenerIniciales(string nombre)
+    {
+        if (string.IsNullOrWhiteSpace(nombre))
+        {
+            return "MR";
+        }
+
+        string[] partes = nombre.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (partes.Length == 1)
+        {
+            return partes[0].Substring(0, Math.Min(2, partes[0].Length)).ToUpperInvariant();
+        }
+
+        return (partes[0][0].ToString() + partes[1][0].ToString()).ToUpperInvariant();
     }
 
     private string FormatVehiculo()
