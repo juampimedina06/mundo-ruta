@@ -1721,3 +1721,112 @@
         align-items: stretch;
     }
 }
+
+
+/* ==========================================================================
+   ESTILOS DE CALIFICACIÓN OBLIGATORIA (UNIFICACIÓN DETALLE / SEGUIMIENTO)
+   ========================================================================== */
+
+.sv-rating-container-card {
+    max-width: 520px;
+    margin: 2.5rem auto;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    background: #ffffff;
+    border: 1px solid #dce4ed;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(10, 34, 64, 0.08);
+}
+
+.sv-rating-icon-box {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: #fef3c7;
+    color: #d97706;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+}
+
+.sv-rating-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #0a2240;
+    margin-bottom: 0.5rem;
+}
+
+.sv-rating-desc {
+    font-size: 0.92rem;
+    color: #5a6e85;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+}
+
+.sv-rating-stars-row {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.sv-star-btn {
+    background: none;
+    border: none;
+    font-size: 2.4rem;
+    color: #d1d5db;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0.25rem 0.5rem;
+    transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.sv-star-btn:hover,
+.sv-star-btn--active {
+    color: #f59e0b;
+    transform: scale(1.15);
+}
+
+.sv-rating-score-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4b5563;
+    min-height: 1.4rem;
+}
+
+.sv-form-group {
+    text-align: left;
+}
+
+.sv-form-label {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.4rem;
+}
+
+.sv-form-textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.92rem;
+    color: #111827;
+    resize: vertical;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-sizing: border-box;
+}
+
+.sv-form-textarea:focus {
+    outline: none;
+    border-color: #006c49;
+    box-shadow: 0 0 0 3px rgba(0, 108, 73, 0.15);
+}
+
+.sv-rating-actions {
+    display: flex;
+    justify-content: center;
+}
