@@ -1,70 +1,189 @@
-.mr-progreso {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .5rem;
-    list-style: none;
+/* ==========================================================================
+   ViajeProgreso — Cronograma Vertical de Hitos del Viaje
+   Basado en Pantalla Seguimiento de Viaje (code.html / screen.png)
+   ========================================================================== */
+
+.vp-timeline {
+    position: relative;
+    padding-left: 1.5rem;
     margin: 0;
-    padding: 0;
-}
-
-.mr-progreso__paso {
+    list-style: none;
     display: flex;
-    align-items: center;
-    gap: .5rem;
-    flex: 1 1 150px;
-    min-width: 140px;
-    padding: .65rem .75rem;
-    border: 1px solid var(--mr-borde);
-    border-radius: var(--mr-radio);
-    background-color: #fff;
-    color: var(--mr-texto-suave);
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
-.mr-progreso__paso--completado {
-    border-color: var(--mr-exito);
-    background-color: #ECFDF3;
-    color: var(--mr-exito);
+.vp-timeline__line {
+    position: absolute;
+    left: 0.875rem;
+    top: 0.75rem;
+    bottom: 0.75rem;
+    width: 2px;
+    background-color: #dae2fd;
 }
 
-.mr-progreso__paso--actual {
-    border-color: var(--mr-naranja);
-    background-color: #FFF3EE;
-    color: var(--mr-azul-marino);
-    box-shadow: var(--mr-sombra);
-    font-weight: 600;
+.vp-item {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
 }
 
-.mr-progreso__punto {
-    display: inline-flex;
+.vp-item--pending {
+    opacity: 0.7;
+}
+
+/* Marcador circular de cada etapa */
+.vp-marker {
+    position: absolute;
+    left: -1.5rem;
+    top: 0;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    width: 1.6rem;
-    height: 1.6rem;
-    flex: 0 0 auto;
-    border-radius: 50%;
-    background-color: var(--mr-azul-marino-100);
-    color: var(--mr-azul-marino);
-    font-size: .8rem;
-    font-weight: 700;
+    box-shadow: 0 0 0 4px #ffffff, 0 1px 2px rgba(0, 0, 0, 0.06);
+    flex-shrink: 0;
+    z-index: 1;
 }
 
-.mr-progreso__paso--completado .mr-progreso__punto {
-    background-color: var(--mr-exito);
-    color: #fff;
+.vp-marker--done {
+    background-color: #9d4300;
+    color: #ffffff;
 }
 
-.mr-progreso__paso--actual .mr-progreso__punto {
-    background-color: var(--mr-naranja);
-    color: #fff;
+.vp-marker--active {
+    background-color: #fd761a;
+    color: #5c2400;
 }
 
-.mr-progreso__etiqueta {
-    font-size: .85rem;
-    line-height: 1.3;
+.vp-marker--pending {
+    background-color: #dae2fd;
+    color: #444651;
 }
 
-@media (max-width: 576px) {
-    .mr-progreso__paso {
-        flex: 1 1 100%;
+.vp-marker__icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.vp-marker__icon--pulse {
+    animation: vp-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes vp-pulse {
+    0%, 100% {
+        opacity: 1;
     }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Cuerpo de cada hito */
+.vp-body {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding-left: 0.5rem;
+}
+
+.vp-body--active {
+    background-color: #f2f3ff;
+    padding: 0.75rem 0.9rem;
+    border-radius: 0.75rem;
+    margin-left: 0.25rem;
+}
+
+.vp-body__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.vp-body__title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.vp-title {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #00236f;
+    line-height: 1.35;
+}
+
+.vp-title--active {
+    font-weight: 700;
+    color: #00236f;
+}
+
+.vp-title--pending {
+    color: #131b2e;
+}
+
+.vp-badge-active {
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    background-color: rgba(157, 67, 0, 0.15);
+    color: #9d4300;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.vp-time {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    background-color: #eaedff;
+    color: #444651;
+    font-variant-numeric: tabular-nums;
+}
+
+.vp-time--active {
+    background-color: transparent;
+    padding: 0;
+    color: #00236f;
+    font-weight: 600;
+    font-size: 11px;
+}
+
+.vp-desc {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 12px;
+    line-height: 18px;
+    color: #444651;
+    margin: 0.2rem 0 0;
+}
+
+.vp-desc--active {
+    margin-top: 0.35rem;
+}
+
+.vp-empty {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background-color: #f2f3ff;
+    color: #444651;
+    font-size: 0.875rem;
+}
+
+.vp-empty__icon {
+    font-size: 18px;
+    color: #1e3a8a;
 }

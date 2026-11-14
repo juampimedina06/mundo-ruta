@@ -1,26 +1,63 @@
-@* Secuencia de estados del viaje: buscando → asignado → carga subida → en tránsito → llegada a destino. *@
+@* Cronograma vertical de hitos del viaje: buscando → asignado → carga subida → en tránsito → llegada a destino. *@
+@using MundoRuta.Server.Client.Infraestructura
 
 @if (EtapaActual is null)
 {
-    <p class="mr-muted">No se pudo interpretar el estado actual del viaje.</p>
+    <div class="vp-empty">
+        <span class="material-symbols-outlined vp-empty__icon">info</span>
+        <span>Estado actual del viaje: <strong>@EstadosViajeUI.Etiqueta(Estado)</strong></span>
+    </div>
 }
 else
 {
-    <ol class="mr-progreso">
+    <ol class="vp-timeline" aria-label="Itinerario y estados de ruta">
+        <div class="vp-timeline__line" aria-hidden="true"></div>
+
         @foreach (EtapaViaje etapa in EstadosViajeUI.Secuencia)
         {
-            <li class="@ClasePaso(etapa)">
-                <span class="mr-progreso__punto" aria-hidden="true">
-                    @if (EstaCompletada(etapa))
+            bool completada = EstaCompletada(etapa);
+            bool actual = EsActual(etapa);
+            bool pendiente = !completada && !actual;
+
+            <li class="vp-item @(pendiente ? "vp-item--pending" : string.Empty)">
+                <div class="vp-marker @(completada ? "vp-marker--done" : actual ? "vp-marker--active" : "vp-marker--pending")" aria-hidden="true">
+                    @if (completada)
                     {
-                        <text>✓</text>
+                        <span class="material-symbols-outlined vp-marker__icon">check</span>
+                    }
+                    else if (actual)
+                    {
+                        <span class="material-symbols-outlined vp-marker__icon vp-marker__icon--pulse">@IconoEtapa(etapa)</span>
                     }
                     else
                     {
-                        <text>@((int)etapa + 1)</text>
+                        <span class="material-symbols-outlined vp-marker__icon">hourglass_empty</span>
                     }
-                </span>
-                <span class="mr-progreso__etiqueta">@EstadosViajeUI.Etiqueta(etapa)</span>
+                </div>
+
+                @if (actual)
+                {
+                    <div class="vp-body vp-body--active">
+                        <div class="vp-body__top">
+                            <div class="vp-body__title-group">
+                                <span class="vp-title vp-title--active">@TituloEtapa(etapa)</span>
+                                <span class="vp-badge-active">En Curso</span>
+                            </div>
+                            <span class="vp-time vp-time--active">@HoraEtapa(etapa, true)</span>
+                        </div>
+                        <p class="vp-desc vp-desc--active">@DescripcionEtapa(etapa)</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="vp-body">
+                        <div class="vp-body__title-group">
+                            <span class="vp-title @(pendiente ? "vp-title--pending" : string.Empty)">@TituloEtapa(etapa)</span>
+                            <span class="vp-time">@HoraEtapa(etapa, false)</span>
+                        </div>
+                        <p class="vp-desc">@DescripcionEtapa(etapa)</p>
+                    </div>
+                }
             </li>
         }
     </ol>
@@ -30,9 +67,26 @@ else
     [Parameter, EditorRequired]
     public string? Estado { get; set; }
 
+    [Parameter]
+    public string? Origen { get; set; }
+
+    [Parameter]
+    public string? Destino { get; set; }
+
+    [Parameter]
+    public string? NombreChofer { get; set; }
+
+    [Parameter]
+    public string? MarcaVehiculo { get; set; }
+
+    [Parameter]
+    public string? DetalleCarga { get; set; }
+
+    [Parameter]
+    public TimeSpan? HoraBase { get; set; }
+
     private EtapaViaje? EtapaActual => EstadosViajeUI.ObtenerEtapa(Estado);
 
-    // Un paso está completado cuando su etapa ya quedó atrás en la secuencia.
     private bool EstaCompletada(EtapaViaje etapa)
     {
         return EtapaActual.HasValue && etapa < EtapaActual.Value;
@@ -43,15 +97,68 @@ else
         return EtapaActual.HasValue && etapa == EtapaActual.Value;
     }
 
-    private string ClasePaso(EtapaViaje etapa)
+    private static string IconoEtapa(EtapaViaje etapa)
     {
-        if (EsActual(etapa))
+        return etapa switch
         {
-            return "mr-progreso__paso mr-progreso__paso--actual";
+            EtapaViaje.Buscando => "person_search",
+            EtapaViaje.Asignado => "badge",
+            EtapaViaje.CargaSubida => "inventory_2",
+            EtapaViaje.EnTransito => "local_shipping",
+            EtapaViaje.LlegadaDestino => "where_to_vote",
+            _ => "local_shipping"
+        };
+    }
+
+    private static string TituloEtapa(EtapaViaje etapa)
+    {
+        return etapa switch
+        {
+            EtapaViaje.Buscando => "Solicitud publicada · Buscando conductor",
+            EtapaViaje.Asignado => "Chofer asignado y confirmado",
+            EtapaViaje.CargaSubida => "Carga subida y validada en origen",
+            EtapaViaje.EnTransito => "En tránsito hacia destino",
+            EtapaViaje.LlegadaDestino => "Llegada a destino y descarga",
+            _ => EstadosViajeUI.Etiqueta(etapa)
+        };
+    }
+
+    private string DescripcionEtapa(EtapaViaje etapa)
+    {
+        string chofer = !string.IsNullOrWhiteSpace(NombreChofer) ? NombreChofer : "El conductor asignado";
+        string unidad = !string.IsNullOrWhiteSpace(MarcaVehiculo) ? $"con unidad {MarcaVehiculo}" : "con la unidad asignada";
+        string origen = !string.IsNullOrWhiteSpace(Origen) ? Origen : "Punto de origen";
+        string destino = !string.IsNullOrWhiteSpace(Destino) ? Destino : "Punto de destino";
+        string carga = !string.IsNullOrWhiteSpace(DetalleCarga) ? DetalleCarga : "Verificación de bultos y precintado de seguridad";
+
+        return etapa switch
+        {
+            EtapaViaje.Buscando => $"Viaje desde {origen} hacia {destino}. Recibiendo postulaciones de operadores.",
+            EtapaViaje.Asignado => $"{chofer} aceptó el servicio y partió al punto de partida {unidad}.",
+            EtapaViaje.CargaSubida => $"{origen}. {carga}.",
+            EtapaViaje.EnTransito => $"En ruta desde {origen} rumbo a {destino}. Monitoreo satelital activo.",
+            EtapaViaje.LlegadaDestino => $"{destino}. Descarga asistida y validación de entrega en destino.",
+            _ => string.Empty
+        };
+    }
+
+    private string HoraEtapa(EtapaViaje etapa, bool esActual)
+    {
+        TimeSpan baseHora = HoraBase ?? new TimeSpan(17, 30, 0);
+        int minutosOffset = (int)etapa * 20;
+        TimeSpan calculada = baseHora.Add(TimeSpan.FromMinutes(minutosOffset));
+        string formato = $"{(int)calculada.TotalHours % 24:D2}:{calculada.Minutes:D2} hs";
+
+        if (esActual)
+        {
+            return $"{formato} (Actual)";
         }
 
-        return EstaCompletada(etapa)
-            ? "mr-progreso__paso mr-progreso__paso--completado"
-            : "mr-progreso__paso";
+        if (EstaCompletada(etapa))
+        {
+            return formato;
+        }
+
+        return $"{formato} (Est.)";
     }
 }
