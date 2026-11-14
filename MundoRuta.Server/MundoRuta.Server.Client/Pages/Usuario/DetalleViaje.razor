@@ -1,4 +1,7 @@
 @page "/usuario/viajes/{ViajeId:int}"
+<<<<<<< HEAD
+@inject NavigationManager Navegacion
+=======
 @using MundoRuta.Shared.DTO
 @using MundoRuta.Shared.DTO.Realtime
 @using System.Globalization
@@ -598,11 +601,26 @@
         <span>Enlace de rastreo satelital copiado al portapapeles</span>
     </div>
 </RoleGuard>
+>>>>>>> 3f116bccc6cdf1a7aa49e6ffe2f109a13a5c4ef1
 
 @code {
     [Parameter]
     public int ViajeId { get; set; }
 
+<<<<<<< HEAD
+    protected override void OnInitialized()
+    {
+        string query = new Uri(Navegacion.Uri).Query;
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            Navegacion.NavigateTo($"/viajes/{ViajeId}", replace: true);
+        }
+        else
+        {
+            Navegacion.NavigateTo($"/viajes/{ViajeId}{query}", replace: true);
+        }
+    }
+=======
     private ViajeDetalladoDTO? _viaje;
     private List<MensajeDTO> _mensajes = new();
 
@@ -1115,4 +1133,5 @@
 
         _ = Hub.SalirDeViaje(ViajeId);
     }
+>>>>>>> 3f116bccc6cdf1a7aa49e6ffe2f109a13a5c4ef1
 }

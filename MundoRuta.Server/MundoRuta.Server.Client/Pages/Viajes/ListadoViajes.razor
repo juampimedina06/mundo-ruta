@@ -16,12 +16,12 @@
 
             @if (!Sesion.Restaurada)
             {
-                <div class="mr-loading">Cargando sesi��n...</div>
+                <div class="mr-loading">Cargando sesión...</div>
             }
             else if (!Sesion.EstaLogueado || Sesion.Id <= 0)
             {
-                <div class="mr-alert mr-alert--error">No hay sesi��n activa. Inici�� sesi��n para ver tus viajes.</div>
-                <a class="btn btn-primary mt-3" href="/login">Iniciar sesi��n</a>
+                <div class="mr-alert mr-alert--error">No hay sesión activa. Iniciá sesión para ver tus viajes.</div>
+                <a class="btn btn-primary mt-3" href="/login">Iniciar sesión</a>
             }
             else
             {
@@ -31,7 +31,7 @@
                     <button class="btn @( _filtroEstado == EstadosViaje.Buscando ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro(EstadosViaje.Buscando)'>Buscando</button>
                     <button class="btn @( _filtroEstado == EstadosViaje.Asignado ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro(EstadosViaje.Asignado)'>Asignado</button>
                     <button class="btn @( _filtroEstado == EstadosViaje.CargaSubida ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro(EstadosViaje.CargaSubida)'>Carga subida</button>
-                    <button class="btn @( _filtroEstado == EstadosViaje.EnTransito ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro(EstadosViaje.EnTransito)'>En tr��nsito</button>
+                    <button class="btn @( _filtroEstado == EstadosViaje.EnTransito ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro(EstadosViaje.EnTransito)'>En tránsito</button>
                     <button class="btn @( _filtroEstado == EstadosViaje.LlegadaDestino ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro(EstadosViaje.LlegadaDestino)'>Llegada destino</button>
                     <button class="btn @( _filtroEstado == EstadosViaje.Finalizado ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro(EstadosViaje.Finalizado)'>Finalizado</button>
                     <button class="btn @( _filtroEstado == EstadosViaje.Cancelado ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro(EstadosViaje.Cancelado)'>Cancelado</button>
@@ -48,7 +48,7 @@
                 else if (_viajes is null || _viajes.Count == 0)
                 {
                     <EmptyState Titulo="No hay viajes para mostrar"
-                                Descripcion="Cuando solicites un viaje lo vas a ver ac�� con su estado y su detalle.">
+                                Descripcion="Cuando solicites un viaje lo vas a ver acá con su estado y su detalle.">
                         <a class="btn btn-primary" href="/usuario/solicitar">Solicitar un viaje</a>
                     </EmptyState>
                 }
