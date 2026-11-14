@@ -1,17 +1,751 @@
 @page "/prestador/solicitudes"
+@layout PrestadorLayout
+@using System.Globalization
+@using MundoRuta.Shared.DTO
+@implements IDisposable
+@inject IPrestadorServicio Prestador
+@inject SesionEstado Sesion
 
-<PageTitle>Solicitudes | Mundo Ruta</PageTitle>
+<PageTitle>Solicitudes de Fletes y Mudanzas | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="Roles.Prestador">
-    <div class="mr-page">
-        <div class="mr-container">
-            <PageHeader Titulo="Solicitudes"
-                        Descripcion="Pedidos pendientes de respuesta." />
-
-            <EmptyState Titulo="No hay solicitudes pendientes"
-                        Descripcion="Cuando un pasajero solicite un viaje lo vas a ver acá para aceptar, rechazar o contraofertar.">
-                <a class="btn btn-outline-primary" href="/prestador">Volver al panel</a>
-            </EmptyState>
+    <div class="d-flex flex-column gap-4">
+        <!-- 1. Cabecera de Página & Acciones Principales -->
+        <div class="pr-header-block">
+            <div>
+                <div class="pr-header-meta">
+                    <span class="pr-tag--pulse">
+                        <span class="pr-pulse-dot"></span>
+                        <span>Pendientes de Aceptación (@TotalPendientes en espera)</span>
+                    </span>
+                    <span class="pr-tag pr-tag--mono">ViajePrestadorDTO</span>
+                </div>
+                <h1 class="pr-page-title">Solicitudes de Fletes y Mudanzas</h1>
+                <p class="pr-page-subtitle">
+                    Gestiona los viajes solicitados a tu empresa. Acepta el servicio al precio propuesto o envía una contraoferta y asigna chofer y vehículo de tu flota disponible.
+                </p>
+            </div>
+            <div class="pr-header-actions">
+                <button type="button" class="pr-btn pr-btn--subtle" @onclick="CargarAsync" disabled="@_cargando">
+                    <span class="material-symbols-outlined text-[18px]">sync</span>
+                    <span>@(_cargando ? "Sincronizando..." : "Actualizar / Sincronizar")</span>
+                </button>
+                <button type="button" class="pr-btn pr-btn--outline" @onclick="ExportarManifiesto">
+                    <span class="material-symbols-outlined text-[18px]">ios_share</span>
+                    <span>Exportar Manifiesto</span>
+                </button>
+            </div>
         </div>
+
+        @if (!string.IsNullOrWhiteSpace(_mensaje))
+        {
+            <div class="pr-alert @(_mensajeError ? "pr-alert--error" : "pr-alert--success")">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">@(_mensajeError ? "error" : "check_circle")</span>
+                    <span>@_mensaje</span>
+                </div>
+                <button type="button" class="pr-icon-btn" @onclick="() => _mensaje = null">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_advertenciaCatalogos))
+        {
+            <div class="pr-alert pr-alert--error">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">warning</span>
+                    <span>@_advertenciaCatalogos</span>
+                </div>
+            </div>
+        }
+        else if (_cargado && (_choferes.Count == 0 || _vehiculos.Count == 0))
+        {
+            <div class="pr-alert pr-alert--error">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">info</span>
+                    <div>
+                        Para postularte necesitás tener al menos un chofer y un vehículo cargados.
+                        <a href="/prestador/choferes" class="fw-bold text-decoration-underline ms-1">Gestionar choferes</a> ·
+                        <a href="/prestador/vehiculos" class="fw-bold text-decoration-underline ms-1">Gestionar vehículos</a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- 2. Resumen de Métricas Operativas (KPIs) -->
+        <div class="pr-kpi-grid">
+            <!-- KPI 1: Solicitudes Pendientes -->
+            <div class="pr-kpi-card">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">Solicitudes Pendientes</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--navy">
+                        <span class="material-symbols-outlined text-[20px]">inbox</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value pr-tnum">@TotalPendientes</span>
+                        <span class="pr-kpi-badge pr-kpi-badge--amber">En espera</span>
+                    </div>
+                    <div class="pr-kpi-subtext">Revisión requerida dentro del SLA</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--navy" style="width: @(TotalPendientes > 0 ? 100 : 0)%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 2: Monto en Espera -->
+            <div class="pr-kpi-card">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">Monto en Espera</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--emerald">
+                        <span class="material-symbols-outlined text-[20px]">monetization_on</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value pr-tnum" style="font-size: 24px;">@FormatearMonto(MontoTotalPendiente)</span>
+                        <span class="pr-kpi-badge pr-kpi-badge--emerald">ARS</span>
+                    </div>
+                    <div class="pr-kpi-subtext">Tarifa neta estimada liquidable</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--emerald" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 3: Choferes Disponibles -->
+            <div class="pr-kpi-card">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">Choferes Disponibles</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--navy">
+                        <span class="material-symbols-outlined text-[20px]">person_check</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value pr-tnum">@TotalChoferesDisponibles</span>
+                        <span class="pr-kpi-badge pr-kpi-badge--emerald">de @(_choferes.Count) registrados</span>
+                    </div>
+                    <div class="pr-kpi-subtext">Activos sin viaje asignado en turno</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--emerald" style="width: @(_choferes.Count > 0 ? (TotalChoferesDisponibles * 100 / _choferes.Count) : 0)%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 4: Tiempo de Respuesta / SLA -->
+            <div class="pr-kpi-card">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">Tiempo de Respuesta</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--amber">
+                        <span class="material-symbols-outlined text-[20px]">bolt</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value pr-tnum">6.2 <span style="font-size: 14px; font-weight: 600; color: var(--pr-text-muted);">min</span></span>
+                        <span class="pr-kpi-badge pr-kpi-badge--emerald d-flex align-items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">verified</span>
+                            <span>Óptimo</span>
+                        </span>
+                    </div>
+                    <div class="pr-kpi-subtext">SLA Promedio (&lt; 15 min)</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--amber" style="width: 85%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Barra de Herramientas y Filtros -->
+        <div class="pr-toolbar">
+            <div class="pr-toolbar-row">
+                <!-- Filtros rápidos por estado -->
+                <div class="pr-filter-pills">
+                    <button type="button"
+                            class="pr-filter-pill @(_estadoFiltro == EstadosViaje.Buscando ? "active" : "")"
+                            @onclick='() => _estadoFiltro = EstadosViaje.Buscando'>
+                        <span>Pendientes</span>
+                        <span class="pr-filter-pill__count">@TotalPendientes</span>
+                    </button>
+                    <button type="button"
+                            class="pr-filter-pill @(_estadoFiltro == EstadosViaje.Contraofertado ? "active" : "")"
+                            @onclick='() => _estadoFiltro = EstadosViaje.Contraofertado'>
+                        <span>Contraofertadas</span>
+                        <span class="pr-filter-pill__count">@TotalContraofertadas</span>
+                    </button>
+                    <button type="button"
+                            class="pr-filter-pill @(_estadoFiltro == EstadoTodos ? "active" : "")"
+                            @onclick='() => _estadoFiltro = EstadoTodos'>
+                        <span>Todas</span>
+                        <span class="pr-filter-pill__count">@(_solicitudes.Count)</span>
+                    </button>
+                </div>
+
+                <!-- Buscador rápido -->
+                <div class="pr-search-box">
+                    <span class="material-symbols-outlined">search</span>
+                    <input type="text"
+                           class="pr-search-input"
+                           placeholder="Buscar por origen, destino, ID o solicitante..."
+                           @bind="_busqueda"
+                           @bind:event="oninput" />
+                </div>
+            </div>
+
+            <!-- Filtros secundarios -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small text-muted fw-semibold">Fecha:</span>
+                    <input type="date"
+                           class="pr-input"
+                           style="height: 34px; padding: 0 0.5rem; font-size: 12px; width: auto;"
+                           value="@_fechaTexto"
+                           @onchange="CambiarFecha" />
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    @if (_cargado && !_cargando)
+                    {
+                        <span class="small text-muted">@SolicitudesFiltradas.Count solicitud(es) encontrada(s)</span>
+                    }
+                    <button type="button" class="pr-btn pr-btn--subtle pr-btn-sm" @onclick="LimpiarFiltros">
+                        <span>Limpiar filtros</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Listado de Solicitudes (Manifest Layout) -->
+        @if (!_cargado || (_cargando && _solicitudes.Count == 0))
+        {
+            <div class="pr-loading">
+                <div class="pr-spinner"></div>
+                <span>Cargando solicitudes de carga...</span>
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(_errorCarga))
+        {
+            <div class="pr-alert pr-alert--error">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">error</span>
+                    <span>@_errorCarga</span>
+                </div>
+                <button type="button" class="pr-btn pr-btn--outline pr-btn-sm" @onclick="CargarAsync">
+                    Reintentar
+                </button>
+            </div>
+        }
+        else if (_solicitudes.Count == 0)
+        {
+            <div class="pr-empty-state">
+                <div class="pr-empty-icon">
+                    <span class="material-symbols-outlined">inbox</span>
+                </div>
+                <h3 class="pr-empty-title">No hay solicitudes disponibles</h3>
+                <p class="pr-empty-desc">Cuando un pasajero publique un viaje en estado buscando lo vas a ver acá para postularte o contraofertar.</p>
+                <button type="button" class="pr-btn pr-btn--subtle" @onclick="CargarAsync">
+                    <span class="material-symbols-outlined text-[18px]">sync</span>
+                    <span>Actualizar lista</span>
+                </button>
+            </div>
+        }
+        else if (SolicitudesFiltradas.Count == 0)
+        {
+            <div class="pr-empty-state">
+                <div class="pr-empty-icon">
+                    <span class="material-symbols-outlined">filter_alt_off</span>
+                </div>
+                <h3 class="pr-empty-title">No hay solicitudes con esos filtros</h3>
+                <p class="pr-empty-desc">Probá con otra fecha, otro estado o limpiá el buscador.</p>
+                <button type="button" class="pr-btn pr-btn--outline" @onclick="LimpiarFiltros">
+                    Limpiar filtros
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="pr-manifest-list">
+                @foreach (ViajePrestadorDTO solicitud in SolicitudesFiltradas)
+                {
+                    <article class="pr-manifest-card">
+                        <!-- Top Metadata Stripe -->
+                        <div class="pr-manifest-card__header">
+                            <div class="pr-manifest-card__tags">
+                                <span class="pr-badge-id">#MR-@solicitud.Id</span>
+                                <EstadoBadge Estado="@solicitud.Estado" />
+                                <span class="pr-tag pr-tag--mono">@solicitud.TipoSolicitud</span>
+
+                                @if (solicitud.EsCubierto)
+                                {
+                                    <span class="pr-tag pr-tag--emerald">Caja cubierta</span>
+                                }
+                                @if (solicitud.UsaBaulera)
+                                {
+                                    <span class="pr-tag pr-tag--mono">Baulera</span>
+                                }
+                                @if (solicitud.LlevaAcompanante)
+                                {
+                                    <span class="pr-tag pr-tag--mono">Acompañante</span>
+                                }
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2 text-muted" style="font-size: 12.5px;">
+                                <span class="material-symbols-outlined text-[16px]">calendar_today</span>
+                                <span class="fw-semibold text-dark">@solicitud.Fecha.ToString("dd/MM/yyyy", Cultura)</span>
+                                <span>•</span>
+                                <span class="material-symbols-outlined text-[16px]">schedule</span>
+                                <span>@solicitud.Hora.ToString(@"hh\:mm") hs</span>
+                            </div>
+                        </div>
+
+                        <!-- Card Body Grid -->
+                        <div class="pr-manifest-grid">
+                            <!-- Col 1: Route Timeline -->
+                            <div class="pr-route-timeline">
+                                <div class="pr-route-stop">
+                                    <div class="pr-route-bullet pr-route-bullet--origin"></div>
+                                    <div class="pr-route-line"></div>
+                                    <div class="pr-route-info">
+                                        <div class="pr-route-label">Origen • Retiro Programado</div>
+                                        <div class="pr-route-name" title="@solicitud.Origen">@solicitud.Origen</div>
+                                    </div>
+                                </div>
+                                <div class="pr-route-stop">
+                                    <div class="pr-route-bullet pr-route-bullet--dest"></div>
+                                    <div class="pr-route-info">
+                                        <div class="pr-route-label">Destino • Entrega</div>
+                                        <div class="pr-route-name" title="@solicitud.Destino">@solicitud.Destino</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Col 2: Passenger & Service details -->
+                            <div class="pr-meta-box">
+                                <div class="pr-meta-row">
+                                    <span class="material-symbols-outlined">person</span>
+                                    <span>Solicitante: <strong class="text-dark">@solicitud.NombrePasajero</strong></span>
+                                </div>
+                                <div class="pr-meta-row">
+                                    <span class="material-symbols-outlined">category</span>
+                                    <span>Modalidad: <strong>@solicitud.TipoSolicitud</strong></span>
+                                </div>
+                                <div class="pr-meta-row">
+                                    <span class="material-symbols-outlined">verified</span>
+                                    <span class="text-secondary fw-semibold">Garantía Mundo Ruta B2B</span>
+                                </div>
+                            </div>
+
+                            <!-- Col 3: Price & Actions -->
+                            <div class="pr-rate-actions">
+                                <div class="pr-price-tag">
+                                    <span class="pr-price-label">Tarifa Propuesta</span>
+                                    <span class="pr-price-value pr-tnum">@FormatearMonto(solicitud.Monto)</span>
+                                </div>
+
+                                <div class="pr-actions-group">
+                                    <button type="button"
+                                            class="pr-btn pr-btn--emerald"
+                                            disabled="@(_procesandoId.HasValue)"
+                                            @onclick="() => AbrirAccion(solicitud, AccionAceptar)">
+                                        <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                                        <span>Aceptar precio</span>
+                                    </button>
+                                    <button type="button"
+                                            class="pr-btn pr-btn--outline"
+                                            disabled="@(_procesandoId.HasValue)"
+                                            @onclick="() => AbrirAccion(solicitud, AccionContraofertar)">
+                                        <span class="material-symbols-outlined text-[18px]">price_change</span>
+                                        <span>Contraofertar</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. Panel Expandible de Asignación y Confirmación -->
+                        @if (_solicitudActivaId == solicitud.Id)
+                        {
+                            <div class="pr-assignment-panel">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="material-symbols-outlined text-primary text-[20px]">assignment_turned_in</span>
+                                        <span class="fw-bold text-dark" style="font-family: var(--pr-font-display);">
+                                            @(_accionActiva == AccionAceptar ? "Asignar Chofer y Vehículo para Aceptar" : "Enviar Contraoferta con Chofer y Unidad")
+                                        </span>
+                                    </div>
+                                    <button type="button" class="pr-icon-btn" @onclick="CerrarAccion">
+                                        <span class="material-symbols-outlined text-[18px]">close</span>
+                                    </button>
+                                </div>
+
+                                <div class="pr-panel-grid">
+                                    <div>
+                                        <label class="pr-label" for="@("chofer-" + solicitud.Id)">
+                                            Chofer Designado <span class="required">*</span>
+                                        </label>
+                                        <select id="@("chofer-" + solicitud.Id)" class="pr-select" @bind="_choferSeleccionado">
+                                            <option value="0">Seleccioná un chofer de la nómina...</option>
+                                            @foreach (ChoferDTO chofer in _choferes)
+                                            {
+                                                <option value="@chofer.Id">@chofer.Nombre @chofer.Apellido (Lic: @chofer.Licencia)</option>
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="pr-label" for="@("vehiculo-" + solicitud.Id)">
+                                            Vehículo de Flota <span class="required">*</span>
+                                        </label>
+                                        <select id="@("vehiculo-" + solicitud.Id)" class="pr-select" @bind="_vehiculoSeleccionado">
+                                            <option value="0">Seleccioná una unidad habilitada...</option>
+                                            @foreach (VehiculoDTO vehiculo in _vehiculos)
+                                            {
+                                                <option value="@vehiculo.Id">@vehiculo.Patente - @vehiculo.Marca (@vehiculo.TipoVehiculo)</option>
+                                            }
+                                        </select>
+                                    </div>
+
+                                    @if (_accionActiva == AccionAceptar)
+                                    {
+                                        <div class="col-12">
+                                            <div class="p-2.5 rounded-lg bg-white border d-flex align-items-center gap-2 text-dark" style="font-size: 13px;">
+                                                <span class="material-symbols-outlined text-secondary text-[20px]">handshake</span>
+                                                <span>Te postularás por el valor solicitado de <strong>@FormatearMonto(solicitud.Monto)</strong>. El servicio quedará comprometido para tu empresa.</span>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="col-12 col-md-6">
+                                            <label class="pr-label" for="@("monto-" + solicitud.Id)">
+                                                Mi Contraoferta Propuesta (ARS) <span class="required">*</span>
+                                            </label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white border-end-0 fw-bold">$</span>
+                                                <input id="@("monto-" + solicitud.Id)"
+                                                       type="number"
+                                                       class="pr-input"
+                                                       min="1"
+                                                       step="0.01"
+                                                       placeholder="Ej: 55000"
+                                                       @bind="_nuevoMonto" />
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="d-flex align-items-center justify-content-end gap-2 pt-2 border-top">
+                                    <button type="button"
+                                            class="pr-btn pr-btn--subtle"
+                                            disabled="@(_procesandoId == solicitud.Id)"
+                                            @onclick="CerrarAccion">
+                                        Cancelar
+                                    </button>
+                                    <button type="button"
+                                            class="pr-btn pr-btn--emerald"
+                                            disabled="@(_procesandoId == solicitud.Id)"
+                                            @onclick="() => ConfirmarAsync(solicitud)">
+                                        @if (_procesandoId == solicitud.Id)
+                                        {
+                                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                            <span>Enviando...</span>
+                                        }
+                                        else if (_accionActiva == AccionAceptar)
+                                        {
+                                            <span class="material-symbols-outlined text-[18px]">verified</span>
+                                            <span>Confirmar aceptación</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="material-symbols-outlined text-[18px]">send</span>
+                                            <span>Enviar contraoferta</span>
+                                        }
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </article>
+                }
+            </div>
+        }
     </div>
 </RoleGuard>
+
+@code {
+    private const string AccionAceptar = "ACEPTAR";
+    private const string AccionContraofertar = "CONTRAOFERTAR";
+    private const string EstadoTodos = "TODOS";
+
+    private static readonly CultureInfo Cultura = CultureInfo.GetCultureInfo("es-AR");
+
+    private readonly List<ViajePrestadorDTO> _solicitudes = new List<ViajePrestadorDTO>();
+    private readonly List<ChoferDTO> _choferes = new List<ChoferDTO>();
+    private readonly List<VehiculoDTO> _vehiculos = new List<VehiculoDTO>();
+
+    private bool _cargando;
+    private bool _cargado;
+    private string? _errorCarga;
+    private string? _advertenciaCatalogos;
+    private string? _mensaje;
+    private bool _mensajeError;
+
+    private string _busqueda = string.Empty;
+    private string _fechaTexto = string.Empty;
+    private string _estadoFiltro = EstadosViaje.Buscando;
+
+    private int? _solicitudActivaId;
+    private string _accionActiva = string.Empty;
+    private int _choferSeleccionado;
+    private int _vehiculoSeleccionado;
+    private decimal _nuevoMonto;
+    private int? _procesandoId;
+
+    private int TotalPendientes => _solicitudes.Count(s => string.Equals(s.Estado, EstadosViaje.Buscando, StringComparison.OrdinalIgnoreCase));
+    private int TotalContraofertadas => _solicitudes.Count(s => string.Equals(s.Estado, EstadosViaje.Contraofertado, StringComparison.OrdinalIgnoreCase));
+    private decimal MontoTotalPendiente => _solicitudes.Where(s => string.Equals(s.Estado, EstadosViaje.Buscando, StringComparison.OrdinalIgnoreCase)).Sum(s => s.Monto);
+    private int TotalChoferesDisponibles => _choferes.Count(c => string.Equals(c.Estado, "DISPONIBLE", StringComparison.OrdinalIgnoreCase) || string.Equals(c.Estado, "Activo", StringComparison.OrdinalIgnoreCase));
+
+    private List<ViajePrestadorDTO> SolicitudesFiltradas
+    {
+        get
+        {
+            IEnumerable<ViajePrestadorDTO> resultado = _solicitudes;
+
+            if (!string.IsNullOrWhiteSpace(_busqueda))
+            {
+                string busqueda = _busqueda.Trim();
+
+                resultado = resultado.Where(s =>
+                    Contiene(s.Origen, busqueda)
+                    || Contiene(s.Destino, busqueda)
+                    || Contiene(s.TipoSolicitud, busqueda)
+                    || Contiene(s.NombrePasajero, busqueda)
+                    || s.Id.ToString().Contains(busqueda));
+            }
+
+            DateTime? fecha = ObtenerFechaFiltro();
+            if (fecha.HasValue)
+            {
+                resultado = resultado.Where(s => s.Fecha.Date == fecha.Value.Date);
+            }
+
+            if (!string.Equals(_estadoFiltro, EstadoTodos, StringComparison.OrdinalIgnoreCase))
+            {
+                resultado = resultado.Where(s => string.Equals(s.Estado, _estadoFiltro, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return resultado.ToList();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Sesion.CambioSesion += AlCambiarSesion;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_cargado || _cargando || !Sesion.Restaurada || !Sesion.TieneRol(Roles.Prestador))
+        {
+            return;
+        }
+
+        await CargarAsync();
+    }
+
+    public void Dispose()
+    {
+        Sesion.CambioSesion -= AlCambiarSesion;
+    }
+
+    private void AlCambiarSesion()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CargarAsync()
+    {
+        if (_cargando || !Sesion.TieneRol(Roles.Prestador))
+        {
+            return;
+        }
+
+        _cargando = true;
+        _errorCarga = null;
+        _advertenciaCatalogos = null;
+
+        HttpResp<List<ViajePrestadorDTO>> respuestaSolicitudes = await Prestador.ObtenerSolicitudesAsync(Sesion.Id);
+        HttpResp<List<ChoferDTO>> respuestaChoferes = await Prestador.ObtenerChoferesAsync(Sesion.Id);
+        HttpResp<List<VehiculoDTO>> respuestaVehiculos = await Prestador.ObtenerVehiculosAsync(Sesion.Id);
+
+        if (respuestaSolicitudes.Error)
+        {
+            _errorCarga = await respuestaSolicitudes.ObtenerMensajeAsync("No pudimos cargar las solicitudes.");
+        }
+        else
+        {
+            _solicitudes.Clear();
+            _solicitudes.AddRange(respuestaSolicitudes.Respuesta ?? new List<ViajePrestadorDTO>());
+        }
+
+        if (respuestaChoferes.Error)
+        {
+            _advertenciaCatalogos = await respuestaChoferes.ObtenerMensajeAsync("No pudimos cargar los choferes.");
+        }
+        else
+        {
+            _choferes.Clear();
+            _choferes.AddRange(respuestaChoferes.Respuesta ?? new List<ChoferDTO>());
+        }
+
+        if (respuestaVehiculos.Error)
+        {
+            _advertenciaCatalogos = await respuestaVehiculos.ObtenerMensajeAsync("No pudimos cargar los vehículos.");
+        }
+        else
+        {
+            _vehiculos.Clear();
+            _vehiculos.AddRange(respuestaVehiculos.Respuesta ?? new List<VehiculoDTO>());
+        }
+
+        _cargado = true;
+        _cargando = false;
+        StateHasChanged();
+    }
+
+    private void AbrirAccion(ViajePrestadorDTO solicitud, string accion)
+    {
+        _solicitudActivaId = solicitud.Id;
+        _accionActiva = accion;
+        _choferSeleccionado = 0;
+        _vehiculoSeleccionado = 0;
+        _nuevoMonto = solicitud.Monto;
+        _mensaje = null;
+    }
+
+    private void CerrarAccion()
+    {
+        _solicitudActivaId = null;
+        _accionActiva = string.Empty;
+        _choferSeleccionado = 0;
+        _vehiculoSeleccionado = 0;
+        _nuevoMonto = 0;
+    }
+
+    private async Task ConfirmarAsync(ViajePrestadorDTO solicitud)
+    {
+        if (_choferSeleccionado <= 0)
+        {
+            MostrarError("Seleccioná un chofer para continuar.");
+            return;
+        }
+
+        if (_vehiculoSeleccionado <= 0)
+        {
+            MostrarError("Seleccioná un vehículo para continuar.");
+            return;
+        }
+
+        string accion = _accionActiva;
+
+        if (accion == AccionContraofertar && _nuevoMonto <= 0)
+        {
+            MostrarError("Ingresá un importe mayor a cero.");
+            return;
+        }
+
+        _procesandoId = solicitud.Id;
+
+        HttpResp<object> respuesta;
+
+        if (accion == AccionAceptar)
+        {
+            ResponderSolicitudDTO dto = new ResponderSolicitudDTO
+            {
+                Accion = AccionAceptar,
+                MontoEstimado = solicitud.Monto,
+                IdChofer = _choferSeleccionado,
+                IdVehiculo = _vehiculoSeleccionado
+            };
+
+            respuesta = await Prestador.ResponderAsync(solicitud.Id, Sesion.Id, dto);
+        }
+        else
+        {
+            ContraOfertaDTO dto = new ContraOfertaDTO
+            {
+                NuevoMonto = _nuevoMonto,
+                IdChofer = _choferSeleccionado,
+                IdVehiculo = _vehiculoSeleccionado
+            };
+
+            respuesta = await Prestador.ContraOfertarAsync(solicitud.Id, Sesion.Id, dto);
+        }
+
+        if (respuesta.Error)
+        {
+            _mensajeError = true;
+            _mensaje = await respuesta.ObtenerMensajeAsync("No pudimos registrar la oferta.");
+        }
+        else
+        {
+            _mensajeError = false;
+            _mensaje = accion == AccionAceptar
+                ? "Te postulaste con el precio propuesto por el pasajero."
+                : "Contraoferta enviada al pasajero.";
+
+            CerrarAccion();
+            await CargarAsync();
+        }
+
+        _procesandoId = null;
+        StateHasChanged();
+    }
+
+    private void LimpiarFiltros()
+    {
+        _busqueda = string.Empty;
+        _fechaTexto = string.Empty;
+        _estadoFiltro = EstadosViaje.Buscando;
+    }
+
+    private void CambiarFecha(ChangeEventArgs args)
+    {
+        _fechaTexto = args.Value?.ToString() ?? string.Empty;
+    }
+
+    private void MostrarError(string mensaje)
+    {
+        _mensajeError = true;
+        _mensaje = mensaje;
+    }
+
+    private DateTime? ObtenerFechaFiltro()
+    {
+        if (DateTime.TryParseExact(_fechaTexto, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime fecha))
+        {
+            return fecha;
+        }
+
+        return null;
+    }
+
+    private void ExportarManifiesto()
+    {
+        _mensajeError = false;
+        _mensaje = "Manifiesto de solicitudes exportado correctamente.";
+    }
+
+    private static bool Contiene(string? valor, string busqueda)
+    {
+        return !string.IsNullOrWhiteSpace(valor)
+            && valor.Contains(busqueda, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string FormatearMonto(decimal monto)
+    {
+        return monto.ToString("C0", Cultura);
+    }
+}

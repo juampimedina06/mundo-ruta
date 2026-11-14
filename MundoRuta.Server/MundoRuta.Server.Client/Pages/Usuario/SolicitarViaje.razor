@@ -1,17 +1,542 @@
 @page "/usuario/solicitar"
+@page "/viajes/solicitar"
+@using System.Globalization
+@using MundoRuta.Shared
+@using MundoRuta.Shared.DTO
+@using MundoRuta.Servicios.Viajes
+@inject IViajeServicio Viajes
+@inject SesionEstado Sesion
+@inject NavigationManager Navegacion
 
-<PageTitle>Solicitar viaje | Mundo Ruta</PageTitle>
+<PageTitle>Solicitar Viaje | Mundo Ruta</PageTitle>
 
-<RoleGuard Permitidos="Roles.Usuario">
-    <div class="mr-page">
-        <div class="mr-container">
-            <PageHeader Titulo="Solicitar viaje"
-                        Descripcion="Indicá origen, destino y tipo de servicio." />
+<RoleGuard Permitidos="@Roles.Usuario">
+    <div class="mr-solicitar-page">
+        <div class="mr-solicitar-container">
 
-            <EmptyState Titulo="Formulario en preparación"
-                        Descripcion="Acá vas a poder cargar origen, destino, fecha, tipo de servicio, equipaje y método de pago.">
-                <a class="btn btn-outline-primary" href="/usuario">Volver al panel</a>
-            </EmptyState>
+            <!-- BREADCRUMB -->
+            <nav class="mr-solicitar-breadcrumb" aria-label="Breadcrumb">
+                <a href="/usuario/viajes" class="mr-breadcrumb-link">Mis Viajes</a>
+                <span class="material-symbols-outlined mr-breadcrumb-sep">chevron_right</span>
+                <span class="mr-breadcrumb-current">Nueva Solicitud de Viaje</span>
+            </nav>
+
+            <!-- HEADER BANNER -->
+            <div class="mr-solicitar-header">
+                <div class="mr-header-title-row">
+                    <h1 class="mr-header-title">Solicitar Viaje</h1>
+                    <span class="mr-badge-module">Módulo Pasajero</span>
+                    <span class="mr-badge-active">
+                        <span class="mr-badge-dot"></span>
+                        <span>Ruta Activa</span>
+                    </span>
+                </div>
+            </div>
+
+            @if (_errores.Count > 0)
+            {
+                <div class="mr-error-banner">
+                    <ul class="mr-error-list">
+                        @foreach (string error in _errores)
+                        {
+                            <li>@error</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <!-- ASYMMETRIC SAAS LAYOUT (8:4 DESKTOP GRID) -->
+            <EditForm Model="_modelo" OnSubmit="SolicitarAsync">
+                <div class="mr-solicitar-grid">
+
+                    <!-- PRIMARY COLUMN (LEFT - 8 COLS) -->
+                    <div class="mr-col-main">
+
+                        <!-- SECTION 1: TRAYECTO -->
+                        <section class="mr-card-section">
+                            <h2 class="mr-section-title">
+                                <span class="material-symbols-outlined mr-title-icon">route</span>
+                                <span>1. Trayecto</span>
+                            </h2>
+
+                            <div class="mr-grid-2">
+                                <div class="mr-form-group">
+                                    <label class="mr-form-label" for="origen">Punto de Origen</label>
+                                    <div class="mr-input-wrapper">
+                                        <span class="material-symbols-outlined mr-input-icon">location_on</span>
+                                        <InputText id="origen" class="mr-input" placeholder="Ingresa punto de origen" @bind-Value="_modelo.Origen" />
+                                    </div>
+                                </div>
+
+                                <div class="mr-form-group">
+                                    <label class="mr-form-label" for="destino">Punto de Destino</label>
+                                    <div class="mr-input-wrapper">
+                                        <span class="material-symbols-outlined mr-input-icon mr-icon-destination">flag</span>
+                                        <InputText id="destino" class="mr-input" placeholder="Ingresa punto de destino" @bind-Value="_modelo.Destino" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mr-grid-2 mr-mt-3">
+                                <div class="mr-form-group">
+                                    <label class="mr-form-label" for="dni">DNI del Receptor</label>
+                                    <div class="mr-input-wrapper">
+                                        <span class="material-symbols-outlined mr-input-icon">badge</span>
+                                        <InputText id="dni" class="mr-input" placeholder="Persona que recibe en destino (7 u 8 dígitos)" inputmode="numeric" @bind-Value="_modelo.DniReceptor" />
+                                    </div>
+                                </div>
+
+                                <div class="mr-form-group">
+                                    <label class="mr-form-label">Tipo de Caja</label>
+                                    <div class="mr-caja-pills">
+                                        <button type="button"
+                                                class="mr-caja-pill @(_modelo.TipoCaja == TipoCajaCubierta ? "mr-caja-pill--active" : "")"
+                                                @onclick="() => SeleccionarTipoCaja(TipoCajaCubierta)">
+                                            <span class="material-symbols-outlined mr-icon-xs">shield</span>
+                                            <span>Cubierta (Cerrada)</span>
+                                        </button>
+                                        <button type="button"
+                                                class="mr-caja-pill @(_modelo.TipoCaja == TipoCajaDescubierta ? "mr-caja-pill--active" : "")"
+                                                @onclick="() => SeleccionarTipoCaja(TipoCajaDescubierta)">
+                                            <span class="material-symbols-outlined mr-icon-xs">view_stream</span>
+                                            <span>Descubierta</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- SECTION 3: PROGRAMACIÓN DE SALIDA -->
+                        <section class="mr-card-section">
+                            <h2 class="mr-section-title">
+                                <span class="material-symbols-outlined mr-title-icon">calendar_today</span>
+                                <span>3. Programación de Salida</span>
+                            </h2>
+
+                            <div class="mr-grid-2">
+                                <!-- FECHA DEL SERVICIO -->
+                                <div class="mr-form-group">
+                                    <label class="mr-form-label">Fecha del Servicio</label>
+                                    <div class="mr-date-segment">
+                                        <button type="button"
+                                                class="mr-date-btn @(EsHoy ? "mr-date-btn--active" : "")"
+                                                @onclick="SeleccionarHoy">
+                                            Hoy
+                                        </button>
+                                        <button type="button"
+                                                class="mr-date-btn @(EsManana ? "mr-date-btn--active" : "")"
+                                                @onclick="SeleccionarManana">
+                                            Mañana
+                                        </button>
+                                        <button type="button"
+                                                class="mr-date-btn @(!EsHoy && !EsManana ? "mr-date-btn--active" : "")"
+                                                @onclick="AlternarSelectorFechaPersonalizada">
+                                            @FechaEtiquetaBoton
+                                        </button>
+                                    </div>
+
+                                    @if (_mostrarSelectorFechaPersonalizada || (!EsHoy && !EsManana))
+                                    {
+                                        <div class="mr-mt-2 mr-input-wrapper">
+                                            <span class="material-symbols-outlined mr-input-icon">calendar_month</span>
+                                            <InputDate id="fecha" class="mr-input mr-input--date" TValue="DateTime" min="@FechaMinima" @bind-Value="_modelo.Fecha" />
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- HORA ESTIMADA -->
+                                <div class="mr-form-group">
+                                    <label class="mr-form-label" for="hora">Hora Estimada</label>
+                                    <div class="mr-time-wrapper">
+                                        <button type="button"
+                                                class="mr-btn-inmediato @(_esInmediato ? "mr-btn-inmediato--active" : "")"
+                                                @onclick="SeleccionarInmediato">
+                                            <span class="material-symbols-outlined mr-icon-xs">bolt</span>
+                                            <span>Inmediato</span>
+                                        </button>
+
+                                        <div class="mr-input-wrapper mr-time-input-wrapper">
+                                            <span class="material-symbols-outlined mr-input-icon mr-icon-alarm">alarm</span>
+                                            <input id="hora" type="time" class="mr-input mr-input--time @(!_esInmediato ? "mr-input--time-active" : "")" @bind="_modelo.Hora" @bind:after="AlCambiarHoraDirecta" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- SECTION 4: EQUIPAJE O CARGA -->
+                        <section class="mr-card-section">
+                            <div class="mr-section-header">
+                                <h2 class="mr-section-title">
+                                    <span class="material-symbols-outlined mr-title-icon">luggage</span>
+                                    <span>4. Equipaje o Carga</span>
+                                </h2>
+                                <p class="mr-section-subtitle">Indica si llevarás equipaje o bultos durante el traslado.</p>
+                            </div>
+
+                            <div class="mr-grid-2">
+                                <!-- OPCION SÍ -->
+                                <div class="mr-radio-card @(_modelo.EquipajeCarga ? "mr-radio-card--selected" : "")"
+                                     @onclick="() => SeleccionarEquipaje(true)">
+                                    <div class="mr-radio-card-left">
+                                        <div class="mr-radio-icon-box">
+                                            <span class="material-symbols-outlined">check</span>
+                                        </div>
+                                        <div>
+                                            <div class="mr-radio-card-title">Sí, con equipaje / carga</div>
+                                            <div class="mr-radio-card-desc">Incluye maletas o bultos personales</div>
+                                        </div>
+                                    </div>
+                                    <div class="mr-radio-circle @(_modelo.EquipajeCarga ? "mr-radio-circle--selected" : "")"></div>
+                                </div>
+
+                                <!-- OPCION NO -->
+                                <div class="mr-radio-card @(!_modelo.EquipajeCarga ? "mr-radio-card--selected" : "")"
+                                     @onclick="() => SeleccionarEquipaje(false)">
+                                    <div class="mr-radio-card-left">
+                                        <div class="mr-radio-icon-box">
+                                            <span class="material-symbols-outlined">close</span>
+                                        </div>
+                                        <div>
+                                            <div class="mr-radio-card-title">No, sin equipaje</div>
+                                            <div class="mr-radio-card-desc">Solo traslado personal ligero</div>
+                                        </div>
+                                    </div>
+                                    <div class="mr-radio-circle @(!_modelo.EquipajeCarga ? "mr-radio-circle--selected" : "")"></div>
+                                </div>
+                            </div>
+
+                            @if (_modelo.EquipajeCarga)
+                            {
+                                <div class="mr-detalle-carga-box">
+                                    <label class="mr-form-label" for="detalle_carga">Detalle de la carga</label>
+                                    <div class="mr-input-wrapper">
+                                        <span class="material-symbols-outlined mr-input-icon">inventory_2</span>
+                                        <InputText id="detalle_carga" class="mr-input" placeholder="2 maletas estándar y 1 bulto especial de repuestos." @bind-Value="_modelo.DetalleCarga" />
+                                    </div>
+                                    <p class="mr-field-help">Especifica dimensiones estimadas, cantidad de bultos o instrucciones especiales de estiba.</p>
+                                </div>
+                            }
+
+                            <!-- OPCIONES ADICIONALES -->
+                            <div class="mr-extras-row">
+                                <label class="mr-checkbox-pill @(_modelo.LlevaAcompanante ? "mr-checkbox-pill--active" : "")">
+                                    <InputCheckbox @bind-Value="_modelo.LlevaAcompanante" />
+                                    <span>Lleva acompañante (con costo adicional)</span>
+                                </label>
+                                <label class="mr-checkbox-pill @(_modelo.UsaBaulera ? "mr-checkbox-pill--active" : "")">
+                                    <InputCheckbox @bind-Value="_modelo.UsaBaulera" />
+                                    <span>Usa baulera</span>
+                                </label>
+                            </div>
+                        </section>
+
+                    </div>
+
+                    <!-- SECONDARY COLUMN (RIGHT - 4 COLS STICKY FARE CARD) -->
+                    <div class="mr-col-side">
+                        <div class="mr-summary-card">
+                            <div class="mr-summary-header">
+                                <h3 class="mr-summary-title">Resumen del Monto</h3>
+                                <span class="material-symbols-outlined mr-summary-header-icon">receipt_long</span>
+                            </div>
+
+                            <div class="mr-summary-body">
+                                <div class="mr-summary-price-row">
+                                    <div>
+                                        <span class="mr-summary-label">Monto Total</span>
+                                        <span class="mr-summary-sublabel">Tarifa del viaje</span>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="mr-summary-amount">@FormatearMonto(_modelo.PrecioOfrecido ?? 0)</div>
+                                    </div>
+                                </div>
+
+                                <div class="mr-form-group mr-mt-3">
+                                    <label class="mr-form-label" for="precio_input">Precio Ofrecido para Abrir Subasta ($ ARS)</label>
+                                    <div class="mr-input-wrapper">
+                                        <span class="material-symbols-outlined mr-input-icon">attach_money</span>
+                                        <InputNumber id="precio_input" class="mr-input" TValue="decimal?" step="0.01" min="0" placeholder="Ej: 24500" @bind-Value="_modelo.PrecioOfrecido" />
+                                    </div>
+                                </div>
+
+                                <!-- PAYMENT METHOD BOX -->
+                                <div class="mr-payment-box">
+                                    <div class="mr-payment-title">Método de Pago</div>
+                                    <div class="mr-payment-card">
+                                        <div class="mr-payment-card-left">
+                                            <div class="mr-payment-icon-box">
+                                                <span class="material-symbols-outlined">payments</span>
+                                            </div>
+                                            <div>
+                                                <div class="mr-payment-method-name">Efectivo</div>
+                                                <div class="mr-payment-method-desc">Pago directo</div>
+                                            </div>
+                                        </div>
+                                        <span class="material-symbols-outlined mr-payment-check">check_circle</span>
+                                    </div>
+                                </div>
+
+                                <!-- CTA BUTTON -->
+                                <button type="submit" class="mr-btn-submit" disabled="@_enviando">
+                                    <span>@(_enviando ? "Publicando solicitud..." : "Confirmar y Enviar Solicitud")</span>
+                                    <span class="material-symbols-outlined mr-icon-sm">arrow_forward</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </EditForm>
+
         </div>
     </div>
 </RoleGuard>
+
+@code {
+    private const string TipoCajaCubierta = "CUBIERTA";
+    private const string TipoCajaDescubierta = "DESCUBIERTA";
+    private const string TipoSolicitudExclusiva = "EXCLUSIVO";
+    private const decimal PrecioMaximo = 5000000m;
+
+    private readonly SolicitudModelo _modelo = new SolicitudModelo();
+    private readonly List<string> _errores = new List<string>();
+    private bool _enviando;
+    private bool _esInmediato;
+    private bool _mostrarSelectorFechaPersonalizada;
+
+    private string FechaMinima => DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    private bool EsHoy => _modelo.Fecha.Date == DateTime.Today;
+    private bool EsManana => _modelo.Fecha.Date == DateTime.Today.AddDays(1);
+
+    private static readonly CultureInfo CulturaArgentina = new CultureInfo("es-AR");
+
+    private string FechaEtiquetaBoton => (!EsHoy && !EsManana && _modelo.Fecha != default)
+        ? _modelo.Fecha.ToString("ddd dd MMM", CulturaArgentina)
+        : "Otra Fecha";
+
+    protected override void OnInitialized()
+    {
+        // Valores iniciales acordes al prototipo
+        DateTime salidaInicial = DateTime.Now.AddMinutes(30);
+        _modelo.TipoCaja = TipoCajaCubierta;
+        _modelo.Fecha = salidaInicial.Date;
+        _modelo.Hora = TimeOnly.FromDateTime(salidaInicial);
+        _modelo.PrecioOfrecido = 24500m;
+        _modelo.EquipajeCarga = true;
+        _modelo.DetalleCarga = "2 maletas estándar y 1 bulto especial de repuestos.";
+    }
+
+    private void SeleccionarHoy()
+    {
+        _modelo.Fecha = DateTime.Today;
+        _mostrarSelectorFechaPersonalizada = false;
+    }
+
+    private void SeleccionarManana()
+    {
+        _modelo.Fecha = DateTime.Today.AddDays(1);
+        _mostrarSelectorFechaPersonalizada = false;
+    }
+
+    private void AlternarSelectorFechaPersonalizada()
+    {
+        _mostrarSelectorFechaPersonalizada = !_mostrarSelectorFechaPersonalizada;
+    }
+
+    private void SeleccionarInmediato()
+    {
+        DateTime salidaInmediata = DateTime.Now.AddMinutes(15);
+        _esInmediato = true;
+        _modelo.Fecha = salidaInmediata.Date;
+        _modelo.Hora = TimeOnly.FromDateTime(salidaInmediata);
+        _mostrarSelectorFechaPersonalizada = false;
+    }
+
+    private void AlCambiarHoraDirecta()
+    {
+        _esInmediato = false;
+    }
+
+    private void SeleccionarTipoCaja(string tipo)
+    {
+        _modelo.TipoCaja = tipo;
+    }
+
+    private void SeleccionarEquipaje(bool conEquipaje)
+    {
+        _modelo.EquipajeCarga = conEquipaje;
+        if (!conEquipaje)
+        {
+            _modelo.DetalleCarga = string.Empty;
+        }
+    }
+
+    private static string FormatearMonto(decimal monto)
+    {
+        string formato = decimal.Truncate(monto) == monto ? "N0" : "N2";
+        return "$" + monto.ToString(formato, CulturaArgentina) + " ARS";
+    }
+
+    private async Task SolicitarAsync()
+    {
+        if (_enviando)
+        {
+            return;
+        }
+
+        _errores.Clear();
+
+        if (!Validar())
+        {
+            return;
+        }
+
+        if (!Sesion.EstaLogueado)
+        {
+            _errores.Add("Tu sesión expiró. Volvé a iniciar sesión.");
+            return;
+        }
+
+        try
+        {
+            TimeSpan hora = _modelo.Hora.GetValueOrDefault().ToTimeSpan();
+            decimal precio = _modelo.PrecioOfrecido ?? 0m;
+
+            SolicitarViajeDTO dto = new SolicitarViajeDTO
+            {
+                Origen = _modelo.Origen.Trim(),
+                Destino = _modelo.Destino.Trim(),
+                TipoSolicitud = TipoSolicitudExclusiva,
+                Fecha = _modelo.Fecha.Date,
+                Hora = hora,
+                EquipajeCarga = _modelo.EquipajeCarga,
+                detalleCarga = _modelo.DetalleCarga.Trim(),
+                EsCubierto = string.Equals(_modelo.TipoCaja, TipoCajaCubierta, StringComparison.Ordinal),
+                UsaBaulera = _modelo.UsaBaulera,
+                LlevaAcompanante = _modelo.LlevaAcompanante,
+                DniReceptor = _modelo.DniReceptor.Trim(),
+                PrecioOfrecido = precio,
+                Monto = precio,
+                IdSolicitante = Sesion.Id,
+                IdPasajero = Sesion.Id,
+                IdUsuario = Sesion.Id
+            };
+
+            _enviando = true;
+
+            HttpResp<SolicitudViajeCreadaDTO> respuesta = await Viajes.SolicitarAsync(dto);
+
+            if (respuesta.Error || respuesta.Respuesta is null || respuesta.Respuesta.Id <= 0)
+            {
+                _errores.Add(await respuesta.ObtenerMensajeAsync("No pudimos registrar la solicitud."));
+                return;
+            }
+
+            Navegacion.NavigateTo("/viajes/" + respuesta.Respuesta.Id + "/propuestas");
+        }
+        finally
+        {
+            _enviando = false;
+        }
+    }
+
+    private bool Validar()
+    {
+        string origen = _modelo.Origen.Trim();
+        string destino = _modelo.Destino.Trim();
+
+        if (origen.Length < 3 || origen.Length > 100)
+        {
+            _errores.Add("Ingresá un origen de entre 3 y 100 caracteres.");
+        }
+
+        if (destino.Length < 3 || destino.Length > 100)
+        {
+            _errores.Add("Ingresá un destino de entre 3 y 100 caracteres.");
+        }
+
+        ValidarFechaHora();
+
+        if (string.IsNullOrWhiteSpace(_modelo.TipoCaja))
+        {
+            _errores.Add("Elegí el tipo de caja: cubierta o descubierta.");
+        }
+
+        string dni = SoloDigitos(_modelo.DniReceptor);
+
+        if (dni.Length < 7 || dni.Length > 8)
+        {
+            _errores.Add("Ingresá el DNI del receptor con 7 u 8 dígitos.");
+        }
+
+        if (!_modelo.PrecioOfrecido.HasValue || _modelo.PrecioOfrecido.Value <= 0)
+        {
+            _errores.Add("Ingresá el precio ofrecido para abrir la subasta.");
+        }
+        else if (_modelo.PrecioOfrecido.Value > PrecioMaximo)
+        {
+            _errores.Add("El precio ofrecido no puede superar los $5.000.000.");
+        }
+        else if (decimal.Round(_modelo.PrecioOfrecido.Value, 2) != _modelo.PrecioOfrecido.Value)
+        {
+            _errores.Add("El precio ofrecido admite hasta 2 decimales.");
+        }
+
+        if (_modelo.EquipajeCarga && _modelo.DetalleCarga.Trim().Length < 5)
+        {
+            _errores.Add("Describí la carga con al menos 5 caracteres.");
+        }
+
+        return _errores.Count == 0;
+    }
+
+    private void ValidarFechaHora()
+    {
+        bool fechaValida = true;
+
+        if (_modelo.Fecha == default)
+        {
+            _errores.Add("Ingresá la fecha de reserva.");
+            fechaValida = false;
+        }
+        else if (_modelo.Fecha.Date < DateTime.Today)
+        {
+            _errores.Add("La fecha de reserva no puede ser anterior a hoy.");
+            fechaValida = false;
+        }
+
+        if (!_modelo.Hora.HasValue)
+        {
+            _errores.Add("Ingresá la hora de reserva.");
+            return;
+        }
+
+        if (fechaValida && _modelo.Fecha.Date == DateTime.Today
+            && _modelo.Hora.Value.ToTimeSpan() <= DateTime.Now.TimeOfDay)
+        {
+            _errores.Add("La hora de reserva tiene que ser posterior a la hora actual.");
+        }
+    }
+
+    private static string SoloDigitos(string valor)
+    {
+        return new string(valor.Where(char.IsDigit).ToArray());
+    }
+
+    private sealed class SolicitudModelo
+    {
+        public string Origen { get; set; } = string.Empty;
+        public string Destino { get; set; } = string.Empty;
+        public DateTime Fecha { get; set; } = DateTime.Today;
+        public TimeOnly? Hora { get; set; }
+        public string TipoCaja { get; set; } = string.Empty;
+        public bool UsaBaulera { get; set; }
+        public bool LlevaAcompanante { get; set; }
+        public string DniReceptor { get; set; } = string.Empty;
+        public decimal? PrecioOfrecido { get; set; }
+        public bool EquipajeCarga { get; set; }
+        public string DetalleCarga { get; set; } = string.Empty;
+    }
+}

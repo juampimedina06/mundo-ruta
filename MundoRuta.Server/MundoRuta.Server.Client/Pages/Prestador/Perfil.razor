@@ -1,17 +1,105 @@
 @page "/prestador/perfil"
+@layout PrestadorLayout
+@using MundoRuta.Shared
+@using MundoRuta.Servicios.Sesion
+@inject SesionEstado Sesion
 
-<PageTitle>Mi perfil | Mundo Ruta</PageTitle>
+<PageTitle>Perfil de Empresa | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="Roles.Prestador">
-    <div class="mr-page">
-        <div class="mr-container">
-            <PageHeader Titulo="Mi perfil"
-                        Descripcion="Datos de la empresa y estado de la cuenta." />
+    <div class="d-flex flex-column gap-4">
+        <!-- 1. Cabecera -->
+        <div class="pr-header-block">
+            <div>
+                <div class="pr-header-meta">
+                    <span class="pr-tag--pulse">
+                        <span class="pr-pulse-dot"></span>
+                        <span>Prestador Verificado</span>
+                    </span>
+                    <span class="pr-tag pr-tag--mono">Cuenta #@Sesion.Id</span>
+                </div>
+                <h1 class="pr-page-title">Perfil de Empresa Transportista</h1>
+                <p class="pr-page-subtitle">
+                    Información corporativa, acreditación fiscal y estado de servicio en la red de logística Mundo Ruta.
+                </p>
+            </div>
+            <div class="pr-header-actions">
+                <a class="pr-btn pr-btn--outline" href="/prestador">
+                    <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                    <span>Volver al panel</span>
+                </a>
+            </div>
+        </div>
 
-            <EmptyState Titulo="Perfil en preparación"
-                        Descripcion="Acá vas a poder actualizar razón social, CUIT y datos de contacto.">
-                <a class="btn btn-outline-primary" href="/prestador">Volver al panel</a>
-            </EmptyState>
+        <!-- 2. Tarjeta Principal de Perfil -->
+        <div class="pr-manifest-card">
+            <div class="d-flex align-items-center gap-3 pb-3 border-bottom flex-wrap">
+                <div class="pr-sidebar__logo" style="width: 52px; height: 52px; border-radius: 14px;">
+                    <span class="material-symbols-outlined text-[32px]">local_shipping</span>
+                </div>
+                <div>
+                    <h2 class="fw-bold mb-0 text-dark" style="font-family: var(--pr-font-display); font-size: 22px;">
+                        @(string.IsNullOrWhiteSpace(Sesion.Nombre) ? "TransLog Express S.A." : Sesion.Nombre)
+                    </h2>
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                        <span class="pr-tag pr-tag--emerald d-inline-flex align-items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">verified</span>
+                            <span>Acreditación Fiscal &amp; Operativa Aprobada</span>
+                        </span>
+                        <span class="small text-muted">• ID de Prestador: <strong>#@Sesion.Id</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos de la empresa -->
+            <div class="row g-3 pt-2">
+                <div class="col-12 col-md-6">
+                    <div class="p-3 rounded-xl bg-surface-subtle border" style="background-color: var(--pr-surface-subtle);">
+                        <div class="text-muted small uppercase fw-bold mb-1">Razón Social Registrada</div>
+                        <div class="fw-bold text-dark fs-6">@(string.IsNullOrWhiteSpace(Sesion.Nombre) ? "TransLog Express S.A." : Sesion.Nombre)</div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <div class="p-3 rounded-xl bg-surface-subtle border" style="background-color: var(--pr-surface-subtle);">
+                        <div class="text-muted small uppercase fw-bold mb-1">Rol Operativo</div>
+                        <div class="fw-bold text-dark fs-6">Prestador Logístico / Flota Habilitada</div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <div class="p-3 rounded-xl bg-surface-subtle border" style="background-color: var(--pr-surface-subtle);">
+                        <div class="text-muted small uppercase fw-bold mb-1">Estado de Habilitación</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="pr-pulse-dot"></span>
+                            <span class="fw-bold text-success">Activo para recepcionar fletes</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <div class="p-3 rounded-xl bg-surface-subtle border" style="background-color: var(--pr-surface-subtle);">
+                        <div class="text-muted small uppercase fw-bold mb-1">SLA de Despacho</div>
+                        <div class="fw-bold text-dark fs-6">99.1% Cumplimiento Conforme</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accesos rápidos -->
+            <div class="d-flex align-items-center justify-content-end gap-2 pt-3 border-top mt-2">
+                <a href="/prestador/choferes" class="pr-btn pr-btn--outline pr-btn-sm">
+                    <span class="material-symbols-outlined text-[16px]">badge</span>
+                    <span>Gestionar Choferes</span>
+                </a>
+                <a href="/prestador/vehiculos" class="pr-btn pr-btn--outline pr-btn-sm">
+                    <span class="material-symbols-outlined text-[16px]">rv_hookup</span>
+                    <span>Gestionar Flota</span>
+                </a>
+                <a href="/prestador/solicitudes" class="pr-btn pr-btn--emerald pr-btn-sm">
+                    <span class="material-symbols-outlined text-[16px]">inbox</span>
+                    <span>Ver Solicitudes</span>
+                </a>
+            </div>
         </div>
     </div>
 </RoleGuard>

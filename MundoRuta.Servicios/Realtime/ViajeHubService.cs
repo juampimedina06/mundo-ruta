@@ -14,6 +14,8 @@ namespace MundoRuta.Servicios.Realtime
 
         private const string HubPath = "hubs/viaje";
 
+        public event Action<bool>? EstadoConexionCambiado;
+
         public event Action<NuevaOfertaDTO>? NuevaOfertaRecibida;
 
         public event Action<ViajeAsignadoDTO>? ViajeAsignado;
@@ -76,18 +78,21 @@ namespace MundoRuta.Servicios.Realtime
                 _hubConnection.Reconnecting += error =>
                 {
                     _logger.LogWarning(error, "Reconexión al hub en curso.");
+                    EstadoConexionCambiado?.Invoke(false);
                     return Task.CompletedTask;
                 };
 
                 _hubConnection.Reconnected += connectionId =>
                 {
                     _logger.LogInformation("Reconexión al hub exitosa. ConnectionId: {ConnectionId}", connectionId);
+                    EstadoConexionCambiado?.Invoke(true);
                     return Task.CompletedTask;
                 };
 
                 _hubConnection.Closed += error =>
                 {
                     _logger.LogWarning(error, "Conexión con el hub cerrada.");
+                    EstadoConexionCambiado?.Invoke(false);
                     return Task.CompletedTask;
                 };
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using MundoRuta.Shared;
 
@@ -33,16 +34,16 @@ namespace MundoRuta.Server.Client.Navigation
 
         private static readonly IReadOnlyList<MenuItem> MenuChofer = new List<MenuItem>
         {
-            new MenuItem("Mi viaje", "/chofer"),
+            new MenuItem("Inicio", "/chofer/home"),
             new MenuItem("Historial", "/chofer/historial"),
             new MenuItem("Mi perfil", "/chofer/perfil")
         };
 
         private static readonly IReadOnlyList<MenuItem> MenuAdmin = new List<MenuItem>
         {
-            new MenuItem("Panel", "/admin"),
-            new MenuItem("Prestadores", "/admin/prestadores"),
-            new MenuItem("Configuración", "/admin/configuracion")
+            new MenuItem("Dashboard", "/admin/dashboard"),
+            new MenuItem("Comisiones", "/admin/comisiones"),
+            new MenuItem("Usuarios", "/admin/usuarios")
         };
 
         public static IReadOnlyList<MenuItem> Obtener(string? rol)

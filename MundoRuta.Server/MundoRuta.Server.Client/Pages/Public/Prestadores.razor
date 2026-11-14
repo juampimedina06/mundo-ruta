@@ -1,14 +1,98 @@
+@page "/servicios/fletes"
 @page "/prestadores"
+@using System.Globalization
 @using MundoRuta.Shared.DTO
 @inject IHttpServices Http
 
-<PageTitle>Prestadores | Mundo Ruta</PageTitle>
+<PageTitle>Catálogo de Servicios de Fletes | Mundo Ruta</PageTitle>
 
-<div class="mr-page">
-    <div class="mr-container">
-        <PageHeader Titulo="Prestadores"
-                    Descripcion="Empresas de transporte aprobadas para operar en Mundo Ruta." />
+<HeadContent>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</HeadContent>
 
+<div class="mr-catalogo-page">
+    <div class="mr-container mr-catalogo">
+        @* Barra superior de migas de pan y fecha *@
+        <div class="mr-catalogo__topbar">
+            <nav class="mr-catalogo__breadcrumb" aria-label="Ubicación">
+                <svg class="mr-catalogo__icon mr-catalogo__icon--18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 10.5 12 3l9 7.5" />
+                    <path d="M5 9.5V20a1 1 0 0 0 1 1h4.5v-6h3v6H18a1 1 0 0 0 1-1V9.5" />
+                </svg>
+                <span>/</span>
+                <span class="mr-catalogo__breadcrumb-strong">Centro de Control</span>
+                <span>/</span>
+                <span class="mr-catalogo__breadcrumb-active">Catálogo de Servicios</span>
+            </nav>
+
+            <div class="mr-catalogo__fecha">
+                <svg class="mr-catalogo__icon mr-catalogo__icon--16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <span>@_fechaActual</span>
+            </div>
+        </div>
+
+        @* Header de Búsqueda y Filtros Simplificados *@
+        <section class="mr-catalogo__search-card">
+            <div class="mr-catalogo__header-row">
+                <div class="mr-catalogo__header-info">
+                    <div class="mr-catalogo__title-wrap">
+                        <h1 class="mr-catalogo__title">Catálogo de Servicios de Fletes</h1>
+                        <span class="mr-catalogo__badge-b2b">Red Verificada B2B</span>
+                    </div>
+                    <p class="mr-catalogo__subtitle">
+                        Encontrá transportistas y empresas de mudanzas con habilitación y póliza vigente.
+                    </p>
+                </div>
+
+                <div class="mr-catalogo__audit">
+                    <svg class="mr-catalogo__icon mr-catalogo__icon--18 mr-catalogo__audit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 2l2.4 1.8 3-.3.9 2.9 2.6 1.5-.9 2.9 1.3 2.7-2.2 2 .1 3-2.9.6-1.8 2.4-2.5-1.7-2.5 1.7-1.8-2.4-2.9-.6.1-3-2.2-2 1.3-2.7-.9-2.9 2.6-1.5.9-2.9 3 .3L12 2z" />
+                        <path d="m9 12 2 2 4-4" />
+                    </svg>
+                    <span>Auditado CNRT / RNR</span>
+                </div>
+            </div>
+
+            <div class="mr-catalogo__filters">
+                <div class="mr-catalogo__search-box">
+                    <svg class="mr-catalogo__field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    <input type="text"
+                           class="mr-catalogo__search-input"
+                           placeholder="Buscar fletes, tipo de vehículo o zona (ej. Sprinter, Paletizado, GBA Norte)..."
+                           @bind="_busqueda"
+                           @bind:event="oninput" />
+                </div>
+
+                <div class="mr-catalogo__zone-box">
+                    <svg class="mr-catalogo__field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    <select class="mr-catalogo__zone-select" @bind="_zonaSeleccionada" aria-label="Zona de cobertura">
+                        <option value="CABA y GBA Norte">CABA y GBA Norte</option>
+                        <option value="Gran Buenos Aires Sur y Oeste">Gran Buenos Aires Sur y Oeste</option>
+                        <option value="Córdoba y Zona Centro">Córdoba y Zona Centro</option>
+                        <option value="Rosario / Litoral">Rosario / Litoral</option>
+                        <option value="Todo el país">Todo el país</option>
+                    </select>
+                    <svg class="mr-catalogo__select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        @* Listado Principal Limpio y Espacioso de Prestadores *@
         @if (_cargando)
         {
             <div class="mr-loading">Cargando prestadores...</div>
@@ -24,23 +108,101 @@
         }
         else
         {
-            <div class="mr-grid">
-                @foreach (PrestadorListadoDTO prestador in _prestadores)
+            List<PrestadorListadoDTO> prestadoresMostrados = ObtenerPrestadoresFiltrados();
+
+            <section class="mr-catalogo__list-section">
+                <div class="mr-catalogo__toolbar">
+                    <span class="mr-catalogo__count">
+                        Mostrando <strong>@prestadoresMostrados.Count @(prestadoresMostrados.Count == 1 ? "empresa verificada" : "empresas verificadas")</strong> @(prestadoresMostrados.Count == 1 ? "disponible" : "disponibles") en tu zona
+                    </span>
+
+                    <div class="mr-catalogo__sort">
+                        <span class="mr-catalogo__sort-label">Ordenar por:</span>
+                        <select class="mr-catalogo__sort-select" @bind="_ordenSeleccionado" aria-label="Ordenar prestadores">
+                            <option value="calificados">Mejor Calificados</option>
+                            <option value="flota">Mayor Flota</option>
+                            <option value="disponibilidad">Disponibilidad Inmediata</option>
+                        </select>
+                    </div>
+                </div>
+
+                @if (prestadoresMostrados.Count == 0)
                 {
-                    <article class="mr-card">
-                        <h2 class="mr-card__title">Prestador verificado</h2>
-                        <p>
-                            <EstadoBadge Estado="@prestador.Estado" />
-                        </p>
-                        <p class="mb-1">
-                            <a href="mailto:@prestador.Email">@prestador.Email</a>
-                        </p>
-                        <p class="mb-0">
-                            <a href="tel:@prestador.Telefono">@prestador.Telefono</a>
-                        </p>
-                    </article>
+                    <EmptyState Titulo="Sin resultados para tu búsqueda"
+                                Descripcion="Probá con otro correo, teléfono o número de ID." />
                 }
-            </div>
+                else
+                {
+                    <div class="mr-catalogo__grid">
+                        @foreach (PrestadorListadoDTO prestador in prestadoresMostrados)
+                        {
+                            bool esDestacado = prestador.Id == _prestadorSeleccionadoId;
+                            bool esActivo = EsEstadoActivo(prestador.Estado);
+
+                            <article class="mr-prestador-card @(esDestacado ? "mr-prestador-card--destacado" : string.Empty)"
+                                     @onclick="() => SeleccionarPrestador(prestador.Id)">
+                                <div class="mr-prestador-card__top">
+                                    <div class="mr-prestador-card__header">
+                                        <div class="mr-prestador-card__identity">
+                                            <div class="mr-prestador-card__id-box @(esDestacado ? "mr-prestador-card__id-box--destacado" : string.Empty)">
+                                                #@prestador.Id
+                                            </div>
+                                            <div class="mr-prestador-card__meta">
+                                                <span class="mr-prestador-card__id-label">ID: @prestador.Id</span>
+                                                <span class="mr-prestador-card__role-pill @(esDestacado ? "mr-prestador-card__role-pill--destacado" : string.Empty)">
+                                                    @(string.IsNullOrWhiteSpace(prestador.Rol) ? "Prestador" : prestador.Rol)
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <span class="mr-prestador-card__status @(esActivo ? "mr-prestador-card__status--activo" : "mr-prestador-card__status--inactivo")">
+                                            <span class="mr-prestador-card__status-dot"></span>
+                                            @ObtenerTextoEstado(prestador.Estado)
+                                        </span>
+                                    </div>
+
+                                    <div class="mr-prestador-card__contacts">
+                                        <div class="mr-prestador-card__contact-row">
+                                            <svg class="mr-prestador-card__contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <rect x="2" y="4" width="20" height="16" rx="2" />
+                                                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                                            </svg>
+                                            <a class="mr-prestador-card__contact-link mr-prestador-card__contact-link--truncate"
+                                               href="mailto:@prestador.Email"
+                                               @onclick:stopPropagation="true">
+                                                @prestador.Email
+                                            </a>
+                                        </div>
+
+                                        <div class="mr-prestador-card__contact-row">
+                                            <svg class="mr-prestador-card__contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                                            </svg>
+                                            <a class="mr-prestador-card__contact-link"
+                                               href="tel:@prestador.Telefono"
+                                               @onclick:stopPropagation="true">
+                                                @prestador.Telefono
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mr-prestador-card__actions">
+                                    <a class="mr-prestador-card__btn @(esDestacado ? "mr-prestador-card__btn--destacado" : string.Empty)"
+                                       href="prestadores/@prestador.Id"
+                                       @onclick:stopPropagation="true">
+                                        <span>Ver Perfil Público</span>
+                                        <svg class="mr-prestador-card__btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg>
+                                    </a>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+            </section>
         }
     </div>
 </div>
@@ -49,6 +211,11 @@
     private List<PrestadorListadoDTO>? _prestadores;
     private bool _cargando = true;
     private string? _error;
+    private string _busqueda = string.Empty;
+    private string _zonaSeleccionada = "CABA y GBA Norte";
+    private string _ordenSeleccionado = "calificados";
+    private int? _prestadorSeleccionadoId;
+    private readonly string _fechaActual = FormatearFechaActual();
 
     protected override async Task OnInitializedAsync()
     {
@@ -61,8 +228,90 @@
         else
         {
             _prestadores = respuesta.Respuesta;
+
+            if (_prestadores is { Count: > 0 })
+            {
+                _prestadorSeleccionadoId = _prestadores[0].Id;
+            }
         }
 
         _cargando = false;
     }
+
+    private void SeleccionarPrestador(int id)
+    {
+        _prestadorSeleccionadoId = id;
+    }
+
+    private List<PrestadorListadoDTO> ObtenerPrestadoresFiltrados()
+    {
+        if (_prestadores is null || _prestadores.Count == 0)
+        {
+            return [];
+        }
+
+        IEnumerable<PrestadorListadoDTO> consulta = _prestadores;
+
+        if (!string.IsNullOrWhiteSpace(_busqueda))
+        {
+            string termino = _busqueda.Trim();
+            consulta = consulta.Where(p =>
+                (p.Email?.Contains(termino, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (p.Telefono?.Contains(termino, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (p.Rol?.Contains(termino, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (p.Estado?.Contains(termino, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                ObtenerTextoEstado(p.Estado).Contains(termino, StringComparison.OrdinalIgnoreCase) ||
+                p.Id.ToString(CultureInfo.InvariantCulture).Contains(termino, StringComparison.OrdinalIgnoreCase));
+        }
+
+        consulta = _ordenSeleccionado switch
+        {
+            "flota" => consulta.OrderByDescending(p => p.Id),
+            "disponibilidad" => consulta.OrderByDescending(p => EsEstadoActivo(p.Estado)).ThenBy(p => p.Id),
+            _ => consulta.OrderBy(p => p.Id)
+        };
+
+        return consulta.ToList();
+    }
+
+    private static bool EsEstadoActivo(string? estado)
+    {
+        if (string.IsNullOrWhiteSpace(estado))
+        {
+            return false;
+        }
+
+        return string.Equals(estado, "APROBADO", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(estado, "ACTIVO", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ObtenerTextoEstado(string? estado)
+    {
+        if (string.IsNullOrWhiteSpace(estado))
+        {
+            return "Inactivo";
+        }
+
+        if (EsEstadoActivo(estado))
+        {
+            return "Activo";
+        }
+
+        if (string.Equals(estado, "INACTIVO", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(estado, "RECHAZADO", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(estado, "PENDIENTE", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Inactivo";
+        }
+
+        return estado;
+    }
+
+    private static string FormatearFechaActual()
+    {
+        CultureInfo cultura = new CultureInfo("es-AR");
+        string fecha = DateTime.Now.ToString("dd MMM yyyy", cultura).Replace(".", string.Empty);
+        return $"{fecha} • GMT-3";
+    }
 }
+

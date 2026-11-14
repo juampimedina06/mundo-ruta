@@ -1,0 +1,38 @@
+.cn-login-page {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.14) 0%, transparent 45%),
+        radial-gradient(circle at 80% 80%, rgba(254, 179, 0, 0.1) 0%, transparent 45%),
+        #0a122a;
+}
+
+.cn-login-card {
+    width: 100%;
+    max-width: 440px;
+    background: rgba(23, 30, 55, 0.92);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    border: 1px solid rgba(56, 189, 248, 0.18);
+    border-radius: 22px;
+    padding: 2.5rem 2rem;
+    box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.cn-login-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(76, 142, 255, 0.25), rgba(78, 222, 163, 0.2));
+    border: 1px solid rgba(173, 198, 255, 0.3);
+    color: var(--cn-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    box-shadow: 0 0 24px rgba(56, 189, 248, 0.2);
+}

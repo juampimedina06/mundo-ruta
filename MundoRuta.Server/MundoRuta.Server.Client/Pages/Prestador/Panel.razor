@@ -1,37 +1,231 @@
 @page "/prestador"
+@layout PrestadorLayout
+@using MundoRuta.Shared
+@using MundoRuta.Servicios.Sesion
+@inject SesionEstado Sesion
 
-<PageTitle>Panel del prestador | Mundo Ruta</PageTitle>
+<PageTitle>Panel de Operaciones Prestador | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="Roles.Prestador">
-    <div class="mr-page">
-        <div class="mr-container">
-            <PageHeader Titulo="Panel del prestador"
-                        Descripcion="Gestioná solicitudes, viajes, choferes y vehículos." />
-
-            <div class="mr-grid">
-                <a class="mr-card mr-card--enlace" href="/prestador/solicitudes">
-                    <h2 class="mr-card__title">Solicitudes</h2>
-                    <p class="mr-muted">Pedidos pendientes de respuesta.</p>
-                    <span class="small fw-semibold">Ir a la sección</span>
+    <div class="d-flex flex-column gap-4">
+        <!-- 1. Cabecera Ejecutiva del Portal Prestador -->
+        <div class="pr-header-block">
+            <div>
+                <div class="pr-header-meta">
+                    <span class="pr-tag--pulse">
+                        <span class="pr-pulse-dot"></span>
+                        <span>Terminal Logística • Despacho Activo</span>
+                    </span>
+                    <span class="pr-tag pr-tag--mono">Portal Prestadores B2B</span>
+                </div>
+                <h1 class="pr-page-title">Centro de Mando del Prestador</h1>
+                <p class="pr-page-subtitle">
+                    Control integral de solicitudes de fletes y mudanzas, seguimiento de viajes en tiempo real, gestión de choferes y flota vehicular.
+                </p>
+            </div>
+            <div class="pr-header-actions">
+                <a class="pr-btn pr-btn--outline" href="/prestador/perfil">
+                    <span class="material-symbols-outlined text-[18px]">business</span>
+                    <span>Perfil de Empresa</span>
                 </a>
-
-                <a class="mr-card mr-card--enlace" href="/prestador/viajes">
-                    <h2 class="mr-card__title">Viajes</h2>
-                    <p class="mr-muted">Servicios asignados y en curso.</p>
-                    <span class="small fw-semibold">Ir a la sección</span>
+                <a class="pr-btn pr-btn--emerald" href="/prestador/solicitudes">
+                    <span class="material-symbols-outlined text-[20px]">inbox</span>
+                    <span>Bandeja de Solicitudes</span>
                 </a>
+            </div>
+        </div>
 
-                <a class="mr-card mr-card--enlace" href="/prestador/choferes">
-                    <h2 class="mr-card__title">Choferes</h2>
-                    <p class="mr-muted">Tu equipo de conducción.</p>
-                    <span class="small fw-semibold">Ir a la sección</span>
-                </a>
+        <!-- 2. KPIs de Acceso Rápido -->
+        <div class="pr-kpi-grid">
+            <a href="/prestador/solicitudes" class="pr-kpi-card text-decoration-none">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">Solicitudes de Carga</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--emerald">
+                        <span class="material-symbols-outlined text-[20px]">inbox</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value" style="font-size: 24px;">Subastas</span>
+                        <span class="pr-kpi-badge pr-kpi-badge--emerald">En espera</span>
+                    </div>
+                    <div class="pr-kpi-subtext">Postulate y envía contraofertas</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--emerald" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </a>
 
-                <a class="mr-card mr-card--enlace" href="/prestador/vehiculos">
-                    <h2 class="mr-card__title">Vehículos</h2>
-                    <p class="mr-muted">Flota disponible para operar.</p>
-                    <span class="small fw-semibold">Ir a la sección</span>
-                </a>
+            <a href="/prestador/viajes" class="pr-kpi-card text-decoration-none">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">Viajes en Tránsito</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--navy">
+                        <span class="material-symbols-outlined text-[20px]">route</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value" style="font-size: 24px;">Operaciones</span>
+                        <span class="pr-kpi-badge pr-kpi-badge--emerald">Tiempo real</span>
+                    </div>
+                    <div class="pr-kpi-subtext">Seguimiento GPS y estados logísticos</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--navy" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </a>
+
+            <a href="/prestador/choferes" class="pr-kpi-card text-decoration-none">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">Equipo de Conducción</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--amber">
+                        <span class="material-symbols-outlined text-[20px]">badge</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value" style="font-size: 24px;">Choferes</span>
+                        <span class="pr-kpi-badge pr-kpi-badge--amber">Nómina</span>
+                    </div>
+                    <div class="pr-kpi-subtext">Altas, licencias y habilitaciones</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--amber" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </a>
+
+            <a href="/prestador/vehiculos" class="pr-kpi-card text-decoration-none">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">Parque Automotor</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--slate">
+                        <span class="material-symbols-outlined text-[20px]">rv_hookup</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value" style="font-size: 24px;">Flota</span>
+                        <span class="pr-kpi-badge pr-kpi-badge--emerald">Tarifa / km</span>
+                    </div>
+                    <div class="pr-kpi-subtext">Unidades registradas y tarifas</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--navy" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- 3. Módulos Operativos Principales -->
+        <div class="row g-4">
+            <div class="col-12 col-lg-6">
+                <div class="pr-manifest-card h-100">
+                    <div class="d-flex align-items-center justify-content-between pb-2 border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--emerald">
+                                <span class="material-symbols-outlined">inbox</span>
+                            </div>
+                            <div>
+                                <h3 class="fw-bold mb-0 text-dark" style="font-family: var(--pr-font-display); font-size: 17px;">
+                                    Bandeja de Solicitudes y Subastas
+                                </h3>
+                                <div class="small text-muted">Fletes empresariales, mudanzas y cargas especiales</div>
+                            </div>
+                        </div>
+                        <span class="pr-tag pr-tag--emerald">Activo</span>
+                    </div>
+                    <p class="text-muted small mt-2 mb-3" style="line-height: 1.5;">
+                        Revisa los pedidos publicados por clientes y empresas. Acepta el servicio directamente o envía contraofertas personalizadas asignando chofer y vehículo habilitado.
+                    </p>
+                    <div class="mt-auto pt-2">
+                        <a href="/prestador/solicitudes" class="pr-btn pr-btn--emerald w-100">
+                            <span>Ingresar a Solicitudes</span>
+                            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-6">
+                <div class="pr-manifest-card h-100">
+                    <div class="d-flex align-items-center justify-content-between pb-2 border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--navy">
+                                <span class="material-symbols-outlined">route</span>
+                            </div>
+                            <div>
+                                <h3 class="fw-bold mb-0 text-dark" style="font-family: var(--pr-font-display); font-size: 17px;">
+                                    Monitoreo de Viajes en Operación
+                                </h3>
+                                <div class="small text-muted">Control en vivo, telemetría y remitos validados</div>
+                            </div>
+                        </div>
+                        <span class="pr-tag pr-tag--mono">Tiempo Real</span>
+                    </div>
+                    <p class="text-muted small mt-2 mb-3" style="line-height: 1.5;">
+                        Seguimiento punto a punto de cada servicio asignado. Visualiza estados de carga, avance de trayecto y confirma entregas con reporte de conformidad.
+                    </p>
+                    <div class="mt-auto pt-2">
+                        <a href="/prestador/viajes" class="pr-btn pr-btn--navy w-100">
+                            <span>Monitorear Viajes</span>
+                            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-6">
+                <div class="pr-manifest-card h-100">
+                    <div class="d-flex align-items-center justify-content-between pb-2 border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--amber">
+                                <span class="material-symbols-outlined">badge</span>
+                            </div>
+                            <div>
+                                <h3 class="fw-bold mb-0 text-dark" style="font-family: var(--pr-font-display); font-size: 17px;">
+                                    Gestión de Choferes
+                                </h3>
+                                <div class="small text-muted">Altas (ChoferAltaDTO) y control de licencias</div>
+                            </div>
+                        </div>
+                        <span class="pr-tag pr-tag--mono">Nómina</span>
+                    </div>
+                    <p class="text-muted small mt-2 mb-3" style="line-height: 1.5;">
+                        Registra conductores de tu empresa, asigna credenciales de acceso para la app móvil de choferes y verifica licencias nacionales de transporte vigentes.
+                    </p>
+                    <div class="mt-auto pt-2">
+                        <a href="/prestador/choferes" class="pr-btn pr-btn--outline w-100">
+                            <span>Administrar Choferes</span>
+                            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-6">
+                <div class="pr-manifest-card h-100">
+                    <div class="d-flex align-items-center justify-content-between pb-2 border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--slate">
+                                <span class="material-symbols-outlined">rv_hookup</span>
+                            </div>
+                            <div>
+                                <h3 class="fw-bold mb-0 text-dark" style="font-family: var(--pr-font-display); font-size: 17px;">
+                                    Mi Flota &amp; Vehículos
+                                </h3>
+                                <div class="small text-muted">Unidades operativas y tarifa base por km</div>
+                            </div>
+                        </div>
+                        <span class="pr-tag pr-tag--emerald">Flota</span>
+                    </div>
+                    <p class="text-muted small mt-2 mb-3" style="line-height: 1.5;">
+                        Administra camiones, camionetas y furgones disponibles. Configura la tarifa base por kilómetro para que el sistema cotice automáticamente tus propuestas.
+                    </p>
+                    <div class="mt-auto pt-2">
+                        <a href="/prestador/vehiculos" class="pr-btn pr-btn--outline w-100">
+                            <span>Gestionar Flota</span>
+                            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
