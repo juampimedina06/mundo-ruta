@@ -2,91 +2,510 @@
 @page "/usuario/viajes"
 @using MundoRuta.Shared
 @using MundoRuta.Shared.DTO
+@using System.Globalization
 @inject IHttpServices Http
 @inject SesionEstado Sesion
 @inject NavigationManager Navegacion
+@inject IJSRuntime JS
+@implements IDisposable
 
-<PageTitle>Mis viajes | Mundo Ruta</PageTitle>
+<PageTitle>Mis Viajes | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="@Roles.Usuario">
-    <div class="mr-page">
-        <div class="mr-container">
-            <PageHeader Titulo="Mis viajes"
-                        Descripcion="Historial y estado de tus solicitudes." />
+    <div class="mr-viajes-page">
+        <div class="mr-viajes-container">
 
-            @if (!Sesion.Restaurada)
-            {
-                <div class="mr-loading">Cargando sesión...</div>
-            }
-            else if (!Sesion.EstaLogueado || Sesion.Id <= 0)
-            {
-                <div class="mr-alert mr-alert--error">No hay sesión activa. Iniciá sesión para ver tus viajes.</div>
-                <a class="btn btn-primary mt-3" href="/login">Iniciar sesión</a>
-            }
-            else
-            {
-                <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
-                    <div class="fw-semibold">Filtrar por estado:</div>
-                    <button class="btn @( _filtroEstado == "TODOS" ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro("TODOS")'>Todos</button>
-                    <button class="btn @( _filtroEstado == EstadosViaje.Buscando ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro(EstadosViaje.Buscando)'>Buscando</button>
-                    <button class="btn @( _filtroEstado == EstadosViaje.Asignado ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro(EstadosViaje.Asignado)'>Asignado</button>
-                    <button class="btn @( _filtroEstado == EstadosViaje.CargaSubida ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro(EstadosViaje.CargaSubida)'>Carga subida</button>
-                    <button class="btn @( _filtroEstado == EstadosViaje.EnTransito ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro(EstadosViaje.EnTransito)'>En tránsito</button>
-                    <button class="btn @( _filtroEstado == EstadosViaje.LlegadaDestino ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro(EstadosViaje.LlegadaDestino)'>Llegada destino</button>
-                    <button class="btn @( _filtroEstado == EstadosViaje.Finalizado ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro(EstadosViaje.Finalizado)'>Finalizado</button>
-                    <button class="btn @( _filtroEstado == EstadosViaje.Cancelado ? "btn-primary" : "btn-outline-primary" )" @onclick='() => CambiarFiltro(EstadosViaje.Cancelado)'>Cancelado</button>
+            <!-- BREADCRUMB -->
+            <nav class="mr-breadcrumb" aria-label="Breadcrumb">
+                <a href="/" class="mr-breadcrumb__item mr-breadcrumb__link">
+                    <span class="material-symbols-outlined mr-icon-sm">home</span>
+                    <span>Inicio</span>
+                </a>
+                <span class="material-symbols-outlined mr-breadcrumb__separator">chevron_right</span>
+                <span class="mr-breadcrumb__item">Pasajero</span>
+                <span class="material-symbols-outlined mr-breadcrumb__separator">chevron_right</span>
+                <span class="mr-breadcrumb__item mr-breadcrumb__item--active">Mis Viajes</span>
+            </nav>
+
+            <!-- HEADER TITLE & GLOBAL CONTROLS BAR -->
+            <div class="mr-header-bar">
+                <div class="mr-header-bar__title-group">
+                    <h1 class="mr-header-bar__title">Mis Viajes</h1>
+                    <p class="mr-header-bar__subtitle">Gestiona tus viajes, estados, fechas, recorridos y pagos.</p>
                 </div>
 
-                @if (_cargando)
+                <div class="mr-header-bar__actions">
+                    <!-- Live Search Field -->
+                    <div class="mr-search-field">
+                        <span class="material-symbols-outlined mr-search-field__icon">search</span>
+                        <input type="text"
+                               class="mr-search-field__input"
+                               placeholder="Buscar por código, destino..."
+                               @bind="_busqueda"
+                               @bind:event="oninput" />
+                        @if (!string.IsNullOrWhiteSpace(_busqueda))
+                        {
+                            <button type="button" class="mr-search-field__clear" @onclick="LimpiarBusqueda" title="Limpiar búsqueda">
+                                <span class="material-symbols-outlined mr-icon-xs">close</span>
+                            </button>
+                        }
+                    </div>
+
+                    <!-- Date Range Filter -->
+                    <div class="mr-dropdown-filter">
+                        <button type="button"
+                                class="mr-btn-date"
+                                @onclick="AlternarMenuFechas">
+                            <span class="material-symbols-outlined mr-icon-sm">calendar_month</span>
+                            <span>@_filtroFechaTexto</span>
+                            <span class="material-symbols-outlined mr-icon-xs">arrow_drop_down</span>
+                        </button>
+
+                        @if (_menuFechasAbierto)
+                        {
+                            <div class="mr-dropdown-menu">
+                                <button type="button"
+                                        class="mr-dropdown-item @(string.IsNullOrEmpty(_filtroMes) ? "mr-dropdown-item--active" : "")"
+                                        @onclick='() => SeleccionarFiltroMes("")'>
+                                    Todas las fechas
+                                </button>
+                                @foreach (var mes in _mesesDisponibles)
+                                {
+                                    <button type="button"
+                                            class="mr-dropdown-item @(_filtroMes == mes.Clave ? "mr-dropdown-item--active" : "")"
+                                            @onclick="() => SeleccionarFiltroMes(mes.Clave)">
+                                        @mes.Etiqueta
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Programar Nuevo Viaje CTA -->
+                    <a href="/usuario/solicitar" class="mr-btn-primary-cta">
+                        <span class="material-symbols-outlined mr-icon-sm">add</span>
+                        <span>+ Programar Nuevo Viaje</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- TABS ROW & MINI METRICS -->
+            <div class="mr-tabs-wrapper">
+                <div class="mr-tabs-strip">
+                    <button type="button"
+                            class="mr-tab-btn @(_tabActual == TabViaje.Proximos ? "mr-tab-btn--active" : "")"
+                            @onclick="() => CambiarTab(TabViaje.Proximos)">
+                        <span class="material-symbols-outlined mr-icon-sm">departure_board</span>
+                        <span>En Curso / Próximos</span>
+                        <span class="mr-tab-counter">@_conteoProximos</span>
+                    </button>
+
+                    <button type="button"
+                            class="mr-tab-btn @(_tabActual == TabViaje.Completados ? "mr-tab-btn--active" : "")"
+                            @onclick="() => CambiarTab(TabViaje.Completados)">
+                        <span class="material-symbols-outlined mr-icon-sm">task_alt</span>
+                        <span>Completados</span>
+                        <span class="mr-tab-counter">@_conteoCompletados</span>
+                    </button>
+
+                    <button type="button"
+                            class="mr-tab-btn @(_tabActual == TabViaje.Cancelados ? "mr-tab-btn--active" : "")"
+                            @onclick="() => CambiarTab(TabViaje.Cancelados)">
+                        <span class="material-symbols-outlined mr-icon-sm">cancel</span>
+                        <span>Cancelados</span>
+                        <span class="mr-tab-counter">@_conteoCancelados</span>
+                    </button>
+
+                    <button type="button"
+                            class="mr-tab-btn @(_tabActual == TabViaje.Todos ? "mr-tab-btn--active" : "")"
+                            @onclick="() => CambiarTab(TabViaje.Todos)">
+                        <span class="material-symbols-outlined mr-icon-sm">list_alt</span>
+                        <span>Todos</span>
+                        <span class="mr-tab-counter">@_conteoTodos</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECCIÓN PRÓXIMAS RESERVAS / LISTADO -->
+            <section class="mr-section-table">
+                <div class="mr-section-table__header">
+                    <div>
+                        <h2 class="mr-section-table__title">
+                            <span>@TituloSeccionActual</span>
+                            <span class="mr-section-badge">@ViajesFiltrados.Count @(ViajesFiltrados.Count == 1 ? "asignada" : "asignadas")</span>
+                        </h2>
+                        <p class="mr-section-table__desc">
+                            Listado de viajes registrados con información de reserva, trayecto, pagos y estados.
+                        </p>
+                    </div>
+
+                    <div class="mr-section-table__actions">
+                        <button type="button"
+                                class="mr-icon-btn"
+                                title="Descargar reporte CSV"
+                                @onclick="DescargarReporteCsv">
+                            <span class="material-symbols-outlined mr-icon-sm">file_download</span>
+                        </button>
+                        <button type="button"
+                                class="mr-icon-btn @(_cargando ? "mr-icon-btn--spinning" : "")"
+                                title="Refrescar listado"
+                                @onclick="CargarViajesAsync">
+                            <span class="material-symbols-outlined mr-icon-sm">sync</span>
+                        </button>
+                    </div>
+                </div>
+
+                @if (!Sesion.Restaurada || _cargando)
                 {
-                    <div class="mr-loading">Cargando viajes...</div>
+                    <!-- SKELETON / LOADING STATE -->
+                    <div class="mr-table-card">
+                        <div class="mr-skeleton-loading">
+                            <div class="mr-skeleton-header"></div>
+                            @for (int i = 0; i < 4; i++)
+                            {
+                                <div class="mr-skeleton-row">
+                                    <div class="mr-skeleton-cell" style="width: 80px;"></div>
+                                    <div class="mr-skeleton-cell" style="width: 110px;"></div>
+                                    <div class="mr-skeleton-cell" style="width: 100px;"></div>
+                                    <div class="mr-skeleton-cell" style="width: 180px;"></div>
+                                    <div class="mr-skeleton-cell" style="width: 90px;"></div>
+                                    <div class="mr-skeleton-cell" style="width: 50px;"></div>
+                                    <div class="mr-skeleton-cell" style="width: 90px;"></div>
+                                    <div class="mr-skeleton-cell" style="width: 90px;"></div>
+                                    <div class="mr-skeleton-cell" style="width: 80px;"></div>
+                                    <div class="mr-skeleton-cell" style="width: 100px;"></div>
+                                    <div class="mr-skeleton-cell" style="width: 100px;"></div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (!Sesion.EstaLogueado || Sesion.Id <= 0)
+                {
+                    <div class="mr-table-card mr-p-4">
+                        <div class="mr-alert mr-alert--error">
+                            No hay sesión activa. Iniciá sesión para ver tus viajes.
+                        </div>
+                        <a class="btn btn-primary mt-3" href="/login">Iniciar sesión</a>
+                    </div>
                 }
                 else if (!string.IsNullOrWhiteSpace(_error))
                 {
-                    <div class="mr-alert mr-alert--error">@_error</div>
+                    <div class="mr-table-card mr-p-4">
+                        <div class="mr-alert mr-alert--error d-flex justify-content-between align-items-center">
+                            <span>@_error</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="CargarViajesAsync">Reintentar</button>
+                        </div>
+                    </div>
                 }
-                else if (_viajes is null || _viajes.Count == 0)
+                else if (ViajesPaginados.Count == 0)
                 {
-                    <EmptyState Titulo="No hay viajes para mostrar"
-                                Descripcion="Cuando solicites un viaje lo vas a ver acá con su estado y su detalle.">
-                        <a class="btn btn-primary" href="/usuario/solicitar">Solicitar un viaje</a>
-                    </EmptyState>
-                }
-                else
-                {
-                    <div class="d-flex flex-column gap-2">
-                        @foreach (ListadoViajeDTO viaje in _viajes)
+                    <div class="mr-table-card mr-empty-box">
+                        <div class="mr-empty-icon">
+                            <span class="material-symbols-outlined" style="font-size: 40px;">route</span>
+                        </div>
+                        <h3 class="mr-empty-title">No hay viajes para mostrar</h3>
+                        <p class="mr-empty-desc">
+                            @if (!string.IsNullOrWhiteSpace(_busqueda) || !string.IsNullOrEmpty(_filtroMes))
+                            {
+                                <span>No se encontraron viajes que coincidan con los filtros aplicados.</span>
+                            }
+                            else
+                            {
+                                <span>Cuando solicites un viaje lo vas a ver acá con su estado y su detalle.</span>
+                            }
+                        </p>
+                        @if (!string.IsNullOrWhiteSpace(_busqueda) || !string.IsNullOrEmpty(_filtroMes))
                         {
-                            <article class="mr-card">
-                                <div class="mr-card__body d-flex flex-column flex-md-row justify-content-between gap-3">
-                                    <div class="flex-grow-1">
-                                        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                                            <h3 class="mr-card__title mb-0">Viaje #@viaje.Id</h3>
-                                            <EstadoBadge Estado="@viaje.Estado" />
-                                        </div>
-                                        <div class="mb-1"><strong>Origen:</strong> @viaje.Origen</div>
-                                        <div class="mb-1"><strong>Destino:</strong> @viaje.Destino</div>
-                                        <div class="mb-1"><strong>Fecha:</strong> @viaje.Fecha.ToString("dd/MM/yyyy")</div>
-                                        <div class="mb-0"><strong>Monto:</strong> $@viaje.Monto.ToString("N2")</div>
-                                    </div>
-                                    <div class="d-flex align-items-start align-items-md-center">
-                                        <button class="btn btn-outline-primary" @onclick="() => VerDetalle(viaje.Id)">Ver detalle</button>
-                                    </div>
-                                </div>
-                            </article>
+                            <button type="button" class="mr-btn-action" @onclick="LimpiarTodosFiltros">
+                                Quitar filtros
+                            </button>
+                        }
+                        else
+                        {
+                            <a class="mr-btn-primary-cta" href="/usuario/solicitar">
+                                <span class="material-symbols-outlined mr-icon-sm">add</span>
+                                Solicitar un viaje
+                            </a>
                         }
                     </div>
                 }
-            }
+                else
+                {
+                    <!-- HIGH-END DESKTOP SAAS TABLE CONTAINER -->
+                    <div class="mr-table-card">
+                        <div class="mr-table-scroll custom-scrollbar">
+                            <table class="mr-table">
+                                <thead>
+                                    <tr class="mr-table__head-row">
+                                        <th class="mr-th">Viaje (Id)</th>
+                                        <th class="mr-th">Fecha y Hora Viaje</th>
+                                        <th class="mr-th">Fecha Reserva</th>
+                                        <th class="mr-th min-w-origen-destino">Origen / Destino</th>
+                                        <th class="mr-th">Tipo Solicitud</th>
+                                        <th class="mr-th text-center">Equipaje / Carga</th>
+                                        <th class="mr-th">Estado</th>
+                                        <th class="mr-th">Estado Pago</th>
+                                        <th class="mr-th">Método Pago</th>
+                                        <th class="mr-th text-end">Monto / Estimado</th>
+                                        <th class="mr-th text-center">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (ListadoViajeDTO viaje in ViajesPaginados)
+                                    {
+                                        <tr class="mr-table__row">
+                                            <!-- VIAJE ID -->
+                                            <td class="mr-td align-top">
+                                                <span class="mr-id-code">#MR-@viaje.Id</span>
+                                            </td>
+
+                                            <!-- FECHA Y HORA VIAJE -->
+                                            <td class="mr-td align-top">
+                                                <div class="mr-date-primary">@FormatearFecha(viaje.Fecha)</div>
+                                                <div class="mr-date-secondary">@FormatearHora(viaje.Hora)</div>
+                                            </td>
+
+                                            <!-- FECHA RESERVA -->
+                                            <td class="mr-td align-top">
+                                                <div class="mr-date-reserva-day">@FormatearFecha(viaje.FechaHoraReserva == default ? viaje.Fecha : viaje.FechaHoraReserva)</div>
+                                                <div class="mr-date-reserva-time">@FormatearHoraReserva(viaje.FechaHoraReserva == default ? viaje.Fecha : viaje.FechaHoraReserva)</div>
+                                            </td>
+
+                                            <!-- ORIGEN / DESTINO -->
+                                            <td class="mr-td align-top min-w-origen-destino">
+                                                <div class="mr-route-stack">
+                                                    <div class="mr-route-item">
+                                                        <span class="mr-route-dot"></span>
+                                                        <span class="mr-route-text" title="@viaje.Origen">@viaje.Origen</span>
+                                                    </div>
+                                                    <div class="mr-route-item">
+                                                        <span class="mr-route-dot"></span>
+                                                        <span class="mr-route-text" title="@viaje.Destino">@viaje.Destino</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+
+                                            <!-- TIPO SOLICITUD -->
+                                            <td class="mr-td align-top">
+                                                <span class="mr-tag-tipo">@FormatearTipoSolicitud(viaje.TipoSolicitud)</span>
+                                            </td>
+
+                                            <!-- EQUIPAJE / CARGA -->
+                                            <td class="mr-td align-top text-center">
+                                                <span class="mr-tag-equipaje @(viaje.EquipajeCarga ? "mr-tag-equipaje--si" : "mr-tag-equipaje--no")">
+                                                    @(viaje.EquipajeCarga ? "Sí" : "No")
+                                                </span>
+                                            </td>
+
+                                            <!-- ESTADO -->
+                                            <td class="mr-td align-top">
+                                                <span class="mr-badge-status @ObtenerClaseBadgeEstado(viaje.Estado)">
+                                                    @FormatearNombreEstado(viaje.Estado)
+                                                </span>
+                                            </td>
+
+                                            <!-- ESTADO PAGO -->
+                                            <td class="mr-td align-top">
+                                                <span class="mr-badge-pago @ObtenerClaseBadgePago(viaje.EstadoPago)">
+                                                    @FormatearEstadoPago(viaje.EstadoPago)
+                                                </span>
+                                            </td>
+
+                                            <!-- METODO PAGO -->
+                                            <td class="mr-td align-top">
+                                                <span class="mr-metodo-pago">@FormatearMetodoPago(viaje.MetodoDePago)</span>
+                                            </td>
+
+                                            <!-- MONTO / ESTIMADO -->
+                                            <td class="mr-td align-top text-end">
+                                                <div class="mr-price-amount">@FormatearMonto(viaje.Monto)</div>
+                                                <div class="mr-price-est">Est: @FormatearMonto(viaje.MontoEstimado > 0 ? viaje.MontoEstimado : viaje.Monto)</div>
+                                            </td>
+
+                                            <!-- ACCION -->
+                                            <td class="mr-td align-middle text-center">
+                                                <button type="button"
+                                                        class="mr-btn-action"
+                                                        @onclick="() => VerDetalle(viaje.Id)">
+                                                    <span>Ver Detalle</span>
+                                                    <span class="material-symbols-outlined mr-icon-xs">arrow_forward</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- TABLE FOOTER / PAGINATION CONTROLS -->
+                        <div class="mr-table-footer">
+                            <div class="mr-table-footer__info">
+                                Mostrando <span class="fw-semibold text-on-surface">@IndiceInicio - @IndiceFin</span> de <span class="fw-semibold text-on-surface">@ViajesFiltrados.Count</span> traslados totales
+                            </div>
+
+                            @if (TotalPaginas > 1)
+                            {
+                                <div class="mr-pagination">
+                                    <button type="button"
+                                            class="mr-page-btn @(_paginaActual <= 1 ? "mr-page-btn--disabled" : "")"
+                                            disabled="@(_paginaActual <= 1)"
+                                            @onclick="() => CambiarPagina(_paginaActual - 1)"
+                                            title="Página anterior">
+                                        <span class="material-symbols-outlined mr-icon-xs">chevron_left</span>
+                                    </button>
+
+                                    @for (int i = 1; i <= TotalPaginas; i++)
+                                    {
+                                        int numPagina = i;
+                                        <button type="button"
+                                                class="mr-page-num @(_paginaActual == numPagina ? "mr-page-num--active" : "")"
+                                                @onclick="() => CambiarPagina(numPagina)">
+                                            @numPagina
+                                        </button>
+                                    }
+
+                                    <button type="button"
+                                            class="mr-page-btn @(_paginaActual >= TotalPaginas ? "mr-page-btn--disabled" : "")"
+                                            disabled="@(_paginaActual >= TotalPaginas)"
+                                            @onclick="() => CambiarPagina(_paginaActual + 1)"
+                                            title="Página siguiente">
+                                        <span class="material-symbols-outlined mr-icon-xs">chevron_right</span>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </section>
+
         </div>
     </div>
 </RoleGuard>
 
 @code {
-    private List<ListadoViajeDTO>? _viajes;
+    private enum TabViaje
+    {
+        Proximos,
+        Completados,
+        Cancelados,
+        Todos
+    }
+
+    private class MesOpcion
+    {
+        public string Clave { get; set; } = string.Empty;
+        public string Etiqueta { get; set; } = string.Empty;
+    }
+
+    private List<ListadoViajeDTO> _todosLosViajes = new();
     private bool _cargando = true;
     private string? _error;
-    private string _filtroEstado = "TODOS";
+
+    private TabViaje _tabActual = TabViaje.Proximos;
+    private string _busqueda = string.Empty;
+    private string _filtroMes = string.Empty;
+    private bool _menuFechasAbierto = false;
+
+    private int _paginaActual = 1;
+    private const int TamanoPagina = 10;
+
+    private int _conteoProximos = 0;
+    private int _conteoCompletados = 0;
+    private int _conteoCancelados = 0;
+    private int _conteoTodos = 0;
+
+    private List<MesOpcion> _mesesDisponibles = new();
+
+    private string _filtroFechaTexto
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_filtroMes))
+            {
+                // Si no hay filtro específico pero tenemos viajes o mes actual
+                if (_mesesDisponibles.Count > 0)
+                {
+                    return _mesesDisponibles[0].Etiqueta;
+                }
+                return DateTime.Now.ToString("MMMM yyyy", new CultureInfo("es-ES"));
+            }
+
+            var seleccionado = _mesesDisponibles.FirstOrDefault(m => m.Clave == _filtroMes);
+            return seleccionado?.Etiqueta ?? _filtroMes;
+        }
+    }
+
+    private string TituloSeccionActual => _tabActual switch
+    {
+        TabViaje.Proximos => "Próximas Reservas Confirmadas",
+        TabViaje.Completados => "Historial de Viajes Completados",
+        TabViaje.Cancelados => "Viajes Cancelados",
+        _ => "Todos los Viajes Registrados"
+    };
+
+    private List<ListadoViajeDTO> ViajesFiltrados
+    {
+        get
+        {
+            IEnumerable<ListadoViajeDTO> resultado = _todosLosViajes;
+
+            // Filtro por Tab
+            resultado = _tabActual switch
+            {
+                TabViaje.Proximos => resultado.Where(EsViajeProximo),
+                TabViaje.Completados => resultado.Where(v => v.Estado.Equals(EstadosViaje.Finalizado, StringComparison.OrdinalIgnoreCase)),
+                TabViaje.Cancelados => resultado.Where(v => v.Estado.Equals(EstadosViaje.Cancelado, StringComparison.OrdinalIgnoreCase) ||
+                                                            v.Estado.Equals(EstadosViaje.Rechazado, StringComparison.OrdinalIgnoreCase)),
+                _ => resultado
+            };
+
+            // Filtro por Búsqueda
+            if (!string.IsNullOrWhiteSpace(_busqueda))
+            {
+                string termino = _busqueda.Trim().ToLowerInvariant();
+                resultado = resultado.Where(v =>
+                    v.Id.ToString().Contains(termino) ||
+                    $"#mr-{v.Id}".Contains(termino) ||
+                    (v.Origen?.ToLowerInvariant().Contains(termino) ?? false) ||
+                    (v.Destino?.ToLowerInvariant().Contains(termino) ?? false) ||
+                    (v.TipoSolicitud?.ToLowerInvariant().Contains(termino) ?? false) ||
+                    (v.Estado?.ToLowerInvariant().Contains(termino) ?? false) ||
+                    (v.MetodoDePago?.ToLowerInvariant().Contains(termino) ?? false)
+                );
+            }
+
+            // Filtro por Mes
+            if (!string.IsNullOrEmpty(_filtroMes))
+            {
+                resultado = resultado.Where(v => v.Fecha.ToString("yyyy-MM") == _filtroMes);
+            }
+
+            return resultado.OrderByDescending(v => v.Fecha).ThenByDescending(v => v.Hora).ToList();
+        }
+    }
+
+    private int TotalPaginas
+    {
+        get
+        {
+            int total = ViajesFiltrados.Count;
+            return total == 0 ? 1 : (int)Math.Ceiling((double)total / TamanoPagina);
+        }
+    }
+
+    private List<ListadoViajeDTO> ViajesPaginados
+    {
+        get
+        {
+            var filtrados = ViajesFiltrados;
+            int pagina = Math.Clamp(_paginaActual, 1, TotalPaginas);
+            return filtrados.Skip((pagina - 1) * TamanoPagina).Take(TamanoPagina).ToList();
+        }
+    }
+
+    private int IndiceInicio => ViajesFiltrados.Count == 0 ? 0 : ((Math.Clamp(_paginaActual, 1, TotalPaginas) - 1) * TamanoPagina) + 1;
+    private int IndiceFin => Math.Min(Math.Clamp(_paginaActual, 1, TotalPaginas) * TamanoPagina, ViajesFiltrados.Count);
 
     protected override async Task OnParametersSetAsync()
     {
@@ -105,23 +524,12 @@
     {
         _ = InvokeAsync(async () =>
         {
-            if (Sesion.Restaurada && !_cargando)
-            {
-                await CargarViajesAsync();
-                StateHasChanged();
-            }
-            else if (Sesion.Restaurada)
+            if (Sesion.Restaurada)
             {
                 await CargarViajesAsync();
                 StateHasChanged();
             }
         });
-    }
-
-    private async Task CambiarFiltro(string filtro)
-    {
-        _filtroEstado = filtro;
-        await CargarViajesAsync();
     }
 
     private async Task CargarViajesAsync()
@@ -135,31 +543,262 @@
         _cargando = true;
         _error = null;
 
-        string url = $"api/pasajero/{Sesion.Id}/viajes";
-        if (_filtroEstado != "TODOS")
-        {
-            url += $"?estado={Uri.EscapeDataString(_filtroEstado)}";
-        }
-
+        // Pasamos ?estado= para obtener todos los viajes del usuario y filtrarlos en cliente
+        string url = $"api/pasajero/{Sesion.Id}/viajes?estado=";
         HttpResp<List<ListadoViajeDTO>> respuesta = await Http.GetAsync<List<ListadoViajeDTO>>(url);
 
         if (respuesta.Error)
         {
             _error = await respuesta.ObtenerMensajeAsync("No pudimos cargar el listado de viajes.");
-            _viajes = new List<ListadoViajeDTO>();
+            _todosLosViajes = new List<ListadoViajeDTO>();
         }
         else
         {
-            _viajes = respuesta.Respuesta ?? new List<ListadoViajeDTO>();
+            _todosLosViajes = respuesta.Respuesta ?? new List<ListadoViajeDTO>();
+            ActualizarConteos();
+            GenerarMesesDisponibles();
         }
 
         _cargando = false;
+        _paginaActual = 1;
         StateHasChanged();
+    }
+
+    private void ActualizarConteos()
+    {
+        _conteoProximos = _todosLosViajes.Count(EsViajeProximo);
+        _conteoCompletados = _todosLosViajes.Count(v => v.Estado.Equals(EstadosViaje.Finalizado, StringComparison.OrdinalIgnoreCase));
+        _conteoCancelados = _todosLosViajes.Count(v => v.Estado.Equals(EstadosViaje.Cancelado, StringComparison.OrdinalIgnoreCase) ||
+                                                       v.Estado.Equals(EstadosViaje.Rechazado, StringComparison.OrdinalIgnoreCase));
+        _conteoTodos = _todosLosViajes.Count;
+    }
+
+    private void GenerarMesesDisponibles()
+    {
+        var meses = _todosLosViajes
+            .Where(v => v.Fecha != default)
+            .Select(v => new { Clave = v.Fecha.ToString("yyyy-MM"), Fecha = v.Fecha })
+            .DistinctBy(x => x.Clave)
+            .OrderByDescending(x => x.Clave)
+            .Select(x => new MesOpcion
+            {
+                Clave = x.Clave,
+                Etiqueta = Capitalizar(x.Fecha.ToString("MMMM yyyy", new CultureInfo("es-ES")))
+            })
+            .ToList();
+
+        if (meses.Count == 0)
+        {
+            var actual = DateTime.Now;
+            meses.Add(new MesOpcion
+            {
+                Clave = actual.ToString("yyyy-MM"),
+                Etiqueta = Capitalizar(actual.ToString("MMMM yyyy", new CultureInfo("es-ES")))
+            });
+        }
+
+        _mesesDisponibles = meses;
+    }
+
+    private static bool EsViajeProximo(ListadoViajeDTO v)
+    {
+        return !v.Estado.Equals(EstadosViaje.Finalizado, StringComparison.OrdinalIgnoreCase) &&
+               !v.Estado.Equals(EstadosViaje.Cancelado, StringComparison.OrdinalIgnoreCase) &&
+               !v.Estado.Equals(EstadosViaje.Rechazado, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void CambiarTab(TabViaje tab)
+    {
+        _tabActual = tab;
+        _paginaActual = 1;
+    }
+
+    private void AlternarMenuFechas()
+    {
+        _menuFechasAbierto = !_menuFechasAbierto;
+    }
+
+    private void SeleccionarFiltroMes(string mesClave)
+    {
+        _filtroMes = mesClave;
+        _menuFechasAbierto = false;
+        _paginaActual = 1;
+    }
+
+    private void LimpiarBusqueda()
+    {
+        _busqueda = string.Empty;
+        _paginaActual = 1;
+    }
+
+    private void LimpiarTodosFiltros()
+    {
+        _busqueda = string.Empty;
+        _filtroMes = string.Empty;
+        _tabActual = TabViaje.Todos;
+        _paginaActual = 1;
+    }
+
+    private void CambiarPagina(int pagina)
+    {
+        if (pagina >= 1 && pagina <= TotalPaginas)
+        {
+            _paginaActual = pagina;
+        }
     }
 
     private void VerDetalle(int viajeId)
     {
         Navegacion.NavigateTo($"/viajes/{viajeId}");
+    }
+
+    private async Task DescargarReporteCsv()
+    {
+        try
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("ID Viaje,Fecha Viaje,Hora Viaje,Fecha Reserva,Origen,Destino,Tipo Solicitud,Equipaje Carga,Estado,Estado Pago,Metodo Pago,Monto,Monto Estimado");
+
+            foreach (var v in ViajesFiltrados)
+            {
+                string fechaViaje = FormatearFecha(v.Fecha);
+                string horaViaje = FormatearHora(v.Hora);
+                string fechaReserva = FormatearFecha(v.FechaHoraReserva == default ? v.Fecha : v.FechaHoraReserva);
+                string horaReserva = FormatearHoraReserva(v.FechaHoraReserva == default ? v.Fecha : v.FechaHoraReserva);
+                string equipaje = v.EquipajeCarga ? "Si" : "No";
+
+                sb.AppendLine($"\"#MR-{v.Id}\",\"{fechaViaje}\",\"{horaViaje}\",\"{fechaReserva} {horaReserva}\",\"{EscaparCsv(v.Origen)}\",\"{EscaparCsv(v.Destino)}\",\"{v.TipoSolicitud}\",\"{equipaje}\",\"{v.Estado}\",\"{v.EstadoPago}\",\"{v.MetodoDePago}\",\"{v.Monto}\",\"{v.MontoEstimado}\"");
+            }
+
+            byte[] bytes = System.Text.Encoding.UTF8.GetPreamble().Concat(System.Text.Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
+            string base64 = Convert.ToBase64String(bytes);
+            string script = $"const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8;base64,{base64}'; a.download = 'mis_viajes_mundo_ruta.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a);";
+            await JS.InvokeVoidAsync("eval", script);
+        }
+        catch
+        {
+            // Fallback silencioso en caso de error de JS
+        }
+    }
+
+    private static string EscaparCsv(string valor)
+    {
+        if (string.IsNullOrEmpty(valor)) return string.Empty;
+        return valor.Replace("\"", "\"\"");
+    }
+
+    // FORMATTERS
+    private static string FormatearFecha(DateTime fecha)
+    {
+        if (fecha == default) return "-";
+        return fecha.ToString("dd MMM yyyy", new CultureInfo("es-ES"));
+    }
+
+    private static string FormatearHora(TimeSpan hora)
+    {
+        try
+        {
+            return DateTime.Today.Add(hora).ToString("hh:mm tt", CultureInfo.InvariantCulture).ToUpper();
+        }
+        catch
+        {
+            return hora.ToString(@"hh\:mm");
+        }
+    }
+
+    private static string FormatearHoraReserva(DateTime fechaHora)
+    {
+        if (fechaHora == default) return "-";
+        return fechaHora.ToString("HH:mm tt", CultureInfo.InvariantCulture).ToUpper();
+    }
+
+    private static string FormatearMonto(decimal monto)
+    {
+        return "$" + monto.ToString("N0", new CultureInfo("es-AR"));
+    }
+
+    private static string FormatearTipoSolicitud(string tipo)
+    {
+        if (string.IsNullOrWhiteSpace(tipo)) return "Individual";
+        string t = tipo.Trim().ToLowerInvariant();
+        if (t.Contains("carga")) return "Con Carga";
+        if (t.Contains("compartido")) return "Compartido";
+        if (t.Contains("individual")) return "Individual";
+        return Capitalizar(tipo);
+    }
+
+    private static string FormatearNombreEstado(string estado)
+    {
+        if (string.IsNullOrWhiteSpace(estado)) return "Buscando";
+        string e = estado.Trim().ToUpperInvariant();
+        return e switch
+        {
+            "BUSCANDO" => "Asignando",
+            "ASIGNADO" => "Confirmado",
+            "EN_TRANSITO" => "En Curso",
+            "CARGA_SUBIDA" => "Carga Subida",
+            "LLEGADA_DESTINO" => "Llegada Destino",
+            "FINALIZADO" => "Finalizado",
+            "CANCELADO" => "Cancelado",
+            "RECHAZADO" => "Rechazado",
+            "CONTRAOFERTADO" => "Contraoferta",
+            _ => Capitalizar(estado.Replace('_', ' '))
+        };
+    }
+
+    private static string ObtenerClaseBadgeEstado(string estado)
+    {
+        if (string.IsNullOrWhiteSpace(estado)) return "mr-badge-status--buscando";
+        string e = estado.Trim().ToUpperInvariant();
+        return e switch
+        {
+            "BUSCANDO" => "mr-badge-status--buscando",
+            "ASIGNADO" => "mr-badge-status--confirmado",
+            "EN_TRANSITO" => "mr-badge-status--en-curso",
+            "CARGA_SUBIDA" => "mr-badge-status--carga-subida",
+            "LLEGADA_DESTINO" => "mr-badge-status--llegada-destino",
+            "FINALIZADO" => "mr-badge-status--finalizado",
+            "CANCELADO" => "mr-badge-status--cancelado",
+            "RECHAZADO" => "mr-badge-status--rechazado",
+            "CONTRAOFERTADO" => "mr-badge-status--contraofertado",
+            _ => "mr-badge-status--default"
+        };
+    }
+
+    private static string FormatearEstadoPago(string estadoPago)
+    {
+        if (string.IsNullOrWhiteSpace(estadoPago)) return "Pendiente";
+        string ep = estadoPago.Trim().ToUpperInvariant();
+        if (ep == "PAGADO") return "Pagado";
+        if (ep == "PENDIENTE") return "Pendiente";
+        return Capitalizar(estadoPago);
+    }
+
+    private static string ObtenerClaseBadgePago(string estadoPago)
+    {
+        if (string.IsNullOrWhiteSpace(estadoPago)) return "mr-badge-pago--pendiente";
+        string ep = estadoPago.Trim().ToUpperInvariant();
+        return ep == "PAGADO" ? "mr-badge-pago--pagado" : "mr-badge-pago--pendiente";
+    }
+
+    private static string FormatearMetodoPago(string metodo)
+    {
+        if (string.IsNullOrWhiteSpace(metodo)) return "Efectivo";
+        string m = metodo.Trim().ToUpperInvariant();
+        return m switch
+        {
+            "EFECTIVO" => "Efectivo",
+            "TRANSFERENCIA" => "Transferencia",
+            "TARJETA" => "Tarjeta",
+            "MERCADOPAGO" => "Mercado Pago",
+            _ => Capitalizar(metodo)
+        };
+    }
+
+    private static string Capitalizar(string texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto)) return string.Empty;
+        return char.ToUpper(texto[0]) + texto.Substring(1).ToLower();
     }
 
     public void Dispose()
