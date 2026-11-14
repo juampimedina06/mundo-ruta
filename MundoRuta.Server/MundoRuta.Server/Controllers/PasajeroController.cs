@@ -178,7 +178,9 @@ namespace MundoRuta.Server.Controllers
                 return StatusCode(403, new
                 {
                     mensaje = "Acceso denegado. Debe calificar el viaje para ver el detalle.",
-                    requiereCalificacion = true
+                    requiereCalificacion = true,
+                    usuarioPrestadorId = v.IdUsuario,
+                    viajeId = v.Id
                 });
             }
 

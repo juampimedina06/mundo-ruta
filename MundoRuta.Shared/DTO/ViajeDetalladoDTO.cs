@@ -42,12 +42,12 @@ namespace MundoRuta.Shared.DTO
         public int? IdChofer { get; set; }
         public string? NombreChofer { get; set; }
 
-        // Veh�culo
+        // Vehículo
         public int? IdVehiculo { get; set; }
         public string? Patente { get; set; }
         public string? Marca { get; set; }
 
-        // Calificaci�n
+        // Calificación
         public bool CalificadoPorPasajero { get; set; }
     }
 }
