@@ -24,7 +24,7 @@ namespace MundoRuta.Server.Client.Navigation
 
             if (string.Equals(rol, Roles.Chofer, StringComparison.OrdinalIgnoreCase))
             {
-                return "/chofer";
+                return "/chofer/home";
             }
 
             if (string.Equals(rol, Roles.Admin, StringComparison.OrdinalIgnoreCase))

@@ -40,7 +40,7 @@ namespace MundoRuta.Server.Controllers
             {
                 IdViaje = dto.viajeId,
                 IdUsuario = dto.usuarioId,
-                IdUsuarioPrestador = dto.usuarioPrestadorId,
+                IdUsuarioPrestador = dto.usuarioPrestadorId > 0 ? dto.usuarioPrestadorId : viaje.IdUsuario,
                 Puntaje = dto.puntaje,
                 Comentario = dto.comentario,
             };

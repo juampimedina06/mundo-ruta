@@ -1,15 +1,281 @@
 @page "/chofer/historial"
+@layout ChoferLayout
+@using MundoRuta.Shared
+@using MundoRuta.Shared.DTO
+@using MundoRuta.Servicios.Chofer
+@using MundoRuta.Servicios.Sesion
+@using MundoRuta.Server.Client.Components
+@inject IChoferServicio ChoferServicio
+@inject SesionEstado Sesion
 
-<PageTitle>Historial | Mundo Ruta</PageTitle>
+<PageTitle>Historial de Viajes | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="Roles.Chofer">
-    <div class="mr-page">
-        <div class="mr-container">
-            <PageHeader Titulo="Historial"
-                        Descripcion="Viajes finalizados y calificaciones." />
+    <div class="cn-page-container">
+        <!-- Encabezado Editorial -->
+        <div class="cn-editorial-header">
+            <div>
+                <div class="cn-breadcrumb">
+                    <a href="/chofer/home">Cabina</a>
+                    <span>/</span>
+                    <span style="color: var(--cn-primary-bright); font-weight: 600;">Historial de Viajes</span>
+                </div>
+                <h1 class="cn-display mb-1" style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em;">
+                    Registro Operativo y Viajes Completados
+                </h1>
+                <p class="mb-0" style="font-size: 14px; color: var(--cn-on-surface-variant);">
+                    Supervisión de servicios completados, tarifas cobradas y entregas confirmadas.
+                </p>
+            </div>
 
-            <EmptyState Titulo="Todavía no hay viajes en tu historial"
-                        Descripcion="Los servicios que completes van a quedar registrados acá." />
+            <div class="cn-tab-switch">
+                <a href="/chofer/historial" class="cn-tab-switch__item cn-tab-switch__item--active">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">history</span>
+                    <span>Historial de Viajes</span>
+                    <span class="cn-chip cn-chip--sky" style="padding: 1px 7px; font-size: 11px;">@_viajes.Count</span>
+                </a>
+                <a href="/chofer/perfil" class="cn-tab-switch__item">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">badge</span>
+                    <span>Mi Perfil Operativo</span>
+                </a>
+            </div>
         </div>
+
+        @if (_cargando)
+        {
+            <div class="cn-card p-5 text-center">
+                <div class="spinner-border text-info mb-3" role="status"></div>
+                <p class="mb-0" style="font-size: 14px; color: var(--cn-on-surface-variant);">Cargando viajes completados...</p>
+            </div>
+        }
+        else
+        {
+            <!-- KPIs de Desempeño -->
+            <div class="cn-kpi-grid">
+                <div class="cn-kpi-card">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="cn-label-caps">Total Cobrado</span>
+                        <div class="cn-kpi-card__icon" style="background: rgba(238, 152, 0, 0.2); color: var(--cn-amber);">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">payments</span>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="cn-display cn-tnum d-block" style="font-size: 26px; font-weight: 800; color: var(--cn-amber);">
+                            $@TotalCobrado.ToString("N2")
+                        </span>
+                        <span style="font-size: 12px; color: var(--cn-primary-bright);">Acumulado en viajes finalizados</span>
+                    </div>
+                </div>
+
+                <div class="cn-kpi-card">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="cn-label-caps">Total Viajes</span>
+                        <div class="cn-kpi-card__icon" style="background: rgba(56, 189, 248, 0.18); color: var(--cn-sky);">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">local_shipping</span>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="cn-display cn-tnum d-block" style="font-size: 26px; font-weight: 800; color: var(--cn-primary-bright);">
+                            @_viajes.Count
+                        </span>
+                        <span style="font-size: 12px; color: var(--cn-on-surface-variant);">Entregas validadas con DNI</span>
+                    </div>
+                </div>
+
+                <div class="cn-kpi-card">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="cn-label-caps">Tarifa Promedio</span>
+                        <div class="cn-kpi-card__icon" style="background: var(--cn-surface-high); color: var(--cn-primary-bright);">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">analytics</span>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="cn-display cn-tnum d-block" style="font-size: 26px; font-weight: 800; color: var(--cn-text-white);">
+                            $@TarifaPromedio.ToString("N0")
+                        </span>
+                        <span style="font-size: 12px; color: var(--cn-on-surface-variant);">ARS promedio por flete</span>
+                    </div>
+                </div>
+
+                <div class="cn-kpi-card">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="cn-label-caps">Puntuación Promedio</span>
+                        <div class="cn-kpi-card__icon" style="background: rgba(238, 152, 0, 0.2); color: var(--cn-amber);">
+                            <span class="material-symbols-outlined" style="font-size: 20px; font-variation-settings: 'FILL' 1;">star</span>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span class="cn-display cn-tnum" style="font-size: 26px; font-weight: 800; color: var(--cn-text-white);">
+                                @(_perfil != null ? _perfil.PromedioCalificacion.ToString("0.0") : "—")
+                            </span>
+                            <span style="font-size: 13px; font-weight: 700; color: var(--cn-amber);">/ 5.0</span>
+                        </div>
+                        <span style="font-size: 12px; color: var(--cn-on-surface-variant);">
+                            @(_perfil != null ? $"Basado en {_perfil.TotalCalificaciones} valoraciones" : "Calificación de clientes")
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            @if (_viajes.Count == 0)
+            {
+                <div class="cn-card p-5 text-center d-flex flex-column align-items-center gap-2">
+                    <div style="width: 56px; height: 56px; border-radius: 16px; background: var(--cn-surface-high); color: var(--cn-sky); display: flex; align-items: center; justify-content: center;">
+                        <span class="material-symbols-outlined" style="font-size: 28px;">route</span>
+                    </div>
+                    <h2 class="cn-display mt-2 mb-0" style="font-size: 19px; font-weight: 700;">Todavía no tenés viajes completados</h2>
+                    <p class="mb-2" style="font-size: 14px; color: var(--cn-on-surface-variant); max-width: 460px;">
+                        Cada viaje que finalices con validación de DNI quedará archivado en este listado.
+                    </p>
+                    <a href="/chofer/home" class="cn-btn cn-btn--primary">Ir a la Cabina</a>
+                </div>
+            }
+            else
+            {
+                <!-- Barra de Filtros y Buscador -->
+                <div class="cn-filter-bar">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <button type="button" class="cn-filter-chip cn-filter-chip--active" @onclick="LimpiarBusqueda">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--cn-sky);"></span>
+                            <span>Todos (@_viajes.Count)</span>
+                        </button>
+                        <span style="font-size: 12.5px; color: var(--cn-on-surface-variant);">
+                            Mostrando <strong style="color: var(--cn-text-white);">@ViajesFiltrados.Count()</strong> resultados
+                        </span>
+                    </div>
+
+                    <div class="position-relative" style="min-width: 260px; flex: 0 1 320px;">
+                        <span class="material-symbols-outlined position-absolute"
+                              style="left: 12px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--cn-outline); pointer-events: none;">
+                            search
+                        </span>
+                        <input type="text"
+                               class="cn-input"
+                               style="min-height: 40px; padding-left: 38px;"
+                               placeholder="Buscar por origen, destino o fecha..."
+                               @bind="_busqueda"
+                               @bind:event="oninput" />
+                    </div>
+                </div>
+
+                <!-- Listado de Tarjetas de Viaje -->
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var v in ViajesFiltrados)
+                    {
+                        <article class="cn-trip-row">
+                            <div class="d-flex flex-column gap-2">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="px-2 py-1 rounded" style="background: var(--cn-surface-highest); color: var(--cn-primary-bright); font-size: 11px; font-weight: 700;">
+                                        @v.FechaFormateada
+                                    </span>
+                                    <span style="font-size: 12.5px; color: var(--cn-on-surface-variant); font-weight: 600;">
+                                        Viaje #@v.Id
+                                    </span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2" style="font-size: 12px; color: var(--cn-on-surface-variant);">
+                                    <span class="material-symbols-outlined" style="font-size: 15px; color: var(--cn-secondary);">verified</span>
+                                    <span>Entrega validada con DNI</span>
+                                </div>
+                            </div>
+
+                            <div class="cn-trip-row__route">
+                                <div class="d-flex align-items-center gap-2 min-w-0">
+                                    <span style="width: 9px; height: 9px; border-radius: 50%; background: var(--cn-sky); flex-shrink: 0;"></span>
+                                    <span class="text-truncate" style="font-size: 14px; color: var(--cn-text-white);">
+                                        <strong style="color: var(--cn-on-surface-variant); font-weight: 500;">Retiro:</strong> @v.Origen
+                                    </span>
+                                </div>
+                                <div style="margin-left: 4px; width: 1px; height: 8px; background: var(--cn-surface-highest);"></div>
+                                <div class="d-flex align-items-center gap-2 min-w-0">
+                                    <span style="width: 9px; height: 9px; border-radius: 50%; background: var(--cn-amber); flex-shrink: 0;"></span>
+                                    <span class="text-truncate" style="font-size: 14px; color: var(--cn-text-white);">
+                                        <strong style="color: var(--cn-on-surface-variant); font-weight: 500;">Entrega:</strong> @v.Destino
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="cn-trip-row__summary">
+                                <div class="text-end">
+                                    <span class="cn-display cn-tnum d-block" style="font-size: 20px; font-weight: 800; color: var(--cn-amber);">
+                                        +$@v.Monto.ToString("N2")
+                                    </span>
+                                    <span class="cn-label-caps" style="color: var(--cn-primary-bright); font-size: 10px;">
+                                        Liquidado
+                                    </span>
+                                </div>
+                                <span class="cn-chip cn-chip--emerald">@(string.IsNullOrWhiteSpace(v.Estado) ? "Finalizado" : v.Estado)</span>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        }
     </div>
 </RoleGuard>
+
+@code {
+    private bool _cargando = true;
+    private List<ChoferViajeHistorialDTO> _viajes = new();
+    private ChoferPerfilDTO? _perfil;
+    private string _busqueda = string.Empty;
+
+    private decimal TotalCobrado => _viajes.Sum(v => v.Monto);
+    private decimal TarifaPromedio => _viajes.Count > 0 ? _viajes.Average(v => v.Monto) : 0;
+
+    private IEnumerable<ChoferViajeHistorialDTO> ViajesFiltrados =>
+        string.IsNullOrWhiteSpace(_busqueda)
+            ? _viajes
+            : _viajes.Where(v =>
+                v.Origen.Contains(_busqueda, StringComparison.OrdinalIgnoreCase) ||
+                v.Destino.Contains(_busqueda, StringComparison.OrdinalIgnoreCase) ||
+                v.FechaFormateada.Contains(_busqueda, StringComparison.OrdinalIgnoreCase) ||
+                v.Id.ToString().Contains(_busqueda, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(CargarHistorialAsync(), CargarPerfilResumenAsync());
+    }
+
+    private async Task CargarHistorialAsync()
+    {
+        _cargando = true;
+        try
+        {
+            var resp = await ChoferServicio.ObtenerHistorialAsync(Sesion.Id);
+            if (!resp.Error && resp.Respuesta != null)
+            {
+                _viajes = resp.Respuesta;
+            }
+        }
+        catch
+        {
+            _viajes = new();
+        }
+        finally
+        {
+            _cargando = false;
+        }
+    }
+
+    private async Task CargarPerfilResumenAsync()
+    {
+        try
+        {
+            var resp = await ChoferServicio.ObtenerPerfilAsync(Sesion.Id);
+            if (!resp.Error && resp.Respuesta != null)
+            {
+                _perfil = resp.Respuesta;
+            }
+        }
+        catch
+        {
+            // Fallback silencioso
+        }
+    }
+
+    private void LimpiarBusqueda()
+    {
+        _busqueda = string.Empty;
+    }
+}
