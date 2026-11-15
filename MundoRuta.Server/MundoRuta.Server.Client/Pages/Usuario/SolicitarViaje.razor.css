@@ -1,0 +1,739 @@
+/* Solicitar Viaje - Estilos acorde al prototipo */
+/* Nota: las fuentes se cargan en App.razor (no permitidas en scoped CSS) */
+
+.mr-solicitar-page {
+    background-color: #f8f9ff;
+    color: #0b1c30;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: calc(100vh - 120px);
+    padding: 1.5rem 0 3rem;
+}
+
+.mr-solicitar-container {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+/* Material Symbols icon helper */
+.material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+    vertical-align: middle;
+}
+
+.mr-icon-xs {
+    font-size: 16px !important;
+}
+
+.mr-icon-sm {
+    font-size: 18px !important;
+}
+
+.mr-icon-md {
+    font-size: 20px !important;
+}
+
+/* BREADCRUMB */
+.mr-solicitar-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 13px;
+    line-height: 18px;
+    color: #44474c;
+}
+
+.mr-breadcrumb-link {
+    color: #44474c;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.mr-breadcrumb-link:hover {
+    color: #0A2240;
+    text-decoration: none;
+}
+
+.mr-breadcrumb-sep {
+    color: #c5c6cd;
+    font-size: 14px;
+}
+
+.mr-breadcrumb-current {
+    color: #0b1c30;
+    font-weight: 600;
+}
+
+/* HEADER & BADGES */
+.mr-solicitar-header {
+    margin-bottom: 1.5rem;
+}
+
+.mr-header-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.mr-header-title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 36px;
+    letter-spacing: -0.02em;
+    color: #0b1c30;
+}
+
+.mr-badge-module {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 14px;
+    background-color: #dce9ff;
+    color: #0e1c2f;
+    white-space: nowrap;
+}
+
+.mr-badge-active {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 14px;
+    background-color: #e5eeff;
+    color: #0A2240;
+    border: 1px solid rgba(10, 34, 64, 0.2);
+    white-space: nowrap;
+}
+
+.mr-badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #0A2240;
+    animation: mr-pulse 1.8s infinite;
+}
+
+@keyframes mr-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+/* 8:4 ASYMMETRIC GRID */
+.mr-solicitar-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+@media (min-width: 992px) {
+    .mr-solicitar-grid {
+        grid-template-columns: 8fr 4fr;
+    }
+}
+
+.mr-col-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.mr-col-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+@media (min-width: 992px) {
+    .mr-col-side {
+        position: sticky;
+        top: 2rem;
+    }
+}
+
+/* CARD SECTIONS */
+.mr-card-section {
+    background-color: #ffffff;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(197, 198, 205, 0.6);
+    box-shadow: 0 1px 3px rgba(11, 28, 48, 0.04);
+    padding: 1.5rem;
+    overflow: hidden;
+}
+
+.mr-section-header {
+    margin-bottom: 1rem;
+}
+
+.mr-section-title {
+    margin: 0 0 1rem;
+    font-size: 18px;
+    line-height: 26px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: #0b1c30;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mr-section-header .mr-section-title {
+    margin-bottom: 0.25rem;
+}
+
+.mr-title-icon {
+    color: #0A2240;
+    font-size: 22px;
+}
+
+.mr-section-subtitle {
+    margin: 0.25rem 0 0;
+    font-size: 12px;
+    line-height: 18px;
+    color: #44474c;
+}
+
+/* FORM CONTROLS & INPUTS */
+.mr-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .mr-grid-2 {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.mr-form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.mr-form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+    color: #44474c;
+    margin-bottom: 0.35rem;
+}
+
+.mr-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.mr-input-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #44474c;
+    font-size: 20px;
+    pointer-events: none;
+}
+
+.mr-icon-destination {
+    color: #0A2240;
+}
+
+.mr-icon-alarm {
+    color: #0A2240;
+}
+
+.mr-input-wrapper ::deep .mr-input {
+    width: 100%;
+    height: 48px;
+    padding-left: 2.5rem;
+    padding-right: 1rem;
+    background-color: #f8f9ff;
+    color: #0b1c30;
+    font-size: 14px;
+    line-height: 20px;
+    border-radius: 0.5rem;
+    border: 1px solid #c5c6cd;
+    transition: all 0.15s ease;
+}
+
+.mr-input-wrapper ::deep .mr-input:focus {
+    outline: none;
+    border-color: #0A2240;
+    box-shadow: 0 0 0 2px rgba(10, 34, 64, 0.12);
+    background-color: #ffffff;
+}
+
+.mr-input-wrapper ::deep .mr-input::placeholder {
+    color: #75777d;
+}
+
+.mr-input-wrapper ::deep .mr-input--date,
+.mr-input-wrapper ::deep .mr-input--time {
+    padding-left: 2.5rem;
+}
+
+.mr-input-wrapper ::deep .mr-input--time-active {
+    border: 2px solid #0A2240;
+    font-weight: 600;
+}
+
+/* CAJA PILLS SELECTOR */
+.mr-caja-pills {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    min-height: 48px;
+}
+
+.mr-caja-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 48px;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid #c5c6cd;
+    background-color: #f8f9ff;
+    color: #44474c;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.mr-caja-pill:hover {
+    background-color: #eff4ff;
+    color: #0b1c30;
+}
+
+.mr-caja-pill--active {
+    background-color: #e5eeff;
+    border: 2px solid #0A2240;
+    color: #0A2240;
+    font-weight: 700;
+}
+
+/* DATE SEGMENT SELECTOR */
+.mr-date-segment {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background-color: #eff4ff;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(197, 198, 205, 0.4);
+    height: 48px;
+}
+
+.mr-date-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.25rem;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #44474c;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.mr-date-btn:hover {
+    color: #0b1c30;
+}
+
+.mr-date-btn--active {
+    background-color: #ffffff;
+    color: #0b1c30;
+    font-weight: 700;
+    box-shadow: 0 1px 2px rgba(11, 28, 48, 0.06);
+    border-color: rgba(197, 198, 205, 0.3);
+}
+
+/* TIME PICKER / INMEDIATO BUTTON */
+.mr-time-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 48px;
+}
+
+.mr-time-input-wrapper {
+    flex: 1;
+    min-width: 0;
+}
+
+.mr-btn-inmediato {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    flex: 1;
+    min-width: 0;
+    height: 48px;
+    border-radius: 0.5rem;
+    background-color: #eff4ff;
+    color: #44474c;
+    border: 1px solid rgba(197, 198, 205, 0.4);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.mr-btn-inmediato:hover {
+    background-color: #dce9ff;
+    color: #0b1c30;
+}
+
+.mr-btn-inmediato--active {
+    background-color: #e5eeff;
+    border: 2px solid #0A2240;
+    color: #0A2240;
+    font-weight: 700;
+}
+
+/* RADIO CARDS FOR EQUIPAJE O CARGA */
+.mr-radio-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(197, 198, 205, 0.6);
+    background-color: #ffffff;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.mr-radio-card:hover {
+    border-color: #75777d;
+}
+
+.mr-radio-card--selected {
+    border: 2px solid #0A2240;
+    background-color: #e5eeff;
+}
+
+.mr-radio-card-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mr-radio-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 0.5rem;
+    background-color: #eff4ff;
+    color: #44474c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(197, 198, 205, 0.2);
+    flex-shrink: 0;
+}
+
+.mr-radio-card--selected .mr-radio-icon-box {
+    background-color: #ffffff;
+    color: #0A2240;
+    border-color: rgba(197, 198, 205, 0.3);
+}
+
+.mr-radio-card-title {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    color: #0b1c30;
+}
+
+.mr-radio-card-desc {
+    font-size: 12px;
+    line-height: 18px;
+    color: #44474c;
+}
+
+.mr-radio-circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #c5c6cd;
+    background-color: transparent;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.mr-radio-circle--selected {
+    border: 6px solid #0A2240;
+    background-color: #ffffff;
+}
+
+/* DETALLE CARGA BOX */
+.mr-detalle-carga-box {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(197, 198, 205, 0.3);
+}
+
+.mr-field-help {
+    margin: 0.35rem 0 0;
+    font-size: 12px;
+    line-height: 18px;
+    color: #44474c;
+}
+
+/* EXTRAS CHECKBOX PILLS */
+.mr-extras-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(197, 198, 205, 0.3);
+}
+
+.mr-checkbox-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background-color: #eff4ff;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(197, 198, 205, 0.4);
+    font-size: 12px;
+    font-weight: 500;
+    color: #0b1c30;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease;
+}
+
+.mr-checkbox-pill:hover {
+    background-color: #dce9ff;
+}
+
+.mr-checkbox-pill--active {
+    background-color: #e5eeff;
+    border-color: #0A2240;
+    font-weight: 600;
+}
+
+.mr-checkbox-pill ::deep input[type="checkbox"] {
+    accent-color: #0A2240;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* RIGHT COLUMN - STICKY FARE CARD */
+.mr-summary-card {
+    background-color: #ffffff;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(197, 198, 205, 0.7);
+    box-shadow: 0 1px 3px rgba(11, 28, 48, 0.05);
+    padding: 1.5rem;
+}
+
+.mr-summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(197, 198, 205, 0.4);
+}
+
+.mr-summary-title {
+    margin: 0;
+    font-size: 18px;
+    line-height: 26px;
+    font-weight: 600;
+    color: #0b1c30;
+}
+
+.mr-summary-header-icon {
+    color: #44474c;
+    font-size: 20px;
+}
+
+.mr-summary-body {
+    padding-top: 1.25rem;
+}
+
+.mr-summary-price-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.mr-summary-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #44474c;
+}
+
+.mr-summary-sublabel {
+    font-size: 11px;
+    color: #75777d;
+}
+
+.mr-summary-amount {
+    font-size: 24px;
+    line-height: 32px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #0b1c30;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+/* PAYMENT METHOD BOX */
+.mr-payment-box {
+    padding: 1rem;
+    border-radius: 0.75rem;
+    background-color: #eff4ff;
+    border: 1px solid rgba(197, 198, 205, 0.4);
+    margin: 1.25rem 0;
+}
+
+.mr-payment-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #44474c;
+    margin-bottom: 0.5rem;
+}
+
+.mr-payment-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background-color: #ffffff;
+    border-radius: 0.5rem;
+    border: 2px solid #0A2240;
+    box-shadow: 0 1px 2px rgba(11, 28, 48, 0.04);
+}
+
+.mr-payment-card-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mr-payment-icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 0.25rem;
+    background-color: #e5eeff;
+    color: #0A2240;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.mr-payment-method-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0b1c30;
+    line-height: 18px;
+}
+
+.mr-payment-method-desc {
+    font-size: 11px;
+    color: #44474c;
+    line-height: 14px;
+}
+
+.mr-payment-check {
+    color: #0A2240;
+    font-size: 20px;
+    font-variation-settings: 'FILL' 1;
+}
+
+/* CTA BUTTON */
+.mr-btn-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    height: 48px;
+    border-radius: 0.5rem;
+    background-color: #0A2240;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(10, 34, 64, 0.2);
+    transition: all 0.15s ease;
+}
+
+.mr-btn-submit:hover:not(:disabled) {
+    background-color: #0B2545;
+    box-shadow: 0 4px 8px rgba(10, 34, 64, 0.25);
+    transform: translateY(-1px);
+}
+
+.mr-btn-submit:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.mr-btn-submit:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* ERROR ALERTS */
+.mr-error-banner {
+    background-color: #ffdad6;
+    border: 1px solid #ffb59d;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    color: #93000a;
+}
+
+.mr-error-list {
+    margin: 0;
+    padding-left: 1.25rem;
+    font-size: 13px;
+}
+
+.mr-mt-2 {
+    margin-top: 0.5rem;
+}
+
+.mr-mt-3 {
+    margin-top: 0.75rem;
+}

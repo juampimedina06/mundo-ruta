@@ -1,0 +1,219 @@
+@inherits LayoutComponentBase
+@inject SesionPersistencia Persistencia
+@inject SesionEstado Sesion
+@inject NavigationManager Navegacion
+@implements IDisposable
+
+<div class="prestador-portal">
+    <div class="pr-shell">
+        @if (_menuMovilAbierto)
+        {
+            <div class="pr-sidebar-backdrop open" @onclick="CerrarMenuMovil"></div>
+        }
+
+        <!-- Left Navigation Sidebar -->
+        <aside class="pr-sidebar @(_menuMovilAbierto ? "open" : string.Empty)">
+            <div>
+                <!-- Brand Header -->
+                <div class="pr-sidebar__brand">
+                    <div class="pr-sidebar__logo">
+                        <span class="material-symbols-outlined text-[24px]">local_shipping</span>
+                    </div>
+                    <div class="pr-sidebar__brand-text">
+                        <span class="pr-sidebar__brand-name">Mundo Ruta</span>
+                        <span class="pr-sidebar__brand-badge">Portal Prestador</span>
+                    </div>
+                </div>
+
+                <!-- Status Strip -->
+                <div class="pr-sidebar__status">
+                    <div class="pr-sidebar__status-pill">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="pr-pulse-dot"></span>
+                            <span class="fw-semibold text-white">Flota Conectada</span>
+                        </div>
+                        <span class="pr-tag pr-tag--emerald">En Línea</span>
+                    </div>
+                </div>
+
+                <!-- Navigation List -->
+                <div class="pr-sidebar__nav-section">
+                    <div class="pr-sidebar__section-title">Operaciones de Carga</div>
+                    <nav class="pr-sidebar__nav">
+                        <NavLink class="pr-sidebar__link" href="/prestador" Match="NavLinkMatch.All" @onclick="CerrarMenuMovil">
+                            <div class="pr-sidebar__link-left">
+                                <span class="material-symbols-outlined">dashboard</span>
+                                <span>Panel General</span>
+                            </div>
+                        </NavLink>
+
+                        <NavLink class="pr-sidebar__link" href="/prestador/solicitudes" Match="NavLinkMatch.Prefix" @onclick="CerrarMenuMovil">
+                            <div class="pr-sidebar__link-left">
+                                <span class="material-symbols-outlined">inbox</span>
+                                <span>Solicitudes</span>
+                            </div>
+                        </NavLink>
+
+                        <NavLink class="pr-sidebar__link" href="/prestador/viajes" Match="NavLinkMatch.Prefix" @onclick="CerrarMenuMovil">
+                            <div class="pr-sidebar__link-left">
+                                <span class="material-symbols-outlined">route</span>
+                                <span>Viajes en Operación</span>
+                            </div>
+                        </NavLink>
+
+                        <NavLink class="pr-sidebar__link" href="/prestador/choferes" Match="NavLinkMatch.Prefix" @onclick="CerrarMenuMovil">
+                            <div class="pr-sidebar__link-left">
+                                <span class="material-symbols-outlined">badge</span>
+                                <span>Choferes</span>
+                            </div>
+                        </NavLink>
+
+                        <NavLink class="pr-sidebar__link" href="/prestador/vehiculos" Match="NavLinkMatch.Prefix" @onclick="CerrarMenuMovil">
+                            <div class="pr-sidebar__link-left">
+                                <span class="material-symbols-outlined">rv_hookup</span>
+                                <span>Mi Flota &amp; Vehículos</span>
+                            </div>
+                        </NavLink>
+
+                        <NavLink class="pr-sidebar__link" href="/prestador/perfil" Match="NavLinkMatch.Prefix" @onclick="CerrarMenuMovil">
+                            <div class="pr-sidebar__link-left">
+                                <span class="material-symbols-outlined">business</span>
+                                <span>Perfil de Empresa</span>
+                            </div>
+                        </NavLink>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Sidebar Footer: Central 24/7 & User Logout -->
+            <div class="pr-sidebar__footer">
+                <div class="pr-sidebar__support-card">
+                    <div class="pr-sidebar__support-header">
+                        <span>Central de Despacho</span>
+                        <span class="material-symbols-outlined text-[16px]">headset_mic</span>
+                    </div>
+                    <div class="pr-sidebar__support-title">24/7 Dispatch SOS</div>
+                    <div class="d-flex align-items-center justify-content-between mt-1">
+                        <span class="small text-secondary-fixed fw-bold" style="color: #6cf8bb; font-size: 11px;">Canal Prioritario</span>
+                        <span class="badge bg-secondary-container text-on-secondary-container" style="font-size: 10px; background-color: #6cf8bb; color: #00714d;">ACTIVO</span>
+                    </div>
+                </div>
+
+                <div class="pr-sidebar__user">
+                    <div class="pr-sidebar__user-info">
+                        <span class="pr-sidebar__user-name">@(string.IsNullOrWhiteSpace(Sesion.Nombre) ? "Prestador" : Sesion.Nombre)</span>
+                        <span class="pr-sidebar__user-role">Jefe de Despacho</span>
+                    </div>
+                    <button type="button" class="pr-icon-btn pr-icon-btn--danger" title="Cerrar sesión" @onclick="CerrarSesion">
+                        <span class="material-symbols-outlined text-[18px]">logout</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Wrapper -->
+        <div class="pr-main-container">
+            <!-- Sticky Topbar -->
+            <header class="pr-topbar">
+                <div class="pr-topbar__left">
+                    <button type="button" class="pr-topbar__mobile-btn" aria-label="Abrir menú" @onclick="AlternarMenuMovil">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+
+                    <div class="pr-breadcrumbs">
+                        <a href="/prestador">Inicio</a>
+                        <span class="separator">/</span>
+                        <span class="current">Prestador</span>
+                    </div>
+
+                    <div class="pr-topbar__verified-pill">
+                        <span class="material-symbols-outlined text-[16px]">verified</span>
+                        <span>@(string.IsNullOrWhiteSpace(Sesion.Nombre) ? "TransLog Express S.A." : Sesion.Nombre) • Prestador Verificado</span>
+                    </div>
+                </div>
+
+                <div class="pr-topbar__right">
+                    <button type="button" class="pr-topbar__action-btn" aria-label="Notificaciones">
+                        <span class="material-symbols-outlined text-[20px]">notifications</span>
+                        <span class="pr-topbar__unread-dot"></span>
+                    </button>
+
+                    <div class="pr-topbar__divider"></div>
+
+                    <div class="pr-topbar__profile">
+                        <div class="pr-topbar__profile-info">
+                            <span class="pr-topbar__profile-name">@(string.IsNullOrWhiteSpace(Sesion.Nombre) ? "Operador Logístico" : Sesion.Nombre)</span>
+                            <span class="pr-topbar__profile-role">Jefe de Despacho</span>
+                        </div>
+                        <div class="pr-topbar__avatar">
+                            <span class="material-symbols-outlined text-[20px]">person</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Body -->
+            <main class="pr-page-content">
+                @Body
+            </main>
+
+            <!-- Footer -->
+            <footer class="pr-footer">
+                <p class="mb-0">© @DateTime.Now.Year Mundo Ruta Logística B2B. Red de Prestadores y Flotas Conectadas.</p>
+                <div class="d-flex align-items-center gap-3">
+                    <a href="#">Términos de Servicio</a>
+                    <span>•</span>
+                    <a href="#">Privacidad y Telemetría</a>
+                    <span>•</span>
+                    <a href="#">Estado del Sistema</a>
+                </div>
+            </footer>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _menuMovilAbierto;
+
+    protected override void OnInitialized()
+    {
+        Sesion.CambioSesion += AlCambiarSesion;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await Persistencia.RestaurarAsync();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        Sesion.CambioSesion -= AlCambiarSesion;
+    }
+
+    private void AlCambiarSesion()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void AlternarMenuMovil()
+    {
+        _menuMovilAbierto = !_menuMovilAbierto;
+    }
+
+    private void CerrarMenuMovil()
+    {
+        _menuMovilAbierto = false;
+    }
+
+    private void CerrarSesion()
+    {
+        Sesion.Cerrar();
+        Navegacion.NavigateTo("/");
+    }
+}

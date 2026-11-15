@@ -34,6 +34,10 @@ public class ChatRepositorio : Repositorio<Chat>, IChatRepositorio
             .FirstOrDefaultAsync(c => c.Id == idChat);
     }
 
+    // Ocultar el miembro heredado
+    // Use la palabra clave new si su intención era ocultarlo.
+
+
     // Obtener el chat vinculado a un viaje específico
     public async Task<Chat?> ObtenerPorViajeId(int idViaje)
     {

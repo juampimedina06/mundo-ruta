@@ -1,178 +1,367 @@
 @page "/prestador/viajes"
+@layout PrestadorLayout
 @using System.Globalization
 @implements IDisposable
 @inject IPrestadorServicio PrestadorServicio
 @inject IViajeHubService Hub
 @inject SesionEstado Sesion
 
-<PageTitle>Viajes de la empresa | Mundo Ruta</PageTitle>
+<PageTitle>Viajes de la Empresa | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="@Roles.Prestador">
-    <div class="mr-page">
-        <div class="mr-container">
-            <PageHeader Titulo="Viajes de la empresa"
-                        Descripcion="Seguí el estado de los servicios asignados y consultá el detalle de cada viaje.">
-                <Acciones>
-                    <span class="mr-vivo @(_tiempoRealActivo ? "mr-vivo--activo" : null)">
-                        <span class="mr-vivo__punto"></span>
-                        @(_tiempoRealActivo ? "En vivo" : "Sin conexión en vivo")
+    <div class="d-flex flex-column gap-4">
+        <!-- 1. Cabecera Operativa & Acciones Globales -->
+        <div class="pr-header-block">
+            <div>
+                <div class="pr-header-meta">
+                    <span class="pr-tag--pulse">
+                        <span class="pr-pulse-dot"></span>
+                        <span>@(_tiempoRealActivo ? "EN TIEMPO REAL • FLOTA CONECTADA" : "SIN CONEXIÓN EN VIVO")</span>
                     </span>
-                    <button type="button"
-                            class="btn btn-outline-primary btn-sm"
-                            @onclick="ActualizarAsync"
-                            disabled="@_cargando">
-                        @(_cargando ? "Actualizando..." : "Actualizar")
-                    </button>
-                </Acciones>
-            </PageHeader>
+                    <span class="pr-tag pr-tag--mono">ViajePrestadorDTO</span>
+                </div>
+                <h1 class="pr-page-title">VIAJES ACEPTADOS EN OPERACIÓN</h1>
+                <p class="pr-page-subtitle">
+                    Control de tráfico, avance de ruta y actualización de estados logísticos para cargas activas.
+                </p>
+            </div>
+            <div class="pr-header-actions">
+                <button type="button" class="pr-btn pr-btn--outline" @onclick="ExportarManifiesto">
+                    <span class="material-symbols-outlined text-[18px]">download</span>
+                    <span>Exportar Manifiesto</span>
+                </button>
+                <button type="button" class="pr-btn pr-btn--navy" @onclick="ActualizarAsync" disabled="@_cargando">
+                    <span class="material-symbols-outlined text-[18px]">refresh</span>
+                    <span>@(_cargando ? "Sincronizando..." : "Sincronizar")</span>
+                </button>
+            </div>
+        </div>
 
-            <div class="mr-filtros">
-                <div class="mr-filtro mr-filtro--busqueda">
-                    <label for="viajes-busqueda">Buscar</label>
-                    <input id="viajes-busqueda"
-                           type="search"
-                           class="form-control"
-                           placeholder="N° de viaje, origen, destino o pasajero"
+        @if (_errorCarga is not null)
+        {
+            <div class="pr-alert pr-alert--error">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">error</span>
+                    <span>@_errorCarga</span>
+                </div>
+                <button type="button" class="pr-btn pr-btn--outline pr-btn-sm" @onclick="ActualizarAsync">
+                    Reintentar
+                </button>
+            </div>
+        }
+
+        <!-- 2. Metrics Grid (KPIs Operativos de Flota) -->
+        <div class="pr-kpi-grid">
+            <!-- KPI 1: Total Viajes Aceptados -->
+            <div class="pr-kpi-card">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">Total Viajes Aceptados</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--emerald">
+                        <span class="material-symbols-outlined text-[20px]">check_circle</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value pr-tnum">@_viajes.Count</span>
+                        <span class="pr-kpi-badge pr-kpi-badge--emerald">100% Asignados</span>
+                    </div>
+                    <div class="pr-kpi-subtext">Servicios registrados en plataforma</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--emerald" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 2: En Tránsito / Ruta -->
+            <div class="pr-kpi-card">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">En Tránsito / Ruta</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--navy">
+                        <span class="material-symbols-outlined text-[20px]">route</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value pr-tnum">@TotalEnTransito</span>
+                        <span class="pr-kpi-badge pr-kpi-badge--emerald d-flex align-items-center gap-1">
+                            <span class="pr-pulse-dot" style="width: 6px; height: 6px;"></span>
+                            <span>GPS Telemetría</span>
+                        </span>
+                    </div>
+                    <div class="pr-kpi-subtext">Unidades activas navegando</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--navy" style="width: @(_viajes.Count > 0 ? (TotalEnTransito * 100 / _viajes.Count) : 0)%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 3: Asignados / Despachando -->
+            <div class="pr-kpi-card">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">Asignados / Por Despachar</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--amber">
+                        <span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value pr-tnum">@TotalAsignados</span>
+                        <span class="pr-kpi-badge pr-kpi-badge--amber">Remito Validado</span>
+                    </div>
+                    <div class="pr-kpi-subtext">Chofer en preparación o viaje asignado</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--amber" style="width: @(_viajes.Count > 0 ? (TotalAsignados * 100 / _viajes.Count) : 0)%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 4: Llegada a Destino / Finalizados -->
+            <div class="pr-kpi-card">
+                <div class="pr-kpi-header">
+                    <span class="pr-kpi-label">Llegada a Destino</span>
+                    <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--emerald">
+                        <span class="material-symbols-outlined text-[20px]">task_alt</span>
+                    </div>
+                </div>
+                <div class="pr-kpi-body">
+                    <div class="pr-kpi-value-row">
+                        <span class="pr-kpi-value pr-tnum">@TotalFinalizados</span>
+                        <span class="pr-kpi-badge pr-kpi-badge--emerald">Conformes</span>
+                    </div>
+                    <div class="pr-kpi-subtext">Entregas completadas exitosamente</div>
+                    <div class="pr-kpi-progress">
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--emerald" style="width: @(_viajes.Count > 0 ? (TotalFinalizados * 100 / _viajes.Count) : 0)%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Toolbar con Filtros por Estado, Buscador y Fecha -->
+        <div class="pr-toolbar">
+            <div class="pr-toolbar-row">
+                <!-- Status Filter Pills -->
+                <div class="pr-filter-pills">
+                    <button type="button"
+                            class="pr-filter-pill @(_estadoFiltro == EstadosViajeUI.Todos ? "active" : "")"
+                            @onclick='() => _estadoFiltro = EstadosViajeUI.Todos'>
+                        <span>Todos</span>
+                        <span class="pr-filter-pill__count">@_viajes.Count</span>
+                    </button>
+                    <button type="button"
+                            class="pr-filter-pill @(_estadoFiltro == EstadosViaje.Asignado ? "active" : "")"
+                            @onclick='() => _estadoFiltro = EstadosViaje.Asignado'>
+                        <span>Asignados</span>
+                        <span class="pr-filter-pill__count">@TotalAsignados</span>
+                    </button>
+                    <button type="button"
+                            class="pr-filter-pill @(_estadoFiltro == EstadosViaje.EnTransito ? "active" : "")"
+                            @onclick='() => _estadoFiltro = EstadosViaje.EnTransito'>
+                        <span>En Tránsito</span>
+                        <span class="pr-filter-pill__count">@TotalEnTransito</span>
+                    </button>
+                    <button type="button"
+                            class="pr-filter-pill @(_estadoFiltro == EstadosViaje.Finalizado ? "active" : "")"
+                            @onclick='() => _estadoFiltro = EstadosViaje.Finalizado'>
+                        <span>Finalizados</span>
+                        <span class="pr-filter-pill__count">@TotalFinalizados</span>
+                    </button>
+                </div>
+
+                <!-- Search Input -->
+                <div class="pr-search-box">
+                    <span class="material-symbols-outlined">search</span>
+                    <input type="text"
+                           class="pr-search-input"
+                           placeholder="Buscar por ID, solicitante, ruta..."
                            @bind="_busqueda"
                            @bind:event="oninput" />
                 </div>
+            </div>
 
-                <div class="mr-filtro">
-                    <label for="viajes-fecha">Fecha</label>
-                    <input id="viajes-fecha"
-                           type="date"
-                           class="form-control"
+            <!-- Date Filter & Actions row -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small text-muted fw-semibold">Fecha:</span>
+                    <input type="date"
+                           class="pr-input"
+                           style="height: 34px; padding: 0 0.5rem; font-size: 12px; width: auto;"
                            value="@_fechaTexto"
                            @onchange="CambiarFecha" />
                 </div>
 
-                <div class="mr-filtro">
-                    <label for="viajes-estado">Estado</label>
-                    <select id="viajes-estado" class="form-select" @bind="_estadoFiltro">
-                        @foreach (OpcionEstado opcion in EstadosViajeUI.Opciones)
-                        {
-                            <option value="@opcion.Valor">@opcion.Etiqueta</option>
-                        }
-                    </select>
-                </div>
-
-                <div class="mr-filtros__acciones">
-                    <button type="button" class="btn btn-outline-primary" @onclick="LimpiarFiltros">
-                        Limpiar
+                <div class="d-flex align-items-center gap-3">
+                    @if (_cargado && !_cargando)
+                    {
+                        <span class="small text-muted">@ViajesFiltrados.Count viaje(s) listado(s)</span>
+                    }
+                    <button type="button" class="pr-btn pr-btn--subtle pr-btn-sm" @onclick="LimpiarFiltros">
+                        <span>Limpiar filtros</span>
                     </button>
                 </div>
             </div>
-
-            @if (!_cargado || (_cargando && _viajes.Count == 0))
-            {
-                <div class="mr-loading">Cargando viajes...</div>
-            }
-            else if (_errorCarga is not null)
-            {
-                <div class="mr-alert mr-alert--error mr-alerta-accion">
-                    <span>@_errorCarga</span>
-                    <button type="button" class="btn btn-outline-primary btn-sm" @onclick="ActualizarAsync">
-                        Reintentar
-                    </button>
-                </div>
-            }
-            else if (_viajes.Count == 0)
-            {
-                <EmptyState Titulo="Todavía no hay viajes asignados"
-                            Descripcion="Los viajes aceptados y en curso van a aparecer acá.">
-                    <a class="btn btn-outline-primary" href="/prestador/solicitudes">Ver solicitudes</a>
-                </EmptyState>
-            }
-            else if (ViajesFiltrados.Count == 0)
-            {
-                <EmptyState Titulo="No encontramos viajes"
-                            Descripcion="Probá con otra búsqueda, fecha o estado.">
-                    <button type="button" class="btn btn-outline-primary" @onclick="LimpiarFiltros">Limpiar filtros</button>
-                </EmptyState>
-            }
-            else
-            {
-                <div class="mr-tabla-wrapper">
-                    <table class="table align-middle mr-tabla-viajes">
-                        <thead>
-                            <tr>
-                                <th scope="col">N°</th>
-                                <th scope="col">Fecha</th>
-                                <th scope="col">Hora</th>
-                                <th scope="col">Recorrido</th>
-                                <th scope="col">Pasajero</th>
-                                <th scope="col">Estado</th>
-                                <th scope="col" class="text-end">Monto</th>
-                                <th scope="col" class="text-end">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (ViajePrestadorDTO viaje in ViajesFiltrados)
-                            {
-                                <tr @key="viaje.Id">
-                                    <td class="fw-semibold">#@viaje.Id</td>
-                                    <td>@FormatearFecha(viaje.Fecha)</td>
-                                    <td>@FormatearHora(viaje.Hora)</td>
-                                    <td>
-                                        <div class="mr-recorrido">
-                                            <span>@viaje.Origen</span>
-                                            <span class="mr-recorrido__flecha" aria-hidden="true">→</span>
-                                            <span>@viaje.Destino</span>
-                                        </div>
-                                    </td>
-                                    <td>@viaje.NombrePasajero</td>
-                                    <td>
-                                        <EstadoBadge Estado="@viaje.Estado"
-                                                     Texto="@EstadosViajeUI.Etiqueta(viaje.Estado)" />
-                                    </td>
-                                    <td class="text-end">
-                                        <div class="fw-semibold">@FormatearMonto(MontoVisible(viaje))</div>
-                                        <small class="mr-muted">@EtiquetaPago(viaje.EstadoPago)</small>
-                                    </td>
-                                    <td class="text-end">
-                                        <button type="button"
-                                                class="btn btn-outline-primary btn-sm"
-                                                @onclick="() => AbrirDetalleAsync(viaje.Id)">
-                                            Ver detalle
-                                        </button>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
         </div>
+
+        <!-- 4. Listado de Viajes Activos y en Operación -->
+        @if (!_cargado || (_cargando && _viajes.Count == 0))
+        {
+            <div class="pr-loading">
+                <div class="pr-spinner"></div>
+                <span>Cargando viajes en operación...</span>
+            </div>
+        }
+        else if (_viajes.Count == 0)
+        {
+            <div class="pr-empty-state">
+                <div class="pr-empty-icon">
+                    <span class="material-symbols-outlined">local_shipping</span>
+                </div>
+                <h3 class="pr-empty-title">Todavía no hay viajes asignados</h3>
+                <p class="pr-empty-desc">Los servicios confirmados y en curso van a figurar en este monitor de operaciones.</p>
+                <a class="pr-btn pr-btn--emerald" href="/prestador/solicitudes">
+                    <span class="material-symbols-outlined text-[18px]">inbox</span>
+                    <span>Ver solicitudes de fletes</span>
+                </a>
+            </div>
+        }
+        else if (ViajesFiltrados.Count == 0)
+        {
+            <div class="pr-empty-state">
+                <div class="pr-empty-icon">
+                    <span class="material-symbols-outlined">search_off</span>
+                </div>
+                <h3 class="pr-empty-title">No encontramos viajes con esos filtros</h3>
+                <p class="pr-empty-desc">Intenta cambiando el estado o la fecha ingresada.</p>
+                <button type="button" class="pr-btn pr-btn--outline" @onclick="LimpiarFiltros">
+                    Limpiar filtros
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="pr-manifest-list">
+                @foreach (ViajePrestadorDTO viaje in ViajesFiltrados)
+                {
+                    <article class="pr-manifest-card" @key="viaje.Id">
+                        <!-- Top Meta Header -->
+                        <div class="pr-manifest-card__header">
+                            <div class="pr-manifest-card__tags">
+                                <span class="pr-badge-id">#MR-@viaje.Id</span>
+                                <EstadoBadge Estado="@viaje.Estado" Texto="@EstadosViajeUI.Etiqueta(viaje.Estado)" />
+                                <span class="pr-tag pr-tag--mono">@viaje.TipoSolicitud</span>
+
+                                <span class="pr-tag pr-tag--emerald d-inline-flex align-items-center gap-1">
+                                    <span class="material-symbols-outlined text-[14px]">verified</span>
+                                    <span>@EtiquetaPago(viaje.EstadoPago)</span>
+                                </span>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2 text-muted" style="font-size: 12.5px;">
+                                <span class="material-symbols-outlined text-[16px]">calendar_today</span>
+                                <span class="fw-semibold text-dark">@FormatearFecha(viaje.Fecha)</span>
+                                <span>•</span>
+                                <span class="material-symbols-outlined text-[16px]">schedule</span>
+                                <span>@FormatearHora(viaje.Hora) hs</span>
+                            </div>
+                        </div>
+
+                        <!-- Card Body Grid -->
+                        <div class="pr-manifest-grid">
+                            <!-- Col 1: Route Timeline -->
+                            <div class="pr-route-timeline">
+                                <div class="pr-route-stop">
+                                    <div class="pr-route-bullet pr-route-bullet--origin"></div>
+                                    <div class="pr-route-line"></div>
+                                    <div class="pr-route-info">
+                                        <div class="pr-route-label">Origen • Retiro Programado</div>
+                                        <div class="pr-route-name" title="@viaje.Origen">@viaje.Origen</div>
+                                    </div>
+                                </div>
+                                <div class="pr-route-stop">
+                                    <div class="pr-route-bullet pr-route-bullet--dest"></div>
+                                    <div class="pr-route-info">
+                                        <div class="pr-route-label">Destino • Entrega</div>
+                                        <div class="pr-route-name" title="@viaje.Destino">@viaje.Destino</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Col 2: Passenger & Service details -->
+                            <div class="pr-meta-box">
+                                <div class="pr-meta-row">
+                                    <span class="material-symbols-outlined">person</span>
+                                    <span>Pasajero / Cliente: <strong class="text-dark">@viaje.NombrePasajero</strong></span>
+                                </div>
+                                <div class="pr-meta-row">
+                                    <span class="material-symbols-outlined">payments</span>
+                                    <span>Estado del Pago: <strong class="text-dark">@EtiquetaPago(viaje.EstadoPago)</strong></span>
+                                </div>
+                                <div class="pr-meta-row">
+                                    <span class="material-symbols-outlined">satellite_alt</span>
+                                    <span class="text-secondary fw-semibold">Telemetría Operativa Activa</span>
+                                </div>
+                            </div>
+
+                            <!-- Col 3: Rate & Actions -->
+                            <div class="pr-rate-actions">
+                                <div class="pr-price-tag">
+                                    <span class="pr-price-label">Monto del Servicio</span>
+                                    <span class="pr-price-value pr-tnum">@FormatearMonto(MontoVisible(viaje))</span>
+                                </div>
+
+                                <div class="pr-actions-group">
+                                    <button type="button"
+                                            class="pr-btn pr-btn--navy"
+                                            @onclick="() => AbrirDetalleAsync(viaje.Id)">
+                                        <span class="material-symbols-outlined text-[18px]">visibility</span>
+                                        <span>Ver detalle</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
     </div>
 
+    <!-- 5. Modal Detalle del Viaje -->
     @if (_detalleAbierto)
     {
-        <div class="mr-modal-fondo" @onclick="CerrarDetalle">
-            <div class="mr-modal"
-                 role="dialog"
-                 aria-modal="true"
-                 aria-labelledby="viaje-detalle-titulo"
-                 @onclick="DetenerEvento"
-                 @onclick:stopPropagation="true">
-                <div class="mr-modal__cabecera">
+        <div class="pr-modal-backdrop" @onclick="CerrarDetalle">
+            <div class="pr-modal" style="max-width: 680px;" @onclick:stopPropagation>
+                <div class="pr-modal__stripe"></div>
+
+                <div class="pr-modal__header">
                     <div>
-                        <p class="mr-modal__eyebrow">Detalle del viaje</p>
-                        <h2 id="viaje-detalle-titulo">Viaje #@_viajeDetalleId</h2>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="pr-tag pr-tag--mono">ViajeDetalladoDTO</span>
+                            <span class="pr-badge-id">#MR-@_viajeDetalleId</span>
+                        </div>
+                        <h2 class="pr-modal__title">Detalle de Operación #@_viajeDetalleId</h2>
+                        <p class="pr-modal__subtitle">Telemetría, asignación y manifiesto de carga del servicio.</p>
                     </div>
-                    <button type="button" class="btn-close" aria-label="Cerrar" @onclick="CerrarDetalle"></button>
+                    <button type="button" class="pr-modal__close-btn" aria-label="Cerrar" @onclick="CerrarDetalle">
+                        <span class="material-symbols-outlined text-[20px]">close</span>
+                    </button>
                 </div>
 
-                <div class="mr-modal__cuerpo">
+                <div class="pr-modal__body">
                     @if (_cargandoDetalle)
                     {
-                        <div class="mr-loading">Cargando detalle...</div>
+                        <div class="pr-loading">
+                            <div class="pr-spinner"></div>
+                            <span>Cargando detalle de viaje...</span>
+                        </div>
                     }
                     else if (_errorDetalle is not null)
                     {
-                        <div class="mr-alert mr-alert--error mr-alerta-accion">
-                            <span>@_errorDetalle</span>
+                        <div class="pr-alert pr-alert--error">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="material-symbols-outlined text-[20px]">error</span>
+                                <span>@_errorDetalle</span>
+                            </div>
                             <button type="button"
-                                    class="btn btn-outline-primary btn-sm"
+                                    class="pr-btn pr-btn--outline pr-btn-sm"
                                     @onclick="() => CargarDetalleAsync(_viajeDetalleId)">
                                 Reintentar
                             </button>
@@ -180,124 +369,93 @@
                     }
                     else if (_detalle is ViajeDetalladoDTO detalle)
                     {
-                        <div class="mr-detalle-grid">
-                            <section class="mr-detalle-bloque">
-                                <h3>Recorrido</h3>
-                                <dl>
-                                    <div class="mr-detalle-item">
-                                        <dt>Origen</dt>
-                                        <dd>@detalle.Origen</dd>
+                        <div class="d-flex flex-column gap-3">
+                            <!-- Recorrido Block -->
+                            <div class="p-3 rounded-xl bg-surface-subtle border" style="background-color: var(--pr-surface-subtle);">
+                                <div class="fw-bold text-dark mb-2" style="font-family: var(--pr-font-display);">Ruta y Recorrido</div>
+                                <div class="pr-route-timeline">
+                                    <div class="pr-route-stop">
+                                        <div class="pr-route-bullet pr-route-bullet--origin"></div>
+                                        <div class="pr-route-line"></div>
+                                        <div class="pr-route-info">
+                                            <div class="pr-route-label">Origen</div>
+                                            <div class="fw-bold text-dark">@detalle.Origen</div>
+                                        </div>
                                     </div>
-                                    <div class="mr-detalle-item">
-                                        <dt>Destino</dt>
-                                        <dd>@detalle.Destino</dd>
+                                    <div class="pr-route-stop">
+                                        <div class="pr-route-bullet pr-route-bullet--dest"></div>
+                                        <div class="pr-route-info">
+                                            <div class="pr-route-label">Destino</div>
+                                            <div class="fw-bold text-dark">@detalle.Destino</div>
+                                        </div>
                                     </div>
-                                    <div class="mr-detalle-item">
-                                        <dt>Tipo de solicitud</dt>
-                                        <dd>@detalle.TipoSolicitud</dd>
-                                    </div>
-                                </dl>
-                            </section>
+                                </div>
+                            </div>
 
-                            <section class="mr-detalle-bloque">
-                                <h3>Estado y pago</h3>
-                                <dl>
-                                    <div class="mr-detalle-item">
-                                        <dt>Estado</dt>
-                                        <dd>
-                                            <EstadoBadge Estado="@detalle.Estado"
-                                                         Texto="@EstadosViajeUI.Etiqueta(detalle.Estado)" />
-                                        </dd>
+                            <!-- Estado & Tarifa -->
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded-xl border bg-white h-100">
+                                        <div class="text-muted small uppercase fw-bold mb-1">Estado de Servicio</div>
+                                        <div class="mb-2">
+                                            <EstadoBadge Estado="@detalle.Estado" Texto="@EstadosViajeUI.Etiqueta(detalle.Estado)" />
+                                        </div>
+                                        <div class="small text-muted">Pago: <strong>@EtiquetaPago(detalle.EstadoPago)</strong></div>
+                                        <div class="small text-muted">Método: <strong>@TextoOpcional(detalle.MetodoDePago)</strong></div>
                                     </div>
-                                    <div class="mr-detalle-item">
-                                        <dt>Pago</dt>
-                                        <dd>@EtiquetaPago(detalle.EstadoPago)</dd>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded-xl border bg-white h-100">
+                                        <div class="text-muted small uppercase fw-bold mb-1">Valores Económicos</div>
+                                        <div class="pr-price-value text-primary pr-tnum">@FormatearMonto(MontoVisible(detalle))</div>
+                                        <div class="small text-muted mt-1">Estimado: @FormatearMonto(detalle.MontoEstimado)</div>
+                                        <div class="small text-muted">Fecha: @FormatearFecha(detalle.Fecha) @FormatearHora(detalle.Hora) hs</div>
                                     </div>
-                                    <div class="mr-detalle-item">
-                                        <dt>Fecha</dt>
-                                        <dd>@FormatearFecha(detalle.Fecha)</dd>
-                                    </div>
-                                    <div class="mr-detalle-item">
-                                        <dt>Hora</dt>
-                                        <dd>@FormatearHora(detalle.Hora)</dd>
-                                    </div>
-                                    <div class="mr-detalle-item">
-                                        <dt>Reserva</dt>
-                                        <dd>@FormatearFechaHora(detalle.FechaHoraReserva)</dd>
-                                    </div>
-                                    <div class="mr-detalle-item">
-                                        <dt>Monto</dt>
-                                        <dd>@FormatearMonto(MontoVisible(detalle))</dd>
-                                    </div>
-                                    <div class="mr-detalle-item">
-                                        <dt>Monto estimado</dt>
-                                        <dd>@FormatearMonto(detalle.MontoEstimado)</dd>
-                                    </div>
-                                    <div class="mr-detalle-item">
-                                        <dt>Método de pago</dt>
-                                        <dd>@TextoOpcional(detalle.MetodoDePago)</dd>
-                                    </div>
-                                </dl>
-                            </section>
+                                </div>
+                            </div>
 
-                            <section class="mr-detalle-bloque">
-                                <h3>Cliente</h3>
-                                <dl>
-                                    <div class="mr-detalle-item">
-                                        <dt>Pasajero</dt>
-                                        <dd>#@detalle.IdPasajero</dd>
+                            <!-- Chofer y Vehículo -->
+                            <div class="p-3 rounded-xl border bg-white">
+                                <div class="fw-bold text-dark mb-2" style="font-family: var(--pr-font-display);">Chofer y Vehículo Asignados</div>
+                                <div class="row g-2">
+                                    <div class="col-sm-6">
+                                        <div class="small text-muted">Chofer asignado:</div>
+                                        <div class="fw-bold text-dark">@TextoOpcional(detalle.NombreChofer)</div>
                                     </div>
-                                    <div class="mr-detalle-item">
-                                        <dt>Nombre</dt>
-                                        <dd>@TextoOpcional(detalle.NombrePasajero)</dd>
+                                    <div class="col-sm-6">
+                                        <div class="small text-muted">Vehículo / Unidad:</div>
+                                        <div class="fw-bold text-dark">@TextoOpcional(detalle.Patente) - @TextoOpcional(detalle.Marca)</div>
                                     </div>
-                                </dl>
-                            </section>
+                                </div>
+                            </div>
 
-                            <section class="mr-detalle-bloque">
-                                <h3>Chofer y vehículo</h3>
-                                <dl>
-                                    <div class="mr-detalle-item">
-                                        <dt>Chofer</dt>
-                                        <dd>@TextoOpcional(detalle.NombreChofer)</dd>
+                            <!-- Pasajero & Carga -->
+                            <div class="p-3 rounded-xl border bg-white">
+                                <div class="fw-bold text-dark mb-2" style="font-family: var(--pr-font-display);">Cliente y Carga</div>
+                                <div class="row g-2">
+                                    <div class="col-sm-6">
+                                        <div class="small text-muted">Pasajero / Solicitante:</div>
+                                        <div class="fw-bold text-dark">#@detalle.IdPasajero - @TextoOpcional(detalle.NombrePasajero)</div>
                                     </div>
-                                    <div class="mr-detalle-item">
-                                        <dt>Patente</dt>
-                                        <dd>@TextoOpcional(detalle.Patente)</dd>
+                                    <div class="col-sm-6">
+                                        <div class="small text-muted">Equipaje / Carga especial:</div>
+                                        <div class="fw-bold text-dark">@SiNo(detalle.EquipajeCarga)</div>
                                     </div>
-                                    <div class="mr-detalle-item">
-                                        <dt>Marca</dt>
-                                        <dd>@TextoOpcional(detalle.Marca)</dd>
-                                    </div>
-                                </dl>
-                            </section>
-
-                            <section class="mr-detalle-bloque mr-detalle-bloque--ancho">
-                                <h3>Carga</h3>
-                                <dl>
-                                    <div class="mr-detalle-item">
-                                        <dt>Equipaje o carga</dt>
-                                        <dd>@SiNo(detalle.EquipajeCarga)</dd>
-                                    </div>
-                                    <div class="mr-detalle-item">
-                                        <dt>Detalle</dt>
-                                        <dd>@TextoOpcional(detalle.DetalleCarga)</dd>
-                                    </div>
-                                    @if (!string.IsNullOrWhiteSpace(detalle.MotivoCancelacion))
+                                    @if (!string.IsNullOrWhiteSpace(detalle.DetalleCarga))
                                     {
-                                        <div class="mr-detalle-item">
-                                            <dt>Motivo de cancelación</dt>
-                                            <dd>@detalle.MotivoCancelacion</dd>
+                                        <div class="col-12 mt-2">
+                                            <div class="small text-muted">Detalle de la carga:</div>
+                                            <div class="small p-2 rounded bg-surface-subtle border">@detalle.DetalleCarga</div>
                                         </div>
                                     }
-                                </dl>
-                            </section>
+                                </div>
+                            </div>
                         </div>
                     }
                 </div>
 
-                <div class="mr-modal__pie">
-                    <button type="button" class="btn btn-outline-primary" @onclick="CerrarDetalle">
+                <div class="pr-modal__footer">
+                    <button type="button" class="pr-btn pr-btn--navy" @onclick="CerrarDetalle">
                         Cerrar
                     </button>
                 </div>
@@ -328,6 +486,10 @@
     private bool _cargandoDetalle;
     private string? _errorDetalle;
     private ViajeDetalladoDTO? _detalle;
+
+    private int TotalEnTransito => _viajes.Count(v => EstadosViajeUI.Coincide(v.Estado, EstadosViaje.EnTransito));
+    private int TotalAsignados => _viajes.Count(v => EstadosViajeUI.Coincide(v.Estado, EstadosViaje.Asignado));
+    private int TotalFinalizados => _viajes.Count(v => EstadosViajeUI.Coincide(v.Estado, EstadosViaje.Finalizado));
 
     private List<ViajePrestadorDTO> ViajesFiltrados
     {
@@ -572,7 +734,7 @@
         _cargandoDetalle = false;
     }
 
-    private void DetenerEvento()
+    private void ExportarManifiesto()
     {
     }
 
