@@ -1,8 +1,6 @@
 @page "/prestador/vehiculos"
-@attribute [Authorize(Roles = "Prestador")]
 @using System.Globalization
 @using MundoRuta.Shared.DTO
-@using Microsoft.AspNetCore.Authorization
 @inject IVehiculoServicio Flota
 @inject SesionEstado Sesion
 @implements IDisposable
