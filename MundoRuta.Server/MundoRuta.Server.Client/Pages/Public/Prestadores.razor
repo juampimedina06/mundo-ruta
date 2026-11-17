@@ -68,27 +68,11 @@
                     </svg>
                     <input type="text"
                            class="mr-catalogo__search-input"
-                           placeholder="Buscar fletes, tipo de vehículo o zona (ej. Sprinter, Paletizado, GBA Norte)..."
+                            placeholder="Buscar por empresa, email, teléfono o ID..."
                            @bind="_busqueda"
                            @bind:event="oninput" />
                 </div>
 
-                <div class="mr-catalogo__zone-box">
-                    <svg class="mr-catalogo__field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                        <circle cx="12" cy="10" r="3" />
-                    </svg>
-                    <select class="mr-catalogo__zone-select" @bind="_zonaSeleccionada" aria-label="Zona de cobertura">
-                        <option value="CABA y GBA Norte">CABA y GBA Norte</option>
-                        <option value="Gran Buenos Aires Sur y Oeste">Gran Buenos Aires Sur y Oeste</option>
-                        <option value="Córdoba y Zona Centro">Córdoba y Zona Centro</option>
-                        <option value="Rosario / Litoral">Rosario / Litoral</option>
-                        <option value="Todo el país">Todo el país</option>
-                    </select>
-                    <svg class="mr-catalogo__select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                </div>
             </div>
         </section>
 
@@ -108,7 +92,7 @@
         }
         else
         {
-            List<PrestadorListadoDTO> prestadoresMostrados = ObtenerPrestadoresFiltrados();
+            List<PrestadorCatalogoDTO> prestadoresMostrados = ObtenerPrestadoresFiltrados();
 
             <section class="mr-catalogo__list-section">
                 <div class="mr-catalogo__toolbar">
@@ -121,7 +105,6 @@
                         <select class="mr-catalogo__sort-select" @bind="_ordenSeleccionado" aria-label="Ordenar prestadores">
                             <option value="calificados">Mejor Calificados</option>
                             <option value="flota">Mayor Flota</option>
-                            <option value="disponibilidad">Disponibilidad Inmediata</option>
                         </select>
                     </div>
                 </div>
@@ -134,10 +117,10 @@
                 else
                 {
                     <div class="mr-catalogo__grid">
-                        @foreach (PrestadorListadoDTO prestador in prestadoresMostrados)
+                        @foreach (PrestadorCatalogoDTO prestador in prestadoresMostrados)
                         {
                             bool esDestacado = prestador.Id == _prestadorSeleccionadoId;
-                            bool esActivo = EsEstadoActivo(prestador.Estado);
+                            string nombreMostrado = ObtenerNombreMostrado(prestador);
 
                             <article class="mr-prestador-card @(esDestacado ? "mr-prestador-card--destacado" : string.Empty)"
                                      @onclick="() => SeleccionarPrestador(prestador.Id)">
@@ -148,17 +131,16 @@
                                                 #@prestador.Id
                                             </div>
                                             <div class="mr-prestador-card__meta">
-                                                <span class="mr-prestador-card__id-label">ID: @prestador.Id</span>
-                                                <span class="mr-prestador-card__role-pill @(esDestacado ? "mr-prestador-card__role-pill--destacado" : string.Empty)">
-                                                    @(string.IsNullOrWhiteSpace(prestador.Rol) ? "Prestador" : prestador.Rol)
-                                                </span>
+                                                <span class="mr-prestador-card__id-label">@nombreMostrado</span>
+                                                @if (!string.IsNullOrWhiteSpace(prestador.RazonSocial) &&
+                                                       !string.Equals(prestador.RazonSocial.Trim(), nombreMostrado, StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    <span class="mr-prestador-card__role-pill @(esDestacado ? "mr-prestador-card__role-pill--destacado" : string.Empty)">
+                                                        @prestador.RazonSocial
+                                                    </span>
+                                                }
                                             </div>
                                         </div>
-
-                                        <span class="mr-prestador-card__status @(esActivo ? "mr-prestador-card__status--activo" : "mr-prestador-card__status--inactivo")">
-                                            <span class="mr-prestador-card__status-dot"></span>
-                                            @ObtenerTextoEstado(prestador.Estado)
-                                        </span>
                                     </div>
 
                                     <div class="mr-prestador-card__contacts">
@@ -184,6 +166,25 @@
                                                 @prestador.Telefono
                                             </a>
                                         </div>
+
+                                        <div class="mr-prestador-card__contact-row">
+                                            <svg class="mr-prestador-card__contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                            </svg>
+                                            <span class="mr-prestador-card__contact-link">
+                                                @if (prestador.TotalCalificaciones > 0)
+                                                {
+                                                    <text>
+                                                        @prestador.PromedioCalificacion.ToString("0.0", CultureInfo.InvariantCulture)
+                                                        (@prestador.TotalCalificaciones @(prestador.TotalCalificaciones == 1 ? "calificación" : "calificaciones"))
+                                                    </text>
+                                                }
+                                                else
+                                                {
+                                                    <text>Sin calificaciones todavía</text>
+                                                }
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -208,18 +209,17 @@
 </div>
 
 @code {
-    private List<PrestadorListadoDTO>? _prestadores;
+    private List<PrestadorCatalogoDTO>? _prestadores;
     private bool _cargando = true;
     private string? _error;
     private string _busqueda = string.Empty;
-    private string _zonaSeleccionada = "CABA y GBA Norte";
     private string _ordenSeleccionado = "calificados";
     private int? _prestadorSeleccionadoId;
     private readonly string _fechaActual = FormatearFechaActual();
 
     protected override async Task OnInitializedAsync()
     {
-        HttpResp<List<PrestadorListadoDTO>> respuesta = await Http.GetAsync<List<PrestadorListadoDTO>>("api/servicios/fletes");
+        HttpResp<List<PrestadorCatalogoDTO>> respuesta = await Http.GetAsync<List<PrestadorCatalogoDTO>>("api/servicios/fletes");
 
         if (respuesta.Error)
         {
@@ -243,68 +243,47 @@
         _prestadorSeleccionadoId = id;
     }
 
-    private List<PrestadorListadoDTO> ObtenerPrestadoresFiltrados()
+    private List<PrestadorCatalogoDTO> ObtenerPrestadoresFiltrados()
     {
         if (_prestadores is null || _prestadores.Count == 0)
         {
             return [];
         }
 
-        IEnumerable<PrestadorListadoDTO> consulta = _prestadores;
+        IEnumerable<PrestadorCatalogoDTO> consulta = _prestadores;
 
         if (!string.IsNullOrWhiteSpace(_busqueda))
         {
             string termino = _busqueda.Trim();
             consulta = consulta.Where(p =>
+                (p.Nombre?.Contains(termino, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (p.RazonSocial?.Contains(termino, StringComparison.OrdinalIgnoreCase) ?? false) ||
                 (p.Email?.Contains(termino, StringComparison.OrdinalIgnoreCase) ?? false) ||
                 (p.Telefono?.Contains(termino, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (p.Rol?.Contains(termino, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (p.Estado?.Contains(termino, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                ObtenerTextoEstado(p.Estado).Contains(termino, StringComparison.OrdinalIgnoreCase) ||
                 p.Id.ToString(CultureInfo.InvariantCulture).Contains(termino, StringComparison.OrdinalIgnoreCase));
         }
 
         consulta = _ordenSeleccionado switch
         {
             "flota" => consulta.OrderByDescending(p => p.Id),
-            "disponibilidad" => consulta.OrderByDescending(p => EsEstadoActivo(p.Estado)).ThenBy(p => p.Id),
-            _ => consulta.OrderBy(p => p.Id)
+            _ => consulta.OrderByDescending(p => p.PromedioCalificacion)
+                         .ThenByDescending(p => p.TotalCalificaciones)
+                         .ThenBy(p => p.Id)
         };
 
         return consulta.ToList();
     }
 
-    private static bool EsEstadoActivo(string? estado)
+    private static string ObtenerNombreMostrado(PrestadorCatalogoDTO prestador)
     {
-        if (string.IsNullOrWhiteSpace(estado))
+        string razonSocial = prestador.RazonSocial?.Trim() ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(razonSocial))
         {
-            return false;
+            return razonSocial;
         }
 
-        return string.Equals(estado, "APROBADO", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(estado, "ACTIVO", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string ObtenerTextoEstado(string? estado)
-    {
-        if (string.IsNullOrWhiteSpace(estado))
-        {
-            return "Inactivo";
-        }
-
-        if (EsEstadoActivo(estado))
-        {
-            return "Activo";
-        }
-
-        if (string.Equals(estado, "INACTIVO", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(estado, "RECHAZADO", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(estado, "PENDIENTE", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Inactivo";
-        }
-
-        return estado;
+        string nombre = prestador.Nombre?.Trim() ?? string.Empty;
+        return string.IsNullOrWhiteSpace(nombre) ? $"Prestador #{prestador.Id}" : nombre;
     }
 
     private static string FormatearFechaActual()
