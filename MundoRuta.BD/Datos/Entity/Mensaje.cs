@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
 namespace MundoRuta.BD.Datos.Entity
@@ -11,9 +12,13 @@ namespace MundoRuta.BD.Datos.Entity
         public int? IdDestinatario { get; set; }
         public string Contenido { get; set; }
         public DateTime EnviadoEn { get; set; }
+        [ForeignKey("IdChat")]
         public Chat Chat { get; set; }
-        public Usuario Emisor { get; set; }
-        public Usuario Destinatario { get; set; }
 
+        [ForeignKey("IdEmisor")]
+        public Usuario? Emisor { get; set; }
+
+        [ForeignKey("IdDestinatario")]
+        public Usuario? Destinatario { get; set; }
     }
 }

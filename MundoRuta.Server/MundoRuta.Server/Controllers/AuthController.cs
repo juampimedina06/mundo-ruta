@@ -11,10 +11,12 @@ namespace MundoRuta.Server.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IUsuarioRepositorio _usuarioRepositorio;
+        private readonly IChoferRepositorio _choferRepositorio;
 
-        public AuthController(IUsuarioRepositorio usuarioRepositorio)
+        public AuthController(IUsuarioRepositorio usuarioRepositorio, IChoferRepositorio choferRepositorio)
         {
             _usuarioRepositorio = usuarioRepositorio;
+            _choferRepositorio = choferRepositorio;
         }
 
         [HttpPost("register")] // api/auth/register
@@ -65,6 +67,29 @@ namespace MundoRuta.Server.Controllers
             if (usuario.Estado == EstadosPrestador.Pendiente)
             {
                 return StatusCode(403, "Cuenta pendiente de aprobación");
+            }
+
+            if (usuario.Rol == Roles.Chofer)
+            {
+                var chofer = await _choferRepositorio.ObtenerPorUsuario(usuario.Id);
+                if (chofer != null)
+                {
+                    if (string.Equals(chofer.Estado, "INACTIVO", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return StatusCode(403, "Cuenta inactiva o dada de baja");
+                    }
+
+                    if (string.Equals(usuario.Estado, "INACTIVO", StringComparison.OrdinalIgnoreCase))
+                    {
+                        usuario.Estado = "APROBADO";
+                        await _usuarioRepositorio.Update(usuario);
+                    }
+                }
+            }
+
+            if (string.Equals(usuario.Estado, "INACTIVO", StringComparison.OrdinalIgnoreCase))
+            {
+                return StatusCode(403, "Cuenta inactiva o dada de baja");
             }
 
             // Una empresa rechazada o suspendida tampoco puede iniciar sesión ni operar.

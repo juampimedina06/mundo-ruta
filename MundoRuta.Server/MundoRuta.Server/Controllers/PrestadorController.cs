@@ -45,6 +45,25 @@ public class PrestadorController : ControllerBase
     public async Task<ActionResult> GetSolicitudes(int prestadorId, [FromQuery] string? estado = null)
     {
         var solicitudes = await _viajeRepositorio.ListadoSolicitudesDisponibles(estado ?? EstadosViaje.Buscando);
+
+        if (prestadorId > 0 && solicitudes.Count > 0)
+        {
+            var idsViajes = solicitudes.Select(s => s.Id).ToList();
+            var ofertasDelPrestador = _context.OfertasViajes
+                .Where(o => o.IdPrestador == prestadorId && o.EstadoOferta == "ACTIVA" && idsViajes.Contains(o.IdViaje))
+                .ToList();
+
+            foreach (var solicitud in solicitudes)
+            {
+                var oferta = ofertasDelPrestador.FirstOrDefault(o => o.IdViaje == solicitud.Id);
+                if (oferta != null)
+                {
+                    solicitud.YaOferto = true;
+                    solicitud.MontoOfertadoPorMi = oferta.MontoOfertado;
+                }
+            }
+        }
+
         return Ok(solicitudes);
     }
 
@@ -176,11 +195,18 @@ public class PrestadorController : ControllerBase
         {
             var prestadorId = idPrestador;
             if (prestadorId <= 0 && viaje.IdUsuario > 0) prestadorId = viaje.IdUsuario;
+
+            bool yaOferto = _context.OfertasViajes.Any(o => o.IdViaje == id && o.IdPrestador == prestadorId && o.EstadoOferta == "ACTIVA");
+            if (yaOferto)
+            {
+                return BadRequest("Ya enviaste una oferta para esta solicitud.");
+            }
             var oferta = new OfertaViaje
             {
                 IdViaje = id,
                 IdPrestador = prestadorId,
                 IdChoferPropuesto = dto.IdChofer > 0 ? dto.IdChofer : null,
+                IdVehiculoPropuesto = dto.IdVehiculo > 0 ? dto.IdVehiculo : null,
                 MontoOfertado = dto.MontoEstimado > 0 ? dto.MontoEstimado : viaje.Monto,
                 EsContraoferta = false,
                 EstadoOferta = "ACTIVA",
@@ -251,6 +277,7 @@ public class PrestadorController : ControllerBase
             IdViaje = id,
             IdPrestador = prestadorId2,
             IdChoferPropuesto = dto.IdChofer > 0 ? dto.IdChofer : null,
+            IdVehiculoPropuesto = dto.IdVehiculo > 0 ? dto.IdVehiculo : null,
             MontoOfertado = dto.NuevoMonto,
             EsContraoferta = true,
             EstadoOferta = "ACTIVA",
@@ -307,6 +334,34 @@ public class PrestadorController : ControllerBase
 
         var vehiculoCreado = await _vehiculoRepositorio.Insert(entidad);
         return Ok(vehiculoCreado);
+    }
+
+    // PUT: Actualizar un vehículo existente (datos técnicos, estado y conductor asignado)
+    [HttpPut("vehiculo/{id:int}")] // api/prestador/vehiculo/{id}
+    public async Task<ActionResult<Vehiculo>> PutVehiculo(int id, [FromBody] RegistroVehiculoDTO dto)
+    {
+        var entidad = await _vehiculoRepositorio.ObtenerPorId(id);
+
+        if (entidad == null)
+        {
+            return NotFound("Vehículo no encontrado.");
+        }
+
+        entidad.Patente = dto.Patente;
+        entidad.Nombre = dto.Nombre;
+        entidad.Marca = dto.Marca;
+        entidad.MarcaModelo = dto.MarcaModelo;
+        entidad.TipoVehiculo = dto.TipoVehiculo;
+        entidad.CapacidadCarga = dto.CapacidadCarga;
+        entidad.Licencia = dto.Licencia;
+        entidad.Estado = dto.Estado;
+        entidad.FechaFabricación = dto.FechaFabricación;
+        entidad.NumeroConductor = dto.NumeroConductor;
+        entidad.CaracteristicasConductor = dto.CaracteristicasConductor;
+        entidad.IdChofer = dto.IdChofer > 0 ? dto.IdChofer : null;
+
+        var actualizado = await _vehiculoRepositorio.Update(entidad);
+        return Ok(actualizado);
     }
 
     // GET: Listado de vehículos de un prestador

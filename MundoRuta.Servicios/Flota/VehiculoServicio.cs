@@ -27,6 +27,11 @@ namespace MundoRuta.Servicios.Flota
             return _http.PostAsync<RegistroVehiculoDTO, VehiculoDTO>(RutaAltaVehiculo, dto);
         }
 
+        public Task<HttpResp<VehiculoDTO>> ActualizarAsync(int id, RegistroVehiculoDTO dto)
+        {
+            return _http.PutAsync<RegistroVehiculoDTO, VehiculoDTO>($"{RutaAltaVehiculo}/{id}", dto);
+        }
+
         public Task<HttpResp<TarifaKmDTO>> ObtenerTarifaAsync(int prestadorId)
         {
             string url = string.Format(RutaTarifaKm, prestadorId);

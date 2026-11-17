@@ -1211,3 +1211,127 @@
     align-items: center;
     gap: 0.5rem;
 }
+
+/* ==========================================================================
+   7. Modal de Registro de Vehículo
+   ========================================================================== */
+
+.mr-fleet-modal-panel--registro {
+    max-width: 672px;
+    border-radius: 16px;
+    border: none;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.mr-fleet-modal-header--registro {
+    background-color: #f8fafc;
+    border-bottom: 1px solid var(--fleet-border, #e2e8f0);
+    padding: 1.25rem 1.5rem 1rem;
+    align-items: flex-start;
+}
+
+.mr-fleet-modal-title--lg {
+    font-size: 1.25rem;
+}
+
+.mr-fleet-modal-subtitle {
+    margin: 0.25rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--fleet-text-muted, #64748b);
+}
+
+.mr-fleet-modal-form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+}
+
+.mr-fleet-modal-body--scroll {
+    padding: 1.25rem 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.mr-fleet-modal-grid-full {
+    grid-column: 1 / -1;
+}
+
+.mr-fleet-required {
+    color: #dc2626;
+}
+
+.mr-fleet-input--modal {
+    height: 40px;
+    border-radius: 10px;
+    background-color: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 0 0.75rem;
+    font-size: 0.875rem;
+    color: var(--fleet-text-main, #0f172a);
+    width: 100%;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.mr-fleet-input--modal:focus {
+    outline: none;
+    background-color: #ffffff;
+    border-color: var(--fleet-primary, #1e3a8a);
+    box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.15);
+}
+
+.mr-fleet-modal-footer--registro {
+    background-color: #ffffff;
+    border-top: 1px solid var(--fleet-border, #e2e8f0);
+    padding: 1rem 1.5rem;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.mr-fleet-btn-cancel {
+    padding: 0.55rem 1rem;
+    border-radius: 10px;
+    border: none;
+    background-color: #f1f5f9;
+    color: var(--fleet-text-main, #0f172a);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.mr-fleet-btn-cancel:hover:not(:disabled) {
+    background-color: #e2e8f0;
+}
+
+.mr-fleet-btn-submit-green {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 1.25rem;
+    border-radius: 10px;
+    border: none;
+    background-color: #047857;
+    color: #ffffff;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(4, 120, 87, 0.25);
+    transition: background-color 0.15s ease;
+}
+
+.mr-fleet-btn-submit-green:hover:not(:disabled) {
+    background-color: #065f46;
+}
+
+.mr-fleet-btn-submit-green:disabled,
+.mr-fleet-btn-cancel:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.mr-fleet-btn-submit-green .material-symbols-outlined {
+    font-size: 18px;
+}

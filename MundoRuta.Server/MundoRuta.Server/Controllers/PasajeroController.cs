@@ -41,6 +41,14 @@ namespace MundoRuta.Server.Controllers
                 return BadRequest("El viaje ya está cancelado");
             }
 
+            if (viaje.Estado == EstadosViaje.Finalizado ||
+                viaje.Estado == EstadosViaje.EnTransito ||
+                viaje.Estado == EstadosViaje.CargaSubida ||
+                viaje.Estado == EstadosViaje.LlegadaDestino)
+            {
+                return BadRequest("No se puede cancelar un viaje que ya está en curso o finalizado.");
+            }
+
             var fechaHoraViaje = viaje.Fecha.Date + viaje.Hora;
 
             if (fechaHoraViaje <= DateTime.Now.AddMinutes(30))
@@ -137,7 +145,7 @@ namespace MundoRuta.Server.Controllers
         }
 
         [HttpGet("{usuarioId:int}/viajes")]
-        public async Task<ActionResult<List<ListadoViajeDTO>>> ViajesSolicitados(int usuarioId, string? estado = EstadosViaje.Buscando) // Obtiene los viajes del usuario, filtrando por estado si se indica.
+        public async Task<ActionResult<List<ListadoViajeDTO>>> ViajesSolicitados(int usuarioId, string? estado = null) // Obtiene los viajes del usuario, filtrando por estado si se indica.
         {
             var lista = await repositorio.ObtenerPorUsuario(usuarioId, estado);
 

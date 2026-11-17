@@ -57,9 +57,9 @@ public class Viaje : EntidadBase
 
     public Usuario Usuario { get; set; }
 
-    public int IdChofer { get; set; }
+    public int? IdChofer { get; set; }
 
-    public Chofer Chofer { get; set; }
+    public Chofer? Chofer { get; set; }
 
     public int IdServicio { get; set; }
     [ForeignKey("IdServicio")]
@@ -71,8 +71,8 @@ public class Viaje : EntidadBase
 
     public string? MotivoCancelacion { get; set; } //
 
-    public int IdVehiculo { get; set; }
+    public int? IdVehiculo { get; set; }
 
     [ForeignKey("IdVehiculo")]
-    public Vehiculo Vehiculo { get; set; }
+    public Vehiculo? Vehiculo { get; set; }
 }

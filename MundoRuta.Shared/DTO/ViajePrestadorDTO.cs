@@ -26,4 +26,7 @@ public class ViajePrestadorDTO
 
     public int IdPasajero { get; set; }
     public string NombrePasajero { get; set; } = string.Empty;
+
+    public bool YaOferto { get; set; }
+    public decimal? MontoOfertadoPorMi { get; set; }
 }

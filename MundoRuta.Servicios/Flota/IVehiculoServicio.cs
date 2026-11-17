@@ -10,6 +10,8 @@ namespace MundoRuta.Servicios.Flota
 
         Task<HttpResp<VehiculoDTO>> RegistrarAsync(RegistroVehiculoDTO dto);
 
+        Task<HttpResp<VehiculoDTO>> ActualizarAsync(int id, RegistroVehiculoDTO dto);
+
         Task<HttpResp<TarifaKmDTO>> ObtenerTarifaAsync(int prestadorId);
 
         Task<HttpResp<TarifaKmDTO>> GuardarTarifaAsync(int prestadorId, decimal tarifaBaseKm);
