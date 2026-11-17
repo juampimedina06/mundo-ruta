@@ -127,6 +127,11 @@ namespace MundoRuta.Server.Controllers
                 return NotFound("El viaje no existe");
             }
 
+            if (viaje.Estado != EstadosViaje.Contraofertado)
+            {
+                return BadRequest("La contraoferta solo puede responderse cuando el viaje está contraofertado");
+            }
+
             if (dto.Aceptar)
             {
                 viaje.Estado = EstadosViaje.Asignado; // Si el pasajero acepta, el viaje queda asignado.
