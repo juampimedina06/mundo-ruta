@@ -62,6 +62,29 @@ namespace MundoRuta.Server.Controllers
 
             await repositorio.Update(viaje);
 
+            var estadoDto = new EstadoViajeActualizadoDTO
+            {
+                IdViaje = viaje.Id,
+                Estado = EstadosViaje.Cancelado,
+                Mensaje = "El viaje ha sido cancelado por el pasajero"
+            };
+
+            await _hubContext.Clients.Group($"viaje_{viaje.Id}")
+                .SendAsync("EstadoViajeActualizado", estadoDto);
+
+            if (viaje.IdUsuario > 0)
+            {
+                var prestador = await _context.Usuarios
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Id == viaje.IdUsuario && u.Rol == Roles.Prestador);
+
+                if (prestador != null)
+                {
+                    await _hubContext.Clients.Group($"prestador_{viaje.IdUsuario}")
+                        .SendAsync("EstadoViajeActualizado", estadoDto);
+                }
+            }
+
             return Ok(new { mensaje = "Viaje cancelado con éxito" });
         }
 
