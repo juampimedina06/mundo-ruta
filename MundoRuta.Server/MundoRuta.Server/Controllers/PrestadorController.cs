@@ -19,6 +19,7 @@ public class PrestadorController : ControllerBase
     private readonly IChoferRepositorio _choferRepositorio;
     private readonly IVehiculoRepositorio _vehiculoRepositorio;
     private readonly IOfertaViajeRepositorio _ofertaViajeRepositorio;
+    private readonly ICalificacionRepositorio _calificacionRepositorio;
     private readonly MundoRuta.BD.Datos.AppDbContext _context;
     private readonly IHubContext<ViajeHub> _hubContext;
 
@@ -28,6 +29,7 @@ public class PrestadorController : ControllerBase
         IChoferRepositorio choferRepositorio,
         IVehiculoRepositorio vehiculoRepositorio,
         IOfertaViajeRepositorio ofertaViajeRepositorio,
+        ICalificacionRepositorio calificacionRepositorio,
         MundoRuta.BD.Datos.AppDbContext context,
         IHubContext<ViajeHub> hubContext)
     {
@@ -36,6 +38,7 @@ public class PrestadorController : ControllerBase
         _choferRepositorio = choferRepositorio;
         _vehiculoRepositorio = vehiculoRepositorio;
         _ofertaViajeRepositorio = ofertaViajeRepositorio;
+        _calificacionRepositorio = calificacionRepositorio;
         _context = context;
         _hubContext = hubContext;
     }
@@ -135,10 +138,14 @@ public class PrestadorController : ControllerBase
     {
         var prestador = await _usuarioRepositorio.ObtenerPorId(id);
 
-        if (prestador == null || prestador.Rol != "Prestador")
+        if (prestador == null
+            || prestador.Rol != Roles.Prestador
+            || prestador.Estado != EstadosPrestador.Aprobado)
         {
             return NotFound("No se encontró el prestador");
         }
+
+        (double? promedio, int total) = await _calificacionRepositorio.ObtenerPromedioRecibido(id);
 
         var listaVehiculos = await _vehiculoRepositorio.ObtenerPorPrestador(id);
 
@@ -163,7 +170,8 @@ public class PrestadorController : ControllerBase
             Estado = prestador.Estado,
             Rol = prestador.Rol,
             RazonSocial = prestador.RazonSocial,
-            Cuit = prestador.Cuit,
+            PromedioCalificacion = promedio ?? 0.0,
+            TotalCalificaciones = total,
             Vehiculos = vehiculosDto
         };
 
