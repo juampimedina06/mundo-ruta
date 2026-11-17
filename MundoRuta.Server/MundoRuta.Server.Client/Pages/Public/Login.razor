@@ -47,7 +47,7 @@
             </EditForm>
 
             <p class="mr-auth__pie">
-                ¿No tenés cuenta? <a href="/registro">Registrate</a>
+                ¿No tenés cuenta? <a href="@ObtenerRegistroUrl()">Registrate</a>
             </p>
         </div>
     </div>
@@ -108,15 +108,39 @@
         Navegacion.NavigateTo(destino);
     }
 
+    private string ObtenerRegistroUrl()
+    {
+        string redirect = ObtenerRedirectValido(RedirectUrl);
+
+        if (string.IsNullOrEmpty(redirect))
+        {
+            return "/registro";
+        }
+
+        return "/registro?redirect=" + Uri.EscapeDataString(redirect);
+    }
+
     private string ObtenerDestino()
     {
-        if (!string.IsNullOrWhiteSpace(RedirectUrl)
-            && RedirectUrl.StartsWith('/')
-            && !RedirectUrl.StartsWith("//"))
+        string redirect = ObtenerRedirectValido(RedirectUrl);
+
+        if (!string.IsNullOrEmpty(redirect))
         {
-            return RedirectUrl;
+            return redirect;
         }
 
         return RutaInicioPorRol.Obtener(Sesion.Rol);
+    }
+
+    private static string ObtenerRedirectValido(string? redirect)
+    {
+        if (!string.IsNullOrWhiteSpace(redirect)
+            && redirect.StartsWith('/')
+            && !redirect.StartsWith("//"))
+        {
+            return redirect;
+        }
+
+        return string.Empty;
     }
 }
