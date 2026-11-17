@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos;
 using MundoRuta.BD.Datos.Entity;
+using MundoRuta.Shared;
 using MundoRuta.Shared.DTO;
 
 namespace MundoRuta.Repositorio.Repositorios
@@ -90,10 +91,26 @@ namespace MundoRuta.Repositorio.Repositorios
             var chofer = await context.Choferes.FindAsync(id);
             if (chofer == null) return false;
 
-            // Actualiza solo los campos permitidos por el criterio de aceptación
-            chofer.Telefono = dto.Telefono;
+            if (!string.IsNullOrWhiteSpace(dto.Telefono))
+            {
+                chofer.Telefono = dto.Telefono;
+            }
             chofer.Licencia = dto.Licencia;
             chofer.Estado = dto.EstadoOperativo;
+
+            if (chofer.IdUsuario > 0)
+            {
+                var usuario = await context.Usuarios.FindAsync(chofer.IdUsuario);
+                if (usuario != null)
+                {
+                    bool esInactivo = string.Equals(dto.EstadoOperativo, "INACTIVO", StringComparison.OrdinalIgnoreCase);
+                    usuario.Estado = esInactivo ? "INACTIVO" : "APROBADO";
+                    if (!string.IsNullOrWhiteSpace(dto.Telefono))
+                    {
+                        usuario.Telefono = dto.Telefono;
+                    }
+                }
+            }
 
             await context.SaveChangesAsync();
             return true;
@@ -101,9 +118,7 @@ namespace MundoRuta.Repositorio.Repositorios
 
         public async Task<bool> TieneViajesEnTransitoAsync(int id)
         {
-            // Verifica si el chofer tiene viajes asignados que no estén finalizados.
-            // OJO: Revisá cómo se llama la propiedad de estado en tu clase Viaje (acá puse Estado como ejemplo)
-            return await context.Viajes.AnyAsync(v => v.IdChofer == id && v.Estado == "En transito");
+            return await context.Viajes.AnyAsync(v => v.IdChofer == id && EstadosViaje.Activos.Contains(v.Estado));
         }
 
         public async Task<bool> BajaLogicaAsync(int id)
@@ -111,8 +126,17 @@ namespace MundoRuta.Repositorio.Repositorios
             var chofer = await context.Choferes.FindAsync(id);
             if (chofer == null) return false;
 
-            // Baja lógica: OJO, revisá si en tu entidad Chofer usan "Activo = false" o "EstadoOperativo = 'Inactivo'"
             chofer.Estado = "Inactivo";
+
+            if (chofer.IdUsuario > 0)
+            {
+                var usuario = await context.Usuarios.FindAsync(chofer.IdUsuario);
+                if (usuario != null)
+                {
+                    usuario.Estado = "INACTIVO";
+                }
+            }
+
             await context.SaveChangesAsync();
             return true;
         }

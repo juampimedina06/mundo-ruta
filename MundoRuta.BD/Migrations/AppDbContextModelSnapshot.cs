@@ -236,18 +236,9 @@ namespace MundoRuta.BD.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("ChatId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Contenido")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("DestinatarioId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("EmisorId")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("EnviadoEn")
                         .HasColumnType("datetime2");
@@ -263,11 +254,11 @@ namespace MundoRuta.BD.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ChatId");
+                    b.HasIndex("IdChat");
 
-                    b.HasIndex("DestinatarioId");
+                    b.HasIndex("IdDestinatario");
 
-                    b.HasIndex("EmisorId");
+                    b.HasIndex("IdEmisor");
 
                     b.ToTable("Mensajes");
                 });
@@ -581,7 +572,7 @@ namespace MundoRuta.BD.Migrations
                     b.Property<TimeSpan>("Hora")
                         .HasColumnType("time");
 
-                    b.Property<int>("IdChofer")
+                    b.Property<int?>("IdChofer")
                         .HasColumnType("int");
 
                     b.Property<int>("IdPasajero")
@@ -596,7 +587,7 @@ namespace MundoRuta.BD.Migrations
                     b.Property<int>("IdUsuario")
                         .HasColumnType("int");
 
-                    b.Property<int>("IdVehiculo")
+                    b.Property<int?>("IdVehiculo")
                         .HasColumnType("int");
 
                     b.Property<bool>("LlevaAcompanante")
@@ -726,21 +717,17 @@ namespace MundoRuta.BD.Migrations
                 {
                     b.HasOne("MundoRuta.BD.Datos.Entity.Chat", "Chat")
                         .WithMany()
-                        .HasForeignKey("ChatId")
+                        .HasForeignKey("IdChat")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MundoRuta.BD.Datos.Entity.Usuario", "Destinatario")
                         .WithMany()
-                        .HasForeignKey("DestinatarioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("IdDestinatario");
 
                     b.HasOne("MundoRuta.BD.Datos.Entity.Usuario", "Emisor")
                         .WithMany()
-                        .HasForeignKey("EmisorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("IdEmisor");
 
                     b.Navigation("Chat");
 
@@ -835,8 +822,7 @@ namespace MundoRuta.BD.Migrations
                     b.HasOne("MundoRuta.BD.Datos.Entity.Chofer", "Chofer")
                         .WithMany()
                         .HasForeignKey("IdChofer")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MundoRuta.BD.Datos.Entity.Usuario", "Pasajero")
                         .WithMany()
@@ -864,9 +850,7 @@ namespace MundoRuta.BD.Migrations
 
                     b.HasOne("MundoRuta.BD.Datos.Entity.Vehiculo", "Vehiculo")
                         .WithMany()
-                        .HasForeignKey("IdVehiculo")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("IdVehiculo");
 
                     b.Navigation("Chofer");
 

@@ -57,13 +57,16 @@ namespace MundoRuta.Repositorio.Repositorios
                 viaje.IdServicio = servicioDefault.Id;
             }
 
+            if (viaje.IdVehiculo == 0) viaje.IdVehiculo = null;
+            if (viaje.IdChofer == 0) viaje.IdChofer = null;
+
             context.Viajes.Add(viaje);
             await context.SaveChangesAsync();
         }
 
         public async Task<List<Viaje>> ObtenerPorUsuario(int usuarioId, string? estado)
         {
-            var query = context.Viajes.Where(v => v.IdUsuario == usuarioId || v.IdPasajero == usuarioId);
+            var query = context.Viajes.Where(v => v.IdUsuario == usuarioId || v.IdPasajero == usuarioId || v.IdSolicitante == usuarioId);
             if (!string.IsNullOrEmpty(estado))
             {
                 query = query.Where(v => v.Estado == estado);

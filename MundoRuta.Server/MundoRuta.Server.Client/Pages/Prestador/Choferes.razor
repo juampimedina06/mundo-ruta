@@ -16,18 +16,12 @@
         <div class="pr-header-block">
             <div>
                 <div class="pr-header-meta">
-                    <span class="pr-tag pr-tag--mono">GET /api/prestador/{prestadorId}/choferes</span>
-                    <span class="pr-tag pr-tag--emerald">ChoferDTO</span>
-                    <span class="badge bg-primary text-white font-label-sm px-2 py-0.5 rounded-full" style="font-size: 11px;">Operativo</span>
+                    <span class="pr-tag pr-tag--emerald">Equipo de Conducción</span>
                 </div>
                 <h1 class="pr-page-title">Gestión de Choferes</h1>
-                <p class="pr-page-subtitle">Listado y administración de choferes registrados según ChoferDTO.</p>
+                <p class="pr-page-subtitle">Listado y administración de choferes registrados.</p>
             </div>
             <div class="pr-header-actions">
-                <button type="button" class="pr-btn pr-btn--outline" @onclick="ExportarNomina">
-                    <span class="material-symbols-outlined text-[18px]">file_download</span>
-                    <span>Exportar Nómina</span>
-                </button>
                 <button type="button" class="pr-btn pr-btn--emerald" @onclick="AbrirModalAlta">
                     <span class="material-symbols-outlined text-[20px]">person_add</span>
                     <span>+ Registrar Chofer</span>
@@ -152,7 +146,7 @@
                     <span class="material-symbols-outlined">search</span>
                     <input type="text"
                            class="pr-search-input"
-                           placeholder="Buscar por ID, nombre, licencia o estado..."
+                           placeholder="Buscar por nombre, licencia o estado..."
                            @bind="_filtroTexto"
                            @bind:event="oninput" />
                 </div>
@@ -227,11 +221,9 @@
                     <table class="pr-table">
                         <thead>
                             <tr>
-                                <th style="width: 80px;">ID (#)</th>
                                 <th>Nombre y Apellido</th>
                                 <th>Licencia</th>
                                 <th>Estado</th>
-                                <th>ID Usuario</th>
                                 <th class="text-end" style="width: 100px;">Acciones</th>
                             </tr>
                         </thead>
@@ -239,9 +231,6 @@
                             @foreach (var chofer in ChoferesFiltrados)
                             {
                                 <tr>
-                                    <td>
-                                        <span class="pr-badge-id">#@chofer.Id</span>
-                                    </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="pr-topbar__avatar" style="width: 28px; height: 28px; font-size: 11px;">
@@ -259,15 +248,12 @@
                                             <span>@(EsActivo(chofer.Estado) ? "Activo" : "Inactivo")</span>
                                         </span>
                                     </td>
-                                    <td>
-                                        <span class="pr-tnum text-muted font-monospace">@chofer.IdUsuario</span>
-                                    </td>
                                     <td class="text-end">
                                         <div class="d-inline-flex align-items-center gap-1">
-                                            <button type="button" class="pr-icon-btn" title="Editar chofer">
+                                            <button type="button" class="pr-icon-btn" title="Editar chofer" @onclick="() => AbrirModalEdicion(chofer)">
                                                 <span class="material-symbols-outlined text-[18px]">edit</span>
                                             </button>
-                                            <button type="button" class="pr-icon-btn pr-icon-btn--danger" title="Eliminar chofer">
+                                            <button type="button" class="pr-icon-btn pr-icon-btn--danger" title="Eliminar chofer" @onclick="() => AbrirModalEliminar(chofer)">
                                                 <span class="material-symbols-outlined text-[18px]">delete</span>
                                             </button>
                                         </div>
@@ -279,7 +265,7 @@
                 </div>
 
                 <div class="pr-table-footer">
-                    <span>Mostrando @ChoferesFiltrados.Count de @(choferes.Count) choferes (ChoferDTO)</span>
+                    <span>Mostrando @ChoferesFiltrados.Count de @(choferes.Count) choferes</span>
                     <div class="d-flex align-items-center gap-1">
                         <button type="button" class="pr-btn pr-btn--subtle pr-btn-sm" disabled>Anterior</button>
                         <button type="button" class="pr-btn pr-btn--navy pr-btn-sm">1</button>
@@ -290,7 +276,7 @@
         }
     </div>
 
-    <!-- MODAL OVERLAY: 'Nuevo Chofer' (POST /api/prestador/choferes -> ChoferAltaDTO) -->
+    <!-- MODAL OVERLAY: 'Nuevo Chofer' -->
     @if (_modalAltaAbierto)
     {
         <div class="pr-modal-backdrop" @onclick="CerrarModalSiBackdrop">
@@ -301,32 +287,18 @@
                 <!-- Modal Header -->
                 <div class="pr-modal__header">
                     <div>
-                        <div class="d-flex align-items-center gap-2 mb-1">
-                            <span class="pr-tag pr-tag--mono">POST /api/prestador/choferes</span>
-                            <span class="pr-tag pr-tag--emerald">ChoferAltaDTO</span>
-                        </div>
                         <h2 class="pr-modal__title">Nuevo Chofer</h2>
-                        <p class="pr-modal__subtitle">Completa los campos obligatorios del modelo ChoferAltaDTO.</p>
+                        <p class="pr-modal__subtitle">Completa los datos obligatorios para registrar al chofer.</p>
                     </div>
                     <button type="button" class="pr-modal__close-btn" aria-label="Cerrar" @onclick="CerrarModalAlta">
                         <span class="material-symbols-outlined text-[20px]">close</span>
                     </button>
                 </div>
 
-                <!-- Modal Form Body strictly adhering to ChoferAltaDTO -->
+                <!-- Modal Form Body -->
                 <form class="pr-modal__body" @onsubmit="CrearChofer" @onsubmit:preventDefault>
                     <div class="row g-3">
-                        <div class="col-12 col-sm-6">
-                            <label class="pr-label">
-                                IdPrestador <span class="required">*</span>
-                            </label>
-                            <input class="pr-input"
-                                   type="number"
-                                   value="@PrestadorIdEfectivo"
-                                   disabled
-                                   readonly />
-                        </div>
-                        <div class="col-12 col-sm-6">
+                        <div class="col-12">
                             <label class="pr-label" for="alta-cuit">
                                 CUIT <span class="required">*</span>
                             </label>
@@ -455,6 +427,119 @@
             </div>
         </div>
     }
+
+    <!-- MODAL EDITAR CHOFER -->
+    @if (_choferEditando is not null)
+    {
+        <div class="pr-modal-backdrop" @onclick="CerrarModalEdicion">
+            <div class="pr-modal" @onclick:stopPropagation>
+                <div class="pr-modal__stripe"></div>
+
+                <div class="pr-modal__header">
+                    <div>
+                        <h2 class="pr-modal__title">Editar Chofer</h2>
+                        <p class="pr-modal__subtitle">@_choferEditando.Nombre @_choferEditando.Apellido</p>
+                    </div>
+                    <button type="button" class="pr-modal__close-btn" aria-label="Cerrar" disabled="@enviando" @onclick="CerrarModalEdicion">
+                        <span class="material-symbols-outlined text-[20px]">close</span>
+                    </button>
+                </div>
+
+                <form class="pr-modal__body" @onsubmit="GuardarEdicionChofer" @onsubmit:preventDefault>
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6">
+                            <label class="pr-label" for="edit-licencia">
+                                Licencia <span class="required">*</span>
+                            </label>
+                            <input id="edit-licencia"
+                                   class="pr-input"
+                                   required
+                                   @bind="_dtoEdicion.Licencia" />
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="pr-label" for="edit-telefono">
+                                Teléfono
+                            </label>
+                            <input id="edit-telefono"
+                                   class="pr-input"
+                                   placeholder="Ej: 1155551234"
+                                   @bind="_dtoEdicion.Telefono" />
+                        </div>
+                        <div class="col-12">
+                            <label class="pr-label" for="edit-estado">
+                                Estado Operativo <span class="required">*</span>
+                            </label>
+                            <select id="edit-estado" class="pr-input" @bind="_dtoEdicion.EstadoOperativo">
+                                <option value="DISPONIBLE">Activo / Disponible</option>
+                                <option value="OCUPADO">Ocupado / En ruta</option>
+                                <option value="INACTIVO">Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="pr-modal__footer">
+                        <button type="button" class="pr-btn pr-btn--subtle" @onclick="CerrarModalEdicion" disabled="@enviando">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="pr-btn pr-btn--emerald" disabled="@enviando">
+                            @if (enviando)
+                            {
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span>Guardando...</span>
+                            }
+                            else
+                            {
+                                <span class="material-symbols-outlined text-[18px]">save</span>
+                                <span>Guardar Cambios</span>
+                            }
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+
+    <!-- MODAL CONFIRMAR BAJA -->
+    @if (_choferAEliminar is not null)
+    {
+        <div class="pr-modal-backdrop" @onclick="CerrarModalEliminar">
+            <div class="pr-modal" style="max-width: 480px;" @onclick:stopPropagation>
+                <div class="pr-modal__header">
+                    <div>
+                        <h2 class="pr-modal__title">Dar de baja chofer</h2>
+                        <p class="pr-modal__subtitle">Confirmá si querés dar de baja a @_choferAEliminar.Nombre @_choferAEliminar.Apellido.</p>
+                    </div>
+                    <button type="button" class="pr-modal__close-btn" aria-label="Cerrar" disabled="@enviando" @onclick="CerrarModalEliminar">
+                        <span class="material-symbols-outlined text-[20px]">close</span>
+                    </button>
+                </div>
+
+                <div class="pr-modal__body">
+                    <p class="text-muted mb-0" style="font-size: 14px;">
+                        Si el chofer tiene viajes en tránsito asignados, la operación no se podrá realizar hasta que finalicen.
+                    </p>
+                </div>
+
+                <div class="pr-modal__footer">
+                    <button type="button" class="pr-btn pr-btn--subtle" @onclick="CerrarModalEliminar" disabled="@enviando">
+                        Cancelar
+                    </button>
+                    <button type="button" class="pr-btn pr-btn--danger-outline" @onclick="ConfirmarEliminarChofer" disabled="@enviando">
+                        @if (enviando)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span>Eliminando...</span>
+                        }
+                        else
+                        {
+                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                            <span>Dar de baja</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
 </RoleGuard>
 
 @code {
@@ -477,6 +562,9 @@
     private string _filtroTexto = string.Empty;
     private string _filtroEstado = "TODOS";
     private bool _modalAltaAbierto;
+    private ChoferDTO? _choferEditando;
+    private ChoferUpdateDto _dtoEdicion = new();
+    private ChoferDTO? _choferAEliminar;
 
     private int TotalChoferes => choferes?.Count ?? 0;
     private int TotalActivos => choferes?.Count(c => EsActivo(c.Estado)) ?? 0;
@@ -584,10 +672,147 @@
         _filtroEstado = "TODOS";
     }
 
-    private void ExportarNomina()
+    private void AbrirModalEdicion(ChoferDTO chofer)
     {
-        // Feedback informativo de exportación
-        mensajeExito = "Nómina de choferes exportada a formato compatible con despacho.";
+        error = null;
+        mensajeExito = null;
+        _choferEditando = chofer;
+        _dtoEdicion = new ChoferUpdateDto
+        {
+            Licencia = chofer.Licencia,
+            Telefono = string.Empty,
+            EstadoOperativo = string.IsNullOrWhiteSpace(chofer.Estado) ? "DISPONIBLE" : chofer.Estado
+        };
+    }
+
+    private void CerrarModalEdicion()
+    {
+        if (!enviando)
+        {
+            _choferEditando = null;
+        }
+    }
+
+    private async Task GuardarEdicionChofer()
+    {
+        if (_choferEditando is null)
+        {
+            return;
+        }
+
+        error = null;
+        mensajeExito = null;
+
+        if (string.IsNullOrWhiteSpace(_dtoEdicion.Licencia))
+        {
+            error = "La licencia es obligatoria.";
+            return;
+        }
+
+        enviando = true;
+        try
+        {
+            HttpResponseMessage response = await Http.PutAsJsonAsync($"api/prestador/choferes/{_choferEditando.Id}", _dtoEdicion);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                error = await ExtraerMensajeErrorAsync(response, "No se pudo actualizar el chofer.");
+                return;
+            }
+
+            mensajeExito = "Datos del chofer actualizados correctamente.";
+            _choferEditando = null;
+            await CargarChoferes();
+        }
+        catch (Exception ex)
+        {
+            error = $"No se pudo actualizar el chofer: {ex.Message}";
+        }
+        finally
+        {
+            enviando = false;
+        }
+    }
+
+    private void AbrirModalEliminar(ChoferDTO chofer)
+    {
+        error = null;
+        mensajeExito = null;
+        _choferAEliminar = chofer;
+    }
+
+    private void CerrarModalEliminar()
+    {
+        if (!enviando)
+        {
+            _choferAEliminar = null;
+        }
+    }
+
+    private async Task ConfirmarEliminarChofer()
+    {
+        if (_choferAEliminar is null)
+        {
+            return;
+        }
+
+        error = null;
+        mensajeExito = null;
+        enviando = true;
+
+        try
+        {
+            HttpResponseMessage response = await Http.DeleteAsync($"api/prestador/choferes/{_choferAEliminar.Id}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                error = await ExtraerMensajeErrorAsync(response, "No se pudo dar de baja al chofer.");
+                _choferAEliminar = null;
+                return;
+            }
+
+            mensajeExito = "Chofer dado de baja exitosamente.";
+            _choferAEliminar = null;
+            await CargarChoferes();
+        }
+        catch (Exception ex)
+        {
+            error = $"No se pudo dar de baja al chofer: {ex.Message}";
+            _choferAEliminar = null;
+        }
+        finally
+        {
+            enviando = false;
+        }
+    }
+
+    private static async Task<string> ExtraerMensajeErrorAsync(HttpResponseMessage response, string fallback)
+    {
+        string contenido = (await response.Content.ReadAsStringAsync()).Trim();
+        if (string.IsNullOrWhiteSpace(contenido))
+        {
+            return fallback;
+        }
+
+        try
+        {
+            using System.Text.Json.JsonDocument doc = System.Text.Json.JsonDocument.Parse(contenido);
+            if (doc.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                doc.RootElement.TryGetProperty("mensaje", out System.Text.Json.JsonElement msg))
+            {
+                string? texto = msg.GetString();
+                if (!string.IsNullOrWhiteSpace(texto))
+                {
+                    return texto;
+                }
+            }
+        }
+        catch
+        {
+            // Si no es JSON válido, devolver el texto plano.
+        }
+
+        return contenido.Trim('"');
     }
 
     private async Task CrearChofer()

@@ -18,7 +18,6 @@
                         <span class="pr-pulse-dot"></span>
                         <span>Pendientes de Aceptación (@TotalPendientes en espera)</span>
                     </span>
-                    <span class="pr-tag pr-tag--mono">ViajePrestadorDTO</span>
                 </div>
                 <h1 class="pr-page-title">Solicitudes de Fletes y Mudanzas</h1>
                 <p class="pr-page-subtitle">
@@ -29,10 +28,6 @@
                 <button type="button" class="pr-btn pr-btn--subtle" @onclick="CargarAsync" disabled="@_cargando">
                     <span class="material-symbols-outlined text-[18px]">sync</span>
                     <span>@(_cargando ? "Sincronizando..." : "Actualizar / Sincronizar")</span>
-                </button>
-                <button type="button" class="pr-btn pr-btn--outline" @onclick="ExportarManifiesto">
-                    <span class="material-symbols-outlined text-[18px]">ios_share</span>
-                    <span>Exportar Manifiesto</span>
                 </button>
             </div>
         </div>
@@ -346,131 +341,191 @@
                                 </div>
 
                                 <div class="pr-actions-group">
-                                    <button type="button"
-                                            class="pr-btn pr-btn--emerald"
-                                            disabled="@(_procesandoId.HasValue)"
-                                            @onclick="() => AbrirAccion(solicitud, AccionAceptar)">
-                                        <span class="material-symbols-outlined text-[18px]">check_circle</span>
-                                        <span>Aceptar precio</span>
-                                    </button>
-                                    <button type="button"
-                                            class="pr-btn pr-btn--outline"
-                                            disabled="@(_procesandoId.HasValue)"
-                                            @onclick="() => AbrirAccion(solicitud, AccionContraofertar)">
-                                        <span class="material-symbols-outlined text-[18px]">price_change</span>
-                                        <span>Contraofertar</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 5. Panel Expandible de Asignación y Confirmación -->
-                        @if (_solicitudActivaId == solicitud.Id)
-                        {
-                            <div class="pr-assignment-panel">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="material-symbols-outlined text-primary text-[20px]">assignment_turned_in</span>
-                                        <span class="fw-bold text-dark" style="font-family: var(--pr-font-display);">
-                                            @(_accionActiva == AccionAceptar ? "Asignar Chofer y Vehículo para Aceptar" : "Enviar Contraoferta con Chofer y Unidad")
-                                        </span>
-                                    </div>
-                                    <button type="button" class="pr-icon-btn" @onclick="CerrarAccion">
-                                        <span class="material-symbols-outlined text-[18px]">close</span>
-                                    </button>
-                                </div>
-
-                                <div class="pr-panel-grid">
-                                    <div>
-                                        <label class="pr-label" for="@("chofer-" + solicitud.Id)">
-                                            Chofer Designado <span class="required">*</span>
-                                        </label>
-                                        <select id="@("chofer-" + solicitud.Id)" class="pr-select" @bind="_choferSeleccionado">
-                                            <option value="0">Seleccioná un chofer de la nómina...</option>
-                                            @foreach (ChoferDTO chofer in _choferes)
-                                            {
-                                                <option value="@chofer.Id">@chofer.Nombre @chofer.Apellido (Lic: @chofer.Licencia)</option>
-                                            }
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label class="pr-label" for="@("vehiculo-" + solicitud.Id)">
-                                            Vehículo de Flota <span class="required">*</span>
-                                        </label>
-                                        <select id="@("vehiculo-" + solicitud.Id)" class="pr-select" @bind="_vehiculoSeleccionado">
-                                            <option value="0">Seleccioná una unidad habilitada...</option>
-                                            @foreach (VehiculoDTO vehiculo in _vehiculos)
-                                            {
-                                                <option value="@vehiculo.Id">@vehiculo.Patente - @vehiculo.Marca (@vehiculo.TipoVehiculo)</option>
-                                            }
-                                        </select>
-                                    </div>
-
-                                    @if (_accionActiva == AccionAceptar)
+                                    @if (solicitud.YaOferto)
                                     {
-                                        <div class="col-12">
-                                            <div class="p-2.5 rounded-lg bg-white border d-flex align-items-center gap-2 text-dark" style="font-size: 13px;">
-                                                <span class="material-symbols-outlined text-secondary text-[20px]">handshake</span>
-                                                <span>Te postularás por el valor solicitado de <strong>@FormatearMonto(solicitud.Monto)</strong>. El servicio quedará comprometido para tu empresa.</span>
-                                            </div>
+                                        <div class="d-flex flex-column align-items-end gap-1">
+                                            <span class="pr-status-chip pr-status-chip--asignado">
+                                                <span class="dot"></span>
+                                                <span>Postulado · Esperando al pasajero</span>
+                                            </span>
+                                            @if (solicitud.MontoOfertadoPorMi.HasValue && solicitud.MontoOfertadoPorMi.Value > 0)
+                                            {
+                                                <span class="text-muted" style="font-size: 12px;">
+                                                    Tu oferta: <strong class="pr-tnum">@FormatearMonto(solicitud.MontoOfertadoPorMi.Value)</strong>
+                                                </span>
+                                            }
                                         </div>
                                     }
                                     else
                                     {
-                                        <div class="col-12 col-md-6">
-                                            <label class="pr-label" for="@("monto-" + solicitud.Id)">
-                                                Mi Contraoferta Propuesta (ARS) <span class="required">*</span>
-                                            </label>
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-white border-end-0 fw-bold">$</span>
-                                                <input id="@("monto-" + solicitud.Id)"
-                                                       type="number"
-                                                       class="pr-input"
-                                                       min="1"
-                                                       step="0.01"
-                                                       placeholder="Ej: 55000"
-                                                       @bind="_nuevoMonto" />
-                                            </div>
-                                        </div>
+                                        <button type="button"
+                                                class="pr-btn pr-btn--emerald"
+                                                disabled="@(_procesandoId.HasValue)"
+                                                @onclick="() => AbrirAccion(solicitud, AccionAceptar)">
+                                            <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                                            <span>Aceptar precio</span>
+                                        </button>
+                                        <button type="button"
+                                                class="pr-btn pr-btn--outline"
+                                                disabled="@(_procesandoId.HasValue)"
+                                                @onclick="() => AbrirAccion(solicitud, AccionContraofertar)">
+                                            <span class="material-symbols-outlined text-[18px]">price_change</span>
+                                            <span>Contraofertar</span>
+                                        </button>
                                     }
                                 </div>
-
-                                <div class="d-flex align-items-center justify-content-end gap-2 pt-2 border-top">
-                                    <button type="button"
-                                            class="pr-btn pr-btn--subtle"
-                                            disabled="@(_procesandoId == solicitud.Id)"
-                                            @onclick="CerrarAccion">
-                                        Cancelar
-                                    </button>
-                                    <button type="button"
-                                            class="pr-btn pr-btn--emerald"
-                                            disabled="@(_procesandoId == solicitud.Id)"
-                                            @onclick="() => ConfirmarAsync(solicitud)">
-                                        @if (_procesandoId == solicitud.Id)
-                                        {
-                                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                            <span>Enviando...</span>
-                                        }
-                                        else if (_accionActiva == AccionAceptar)
-                                        {
-                                            <span class="material-symbols-outlined text-[18px]">verified</span>
-                                            <span>Confirmar aceptación</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="material-symbols-outlined text-[18px]">send</span>
-                                            <span>Enviar contraoferta</span>
-                                        }
-                                    </button>
-                                </div>
                             </div>
-                        }
+                        </div>
                     </article>
                 }
             </div>
         }
     </div>
+
+    <!-- MODAL ACEPTAR / CONTRAOFERTAR Y ASIGNAR FLOTA -->
+    @if (_solicitudActivaId.HasValue)
+    {
+        ViajePrestadorDTO? solicitudActiva = _solicitudes.FirstOrDefault(s => s.Id == _solicitudActivaId.Value);
+        if (solicitudActiva is not null)
+        {
+            <div class="pr-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-flota-titulo" @onclick="CerrarAccion">
+                <div class="pr-modal" style="max-width: 560px; border-radius: 16px; overflow: hidden;" @onclick:stopPropagation>
+                    <!-- Header Oscuro Azul Marino -->
+                    <div class="d-flex align-items-center justify-content-between" style="background-color: #0b1936; color: #ffffff; padding: 1.15rem 1.5rem;">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; border-radius: 10px; background-color: rgba(16, 185, 129, 0.16); color: #10b981;">
+                                <span class="material-symbols-outlined text-[20px]">local_shipping</span>
+                            </div>
+                            <div>
+                                <h2 id="modal-flota-titulo" class="mb-0 fw-bold" style="font-size: 1.05rem; color: #ffffff; font-family: var(--pr-font-display);">
+                                    @(_accionActiva == AccionAceptar ? "Aceptar y Asignar Flota" : "Contraofertar y Asignar Flota")
+                                </h2>
+                                <div style="font-size: 11px; letter-spacing: 0.05em; color: #94a3b8; font-family: var(--pr-font-mono);">
+                                    SERVICIO #MR-@solicitudActiva.Id
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button"
+                                class="pr-modal__close-btn"
+                                style="color: #cbd5e1;"
+                                aria-label="Cerrar"
+                                disabled="@(_procesandoId == solicitudActiva.Id)"
+                                @onclick="CerrarAccion">
+                            <span class="material-symbols-outlined text-[20px]">close</span>
+                        </button>
+                    </div>
+
+                    <div class="pr-modal__body d-flex flex-column gap-3" style="padding: 1.5rem;">
+                        @if (_mensajeError && !string.IsNullOrWhiteSpace(_mensaje))
+                        {
+                            <div class="pr-alert pr-alert--error mb-0">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="material-symbols-outlined text-[18px]">error</span>
+                                    <span>@_mensaje</span>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Resumen Ruta Solicitada -->
+                        <div class="d-flex align-items-center justify-content-between gap-3" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.85rem 1rem;">
+                            <div>
+                                <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: #64748b; text-transform: uppercase;">
+                                    RUTA SOLICITADA
+                                </div>
+                                <div class="fw-bold text-dark" style="font-size: 0.95rem;">
+                                    @solicitudActiva.Origen &rarr; @solicitudActiva.Destino
+                                </div>
+                            </div>
+                            <div class="fw-bold pr-tnum text-end" style="color: #059669; font-size: 1rem; white-space: nowrap;">
+                                @FormatearMonto(solicitudActiva.Monto)
+                            </div>
+                        </div>
+
+                        @if (_accionActiva == AccionContraofertar)
+                        {
+                            <div>
+                                <label class="pr-label" for="@("monto-" + solicitudActiva.Id)">
+                                    Mi Contraoferta Propuesta (ARS) <span class="required">*</span>
+                                </label>
+                                <input id="@("monto-" + solicitudActiva.Id)"
+                                       type="number"
+                                       class="pr-input pr-tnum fw-bold"
+                                       min="1"
+                                       step="0.01"
+                                       placeholder="Ej: 55000"
+                                       @bind="_nuevoMonto" />
+                            </div>
+                        }
+
+                        <div>
+                            <label class="pr-label" for="@("chofer-" + solicitudActiva.Id)">
+                                Seleccionar Chofer Habilitado <span class="required">*</span>
+                            </label>
+                            <select id="@("chofer-" + solicitudActiva.Id)" class="pr-input" @bind="_choferSeleccionado">
+                                <option value="0">Seleccioná un chofer de la nómina...</option>
+                                @foreach (ChoferDTO chofer in _choferes)
+                                {
+                                    <option value="@chofer.Id">@chofer.Nombre @chofer.Apellido (Lic: @chofer.Licencia)</option>
+                                }
+                            </select>
+                            <div class="text-muted mt-1" style="font-size: 11px;">
+                                Choferes con documentación y seguro de carga al día.
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="pr-label" for="@("vehiculo-" + solicitudActiva.Id)">
+                                Asignar Vehículo de Flota <span class="required">*</span>
+                            </label>
+                            <select id="@("vehiculo-" + solicitudActiva.Id)" class="pr-input" @bind="_vehiculoSeleccionado">
+                                <option value="0">Seleccioná una unidad habilitada...</option>
+                                @foreach (VehiculoDTO vehiculo in _vehiculos)
+                                {
+                                    <option value="@vehiculo.Id">@vehiculo.Patente - @vehiculo.Marca (@vehiculo.TipoVehiculo)</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="d-flex align-items-start gap-2" style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 0.75rem 1rem; color: #065f46; font-size: 12.5px;">
+                            <span class="material-symbols-outlined text-[18px]" style="color: #059669; margin-top: 1px;">notifications_active</span>
+                            <span>
+                                Al confirmar, se enviará la propuesta al solicitante en tiempo real con el chofer y vehículo seleccionados.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="pr-modal__footer" style="padding: 1rem 1.5rem; background-color: #ffffff; border-top: 1px solid #e2e8f0;">
+                        <button type="button"
+                                class="pr-btn pr-btn--subtle"
+                                disabled="@(_procesandoId == solicitudActiva.Id)"
+                                @onclick="CerrarAccion">
+                            Cancelar
+                        </button>
+                        <button type="button"
+                                class="pr-btn pr-btn--navy"
+                                disabled="@(_procesandoId == solicitudActiva.Id)"
+                                @onclick="() => ConfirmarAsync(solicitudActiva)">
+                            @if (_procesandoId == solicitudActiva.Id)
+                            {
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span>Enviando...</span>
+                            }
+                            else if (_accionActiva == AccionAceptar)
+                            {
+                                <span class="material-symbols-outlined text-[18px]">check</span>
+                                <span>Confirmar y Aceptar Servicio</span>
+                            }
+                            else
+                            {
+                                <span class="material-symbols-outlined text-[18px]">send</span>
+                                <span>Enviar Contraoferta</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    }
 </RoleGuard>
 
 @code {
@@ -730,12 +785,6 @@
         }
 
         return null;
-    }
-
-    private void ExportarManifiesto()
-    {
-        _mensajeError = false;
-        _mensaje = "Manifiesto de solicitudes exportado correctamente.";
     }
 
     private static bool Contiene(string? valor, string busqueda)

@@ -324,7 +324,7 @@
                                 <div class="sv-map-tooltip">
                                     <div class="sv-map-tooltip__box">
                                         <span class="sv-map-tooltip__dot"></span>
-                                        <span class="sv-map-tooltip__driver">@NombreChoferDisplay</span>
+                                        <span class="sv-map-tooltip__driver">@(TieneAsignacion ? NombreChoferDisplay : "Esperando asignación")</span>
                                         <span class="sv-map-tooltip__status">• @EstadosViajeUI.EtiquetaSeguimiento(_viaje.Estado) hacia @TruncarTexto(_viaje.Destino, 20)</span>
                                     </div>
                                     <div class="sv-map-tooltip__arrow"></div>
@@ -375,6 +375,8 @@
 
                     <!-- COLUMNA DERECHA: Chofer, Vehículo, Carga y Acciones Rápidas (5 Cols) -->
                     <div class="sv-col-right">
+                        @if (TieneAsignacion)
+                        {
                         <!-- Ficha del Conductor / Prestador Asignado -->
                         <div class="sv-card sv-provider-card">
                             <div class="sv-card-toprow">
@@ -535,6 +537,32 @@
                                 </span>
                             </div>
                         </div>
+                        }
+                        else
+                        {
+                            <div class="sv-card sv-provider-card">
+                                <div class="sv-card-toprow">
+                                    <span class="sv-section-label">Prestador y Flota</span>
+                                    <span class="sv-cargo-count">Pendiente de selección</span>
+                                </div>
+                                <div class="sv-base-box" style="margin-bottom: 0;">
+                                    <div class="sv-base-box__top" style="margin-bottom: 0;">
+                                        <div class="sv-base-box__brand">
+                                            <div class="sv-base-box__icon">
+                                                <span class="material-symbols-outlined sv-icon-20">hourglass_top</span>
+                                            </div>
+                                            <div class="sv-base-box__info">
+                                                <span class="sv-base-box__label">Estado de Asignación</span>
+                                                <h3 class="sv-base-box__name">Sin prestador ni chofer asignado</h3>
+                                                <p class="text-muted mb-0 mt-1" style="font-size: 12.5px;">
+                                                    Cuando elijas una propuesta recibida, verás aquí los datos del prestador, conductor y vehículo asignado.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
 
                         <!-- Ficha de Resumen de Carga & Modalidad de Pago -->
                         <div class="sv-card sv-cargo-card">
@@ -756,25 +784,44 @@
 
     private bool PuedeChatear => _viaje is not null && EstadosViajeUI.ChatHabilitado(_viaje.Estado);
 
+    private bool TieneAsignacion
+    {
+        get
+        {
+            if (_viaje is null)
+            {
+                return false;
+            }
+
+            string estadoNorm = EstadosViaje.Normalizar(_viaje.Estado);
+            if (estadoNorm == "buscando" || estadoNorm == "contraofertado" || estadoNorm == "rechazado")
+            {
+                return false;
+            }
+
+            return !string.IsNullOrWhiteSpace(_viaje.NombrePrestador) || !string.IsNullOrWhiteSpace(_viaje.NombreChofer);
+        }
+    }
+
     private string NombreOperadorDisplay =>
         !string.IsNullOrWhiteSpace(_viaje?.NombrePrestador)
             ? _viaje.NombrePrestador
-            : "TransLog Express S.A.";
+            : "Sin asignar";
 
     private string NombreChoferDisplay =>
         !string.IsNullOrWhiteSpace(_viaje?.NombreChofer)
             ? _viaje.NombreChofer
-            : "Carlos Gómez";
+            : "Por asignar";
 
     private string MarcaVehiculoDisplay =>
         !string.IsNullOrWhiteSpace(_viaje?.Marca)
             ? _viaje.Marca
-            : "Mercedes-Benz Sprinter 415";
+            : "Sin vehículo asignado";
 
     private string PatenteDisplay =>
         !string.IsNullOrWhiteSpace(_viaje?.Patente)
             ? _viaje.Patente
-            : "AD 188 ZP";
+            : "Sin patente";
 
     private string EtiquetaEstadoVivo
     {

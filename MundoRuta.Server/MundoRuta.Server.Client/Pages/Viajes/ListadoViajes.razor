@@ -649,6 +649,17 @@
 
     private void VerDetalle(int viajeId)
     {
+        var viaje = _todosLosViajes.FirstOrDefault(v => v.Id == viajeId);
+        if (viaje is not null && string.Equals(Sesion.Rol, Roles.Usuario, StringComparison.OrdinalIgnoreCase))
+        {
+            string estadoNorm = EstadosViaje.Normalizar(viaje.Estado);
+            if (estadoNorm == "buscando" || estadoNorm == "contraofertado")
+            {
+                Navegacion.NavigateTo($"/viajes/{viajeId}/propuestas");
+                return;
+            }
+        }
+
         Navegacion.NavigateTo($"/viajes/{viajeId}");
     }
 

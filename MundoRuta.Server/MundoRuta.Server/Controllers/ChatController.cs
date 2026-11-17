@@ -61,10 +61,12 @@ namespace MundoRuta.Server.Controllers
                 await _chatRepo.CrearChat(nuevoChat);
                 chat = nuevoChat;
             }
+            if (dto.IdEmisor == viaje.IdUsuario && viaje.IdChofer == null)
+                throw new InvalidOperationException("El viaje todavía no tiene chofer asignado.");
 
             int idReceptor = dto.IdEmisor == viaje.IdUsuario
-                            ? viaje.IdChofer
-                            : viaje.IdUsuario;
+                             ? viaje.IdChofer!.Value
+                             : viaje.IdUsuario;
 
 
             var mensaje = new Mensaje

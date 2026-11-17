@@ -1,6 +1,7 @@
 @page "/"
 @inject SesionEstado Sesion
 @inject NavigationManager Navegacion
+@implements IDisposable
 
 <PageTitle>Mundo Ruta | Tu carga y tu viaje, en un solo lugar</PageTitle>
 
@@ -88,9 +89,44 @@
 @code {
     protected override void OnInitialized()
     {
-        if (Sesion.EstaLogueado && string.Equals(Sesion.Rol, Roles.Admin, StringComparison.OrdinalIgnoreCase))
+        Sesion.CambioSesion += AlCambiarSesion;
+        RedirigirSiCorresponde();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
         {
-            Navegacion.NavigateTo("/admin/dashboard", replace: true);
+            RedirigirSiCorresponde();
+        }
+    }
+
+    public void Dispose()
+    {
+        Sesion.CambioSesion -= AlCambiarSesion;
+    }
+
+    private void AlCambiarSesion()
+    {
+        _ = InvokeAsync(RedirigirSiCorresponde);
+    }
+
+    private void RedirigirSiCorresponde()
+    {
+        if (!Sesion.EstaLogueado)
+        {
+            return;
+        }
+
+        if (string.Equals(Sesion.Rol, Roles.Admin, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(Sesion.Rol, Roles.Prestador, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(Sesion.Rol, Roles.Chofer, StringComparison.OrdinalIgnoreCase))
+        {
+            string destino = RutaInicioPorRol.Obtener(Sesion.Rol);
+            if (!string.Equals(destino, "/", StringComparison.Ordinal))
+            {
+                Navegacion.NavigateTo(destino, replace: true);
+            }
         }
     }
 }
