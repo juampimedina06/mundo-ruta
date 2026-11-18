@@ -93,19 +93,22 @@ namespace MundoRuta.Server.Controllers
         {
             decimal porcentajeRecargo = 15m;
             var configRecargo = await _context.ConfiguracionesSistema.FirstOrDefaultAsync(c => c.Clave == "RECARGO_ACOMPANANTE_PORCENTAJE");
-            if (configRecargo != null && decimal.TryParse(configRecargo.Valor.Replace(".", ","), out decimal pCfg))
+            if (configRecargo != null)
             {
-                porcentajeRecargo = pCfg;
-            }
-            else if (configRecargo != null && decimal.TryParse(configRecargo.Valor, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal pCfgInv))
-            {
-                porcentajeRecargo = pCfgInv;
+                if (decimal.TryParse(configRecargo.Valor.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal pCfgInv))
+                {
+                    porcentajeRecargo = pCfgInv;
+                }
+                else if (decimal.TryParse(configRecargo.Valor, out decimal pCfgLoc))
+                {
+                    porcentajeRecargo = pCfgLoc;
+                }
             }
 
             decimal montoCalculado = dto.Monto;
             if (dto.LlevaAcompanante)
             {
-                montoCalculado = dto.Monto * (1 + (porcentajeRecargo / 100m));
+                montoCalculado = decimal.Round(dto.Monto * (1 + (porcentajeRecargo / 100m)), 2);
             }
 
             var viaje = new Viaje()
