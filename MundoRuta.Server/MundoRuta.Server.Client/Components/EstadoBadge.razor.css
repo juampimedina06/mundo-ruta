@@ -1,3 +1,6 @@
+.mr-badge {
+    color: #fff;
+}
 .mr-badge--buscando {
     background-color: var(--mr-azul-marino);
 }
