@@ -1049,6 +1049,24 @@
 
                             </div>
 
+                            <div class="sv-cargo-box" style="margin-top: 0.75rem; background-color: #ecfdf5; border: 1px solid #a7f3d0;">
+
+                                <span class="material-symbols-outlined sv-icon-20" style="color: #006c49;">badge</span>
+
+                                <div class="sv-cargo-box__content">
+
+                                    <span class="sv-cargo-box__title" style="color: #065f46;">DNI del Receptor (Validación en Destino)</span>
+
+                                    <span class="sv-cargo-box__desc" style="font-weight: 700; font-size: 0.95rem; color: #000b1f;">
+
+                                        @(!string.IsNullOrWhiteSpace(_viaje.DniReceptor) ? _viaje.DniReceptor : "No informado")
+
+                                    </span>
+
+                                </div>
+
+                            </div>
+
 
 
                             <div class="sv-rate-row">
@@ -1249,7 +1267,9 @@
 
                             <span class="sv-footer-bar__title">@(!string.IsNullOrWhiteSpace(_viaje.NombrePasajero) ? _viaje.NombrePasajero : Sesion.Nombre ?? "Pasajero Registrado")</span>
 
-                            <span class="sv-footer-bar__sub">Validación con DNI en entrega</span>
+                            <span class="sv-footer-bar__sub">
+                                Validación con DNI en entrega: <strong>@(!string.IsNullOrWhiteSpace(_viaje.DniReceptor) ? _viaje.DniReceptor : "No informado")</strong>
+                            </span>
 
                         </div>
 

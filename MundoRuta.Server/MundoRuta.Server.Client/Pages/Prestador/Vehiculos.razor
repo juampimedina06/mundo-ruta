@@ -399,13 +399,19 @@
                                 : "Completa los campos correspondientes a la entidad técnica del vehículo.")
                         </p>
                     </div>
-                    <button type="button"
-                            class="pr-modal__close-btn"
-                            aria-label="Cerrar ventana"
-                            disabled="@_guardando"
-                            @onclick="CerrarModalAlta">
-                        <span class="material-symbols-outlined text-[20px]">close</span>
-                    </button>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="pr-btn pr-btn--outline pr-btn-sm" @onclick="RellenarVehiculoSimulado">
+                            <span class="material-symbols-outlined text-[16px]">auto_fix_high</span>
+                            <span>Rellenar prueba</span>
+                        </button>
+                        <button type="button"
+                                class="pr-modal__close-btn"
+                                aria-label="Cerrar ventana"
+                                disabled="@_guardando"
+                                @onclick="CerrarModalAlta">
+                            <span class="material-symbols-outlined text-[20px]">close</span>
+                        </button>
+                    </div>
                 </div>
 
                 <EditForm Model="_alta" OnSubmit="RegistrarAsync">
@@ -868,6 +874,45 @@
                 StateHasChanged();
             });
         }
+    }
+
+    private static readonly (string Marca, string Modelo, string Tipo, string Capacidad, string AliasBase, string Caracteristicas)[] CatalogoVehiculosSimulados =
+    {
+        ("Mercedes-Benz", "Sprinter 516 CDI", "Furgón", "2100 kg", "Sprinter", "LNT Vigente, Cargas Generales e Interprovincial"),
+        ("Iveco", "Daily 70C17", "Camión Liviano", "4200 kg", "Daily Cargo", "Habilitación CNRT, Rampa Hidráulica y Satelital"),
+        ("Ford", "Transit 350L", "Furgón", "1650 kg", "Transit Express", "Volumen 12m³, Sensores de Estacionamiento y GPS"),
+        ("Volkswagen", "Delivery 9.170", "Camión Mediano", "5800 kg", "VW Delivery", "Caja Paquetera Cerrada, Póliza Todo Riesgo Vigente"),
+        ("Renault", "Master L3H2", "Furgón", "1500 kg", "Master Baires", "Puerta Lateral Corrediza, Sujeción con Rieles Logísticos"),
+        ("Toyota", "Hilux Chasis Cabina", "Utilitario", "1100 kg", "Hilux Flete", "Caja Mudancera con Lona Impermeable y Barandas"),
+        ("Peugeot", "Boxer 350 LH", "Furgón", "1575 kg", "Boxer Logística", "Revestimiento Interior Fenólico y Alarma Satelital"),
+        ("Scania", "P320 B6x2", "Camión Pesado", "14500 kg", "Scania Ruta", "Cargas Palletizadas de Gran Porte, VTV y Ruta al Día")
+    };
+
+    private static readonly string[] LetrasPatente = { "CD", "EF", "GH", "JK", "LM", "NP", "QR", "ST", "UV", "WX" };
+
+    private void RellenarVehiculoSimulado()
+    {
+        int sufijo = Random.Shared.Next(100, 999);
+        var modelo = CatalogoVehiculosSimulados[Random.Shared.Next(CatalogoVehiculosSimulados.Length)];
+        string letrasFin = LetrasPatente[Random.Shared.Next(LetrasPatente.Length)];
+        string letraSegunda = ((char)('A' + Random.Shared.Next(0, 7))).ToString();
+        int anio = Random.Shared.Next(2019, 2026);
+        int mes = Random.Shared.Next(1, 13);
+        int idChofer = _choferes.Count > 0 ? _choferes[Random.Shared.Next(_choferes.Count)].Id : 0;
+
+        _alta.Patente = $"A{letraSegunda}{sufijo}{letrasFin}";
+        _alta.Marca = modelo.Marca;
+        _alta.MarcaModelo = modelo.Modelo;
+        _alta.TipoVehiculo = modelo.Tipo;
+        _alta.CapacidadCarga = modelo.Capacidad;
+        _alta.Licencia = $"L-CNRT-{sufijo}{Random.Shared.Next(100, 999)}";
+        _alta.Estado = EstadoDisponible;
+        _alta.FechaFabricación = new DateTime(anio, mes, 15);
+        _alta.Nombre = $"{modelo.AliasBase} #{sufijo}";
+        _alta.IdChofer = idChofer > 0 ? idChofer : 0;
+        _alta.NumeroConductor = idChofer > 0 ? idChofer : 0;
+        _alta.CaracteristicasConductor = modelo.Caracteristicas;
+        _errorAlta = null;
     }
 
     private void AbrirModalEdicion(VehiculoDTO vehiculo)

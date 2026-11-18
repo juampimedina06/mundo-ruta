@@ -3,9 +3,15 @@
 @implements IDisposable
 
 <header class="mr-navbar">
-    <div class="mr-container mr-navbar__inner">
+    <div class="mr-navbar__inner">
         <a class="mr-navbar__brand" href="@(Sesion.EstaLogueado ? RutaInicioPorRol.Obtener(Sesion.Rol) : "/")">
-            <img src="img/logo-mundo-ruta.svg" alt="Mundo Ruta" />
+            <div class="mr-navbar__logo-box">
+                <span class="material-symbols-outlined mr-navbar__logo-icon">local_shipping</span>
+            </div>
+            <div class="mr-navbar__brand-copy">
+                <span class="mr-navbar__brand-title">Mundo Ruta</span>
+                <span class="mr-navbar__brand-subtitle">Logística Integral</span>
+            </div>
         </a>
 
         <button type="button" class="mr-navbar__toggle" aria-label="Abrir menú" @onclick="AlternarMenu">
@@ -21,29 +27,32 @@
                     @item.Texto
                 </NavLink>
             }
+            @if (!Sesion.EstaLogueado)
+            {
+                <a class="mr-navbar__link" href="/#como-funciona" @onclick="CerrarMenu">Nosotros</a>
+            }
         </nav>
 
         <div class="mr-navbar__acciones">
             @if (Sesion.EstaLogueado)
             {
-                <div class="d-flex align-items-center gap-2">
-                    <div class="d-none d-sm-flex flex-column text-end" style="line-height: 1.2;">
-                        <span class="fw-bold small text-dark">@Sesion.Nombre</span>
-                        <span class="text-muted" style="font-size: .725rem;">@Sesion.Rol</span>
+                <div class="mr-navbar__user-wrap">
+                    <div class="mr-navbar__user-info">
+                        <span class="mr-navbar__user-name">@Sesion.Nombre</span>
+                        <span class="mr-navbar__user-role">@Sesion.Rol</span>
                     </div>
-                    <div class="rounded-circle text-white d-flex align-items-center justify-content-center"
-                         style="width: 34px; height: 34px; background-color: var(--mr-primary); font-size: 1rem;">
-                        <span class="material-symbols-outlined text-[18px]">person</span>
+                    <div class="mr-navbar__user-avatar">
+                        <span class="material-symbols-outlined mr-navbar__user-icon">person</span>
                     </div>
-                    <button type="button" class="btn btn-outline-primary btn-sm ms-1" @onclick="CerrarSesion">
+                    <button type="button" class="mr-navbar__btn-logout" @onclick="CerrarSesion">
                         Cerrar sesión
                     </button>
                 </div>
             }
             else
             {
-                <a class="btn btn-outline-primary btn-sm" href="/login">Iniciar sesión</a>
-                <a class="btn btn-primary btn-sm" href="/registro">Registrarse</a>
+                <a class="mr-navbar__btn-login" href="/login">Iniciar sesión</a>
+                <a class="mr-navbar__btn-register" href="/registro">Registrarse</a>
             }
         </div>
     </div>

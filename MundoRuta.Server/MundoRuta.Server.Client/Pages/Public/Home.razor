@@ -5,86 +5,439 @@
 
 <PageTitle>Mundo Ruta | Tu carga y tu viaje, en un solo lugar</PageTitle>
 
-<div class="mr-page mr-home">
-    <section class="mr-hero">
-        <div class="mr-container">
-            <p class="mr-hero__etiqueta">Transporte de personas y cargas</p>
-            <h1>Tu carga y tu viaje, en un solo lugar</h1>
-            <p class="mr-hero__texto">
-                Conectamos pasajeros y solicitantes con prestadores y choferes de confianza
-                para mover personas y cargas de forma simple, coordinada y segura.
-            </p>
-            <div class="mr-hero__acciones">
-                <a class="btn btn-primary" href="/usuario/solicitar">Solicitar un viaje</a>
-                <a class="btn mr-btn-claro" href="/prestadores">Ver prestadores</a>
+@if (!Sesion.EstaLogueado)
+{
+    <div class="mr-visitor-home">
+        <!-- HERO MASTER SECTION -->
+        <section class="mr-v-hero">
+            <!-- Ambient Vector Grid / Living Track Accent -->
+            <div class="mr-v-hero__grid-bg">
+                <svg class="mr-v-hero__svg" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <pattern id="grid-pattern" width="48" height="48" patternUnits="userSpaceOnUse">
+                            <path d="M 48 0 L 0 0 0 48" fill="none" stroke="#6cf8bb" stroke-dasharray="2 4" stroke-width="0.5"></path>
+                        </pattern>
+                        <linearGradient id="hero-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#0a2240" stop-opacity="1"></stop>
+                            <stop offset="60%" stop-color="#000b1f" stop-opacity="0.95"></stop>
+                            <stop offset="100%" stop-color="#001a35" stop-opacity="0.8"></stop>
+                        </linearGradient>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#hero-gradient)"></rect>
+                    <rect width="100%" height="100%" fill="url(#grid-pattern)"></rect>
+                </svg>
             </div>
-        </div>
-    </section>
 
-    <section class="mr-home__seccion">
-        <div class="mr-container">
-            <h2 class="mr-section-title">Todo el viaje, de punta a punta</h2>
-            <div class="mr-grid">
-                <article class="mr-card">
-                    <h3 class="mr-card__title">Publicá tu solicitud</h3>
-                    <p class="mr-muted mb-0">
-                        Elegí origen, destino y tipo de servicio. Contanos qué necesitás mover y cuándo.
-                    </p>
-                </article>
+            <!-- Soft Ambient Light Glows -->
+            <div class="mr-v-hero__glow-top"></div>
+            <div class="mr-v-hero__glow-bottom"></div>
 
-                <article class="mr-card">
-                    <h3 class="mr-card__title">Recibí ofertas de prestadores</h3>
-                    <p class="mr-muted mb-0">
-                        Aceptá, rechazá o contraofertá. Vos decidís con qué empresa realizar el viaje.
-                    </p>
-                </article>
+            <div class="mr-v-container mr-v-hero__inner">
+                <div class="mr-v-hero__layout">
+                    <!-- Left Column: Copy & Actions -->
+                    <div class="mr-v-hero__left">
+                        <!-- Pill Badge -->
+                        <div class="mr-v-hero__pill">
+                            <span class="mr-v-hero__pill-dot"></span>
+                            <span class="mr-v-hero__pill-text">
+                                TRANSPORTE DE PERSONAS Y CARGAS • RED HOMOLOGADA NACIONAL
+                            </span>
+                        </div>
 
-                <article class="mr-card">
-                    <h3 class="mr-card__title">Seguí el viaje hasta el final</h3>
-                    <p class="mr-muted mb-0">
-                        Consultá el estado, coordiná el pago y calificá el servicio al finalizar.
-                    </p>
-                </article>
+                        <!-- Headline -->
+                        <h1 class="mr-v-hero__title">
+                            Tu carga y tu viaje, <br class="mr-v-br-sm" />
+                            <span class="mr-v-hero__title-accent">en un solo lugar</span>
+                        </h1>
+
+                        <!-- Body Description -->
+                        <p class="mr-v-hero__desc">
+                            Conectamos pasajeros, empresas y solicitantes con prestadores y choferes de confianza para mover cargas, fletes y encomiendas de forma simple, coordinada y 100% segura con póliza oficial.
+                        </p>
+
+                        <!-- Buttons Group -->
+                        <div class="mr-v-hero__actions">
+                            <a class="mr-v-btn-hero-primary" href="/usuario/solicitar">
+                                <span>Solicitar un viaje</span>
+                                <span class="material-symbols-outlined mr-v-icon-20">arrow_forward</span>
+                            </a>
+                            <a class="mr-v-btn-hero-secondary" href="/prestadores">
+                                <span class="material-symbols-outlined mr-v-icon-20 mr-v-text-mint">verified_user</span>
+                                <span>Ver prestadores verificados</span>
+                            </a>
+                        </div>
+
+                        <!-- Trust Signals -->
+                        <div class="mr-v-hero__trust">
+                            <div class="mr-v-hero__trust-item">
+                                <span class="material-symbols-outlined mr-v-icon-20 mr-v-text-mint">bolt</span>
+                                <div class="mr-v-hero__trust-copy">
+                                    <span class="mr-v-hero__trust-val">&lt; 15 min</span>
+                                    <span class="mr-v-hero__trust-lbl">Asignación media</span>
+                                </div>
+                            </div>
+                            <div class="mr-v-hero__trust-item">
+                                <span class="material-symbols-outlined mr-v-icon-20 mr-v-text-mint">gavel</span>
+                                <div class="mr-v-hero__trust-copy">
+                                    <span class="mr-v-hero__trust-val">100% Legal</span>
+                                    <span class="mr-v-hero__trust-lbl">Póliza y CNRT</span>
+                                </div>
+                            </div>
+                            <div class="mr-v-hero__trust-item">
+                                <span class="material-symbols-outlined mr-v-icon-20 mr-v-text-mint mr-v-icon-filled">star</span>
+                                <div class="mr-v-hero__trust-copy">
+                                    <span class="mr-v-hero__trust-val">4.9 / 5</span>
+                                    <span class="mr-v-hero__trust-lbl">+12k opiniones</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Visual Telematics Card Preview -->
+                    <div class="mr-v-hero__right">
+                        <div class="mr-v-telematics">
+                            <!-- Live Status Ribbon -->
+                            <div class="mr-v-telematics__ribbon">
+                                <div class="mr-v-telematics__ribbon-left">
+                                    <span class="mr-v-telematics__ping"></span>
+                                    <span class="mr-v-telematics__ribbon-title">MONITOREO DE DESPACHO EN VIVO</span>
+                                </div>
+                                <span class="mr-v-telematics__badge">Ruta Activa</span>
+                            </div>
+
+                            <!-- Route Manifest Node -->
+                            <div class="mr-v-telematics__route">
+                                <div class="mr-v-telematics__route-track">
+                                    <div class="mr-v-telematics__node-origin">
+                                        <span class="mr-v-telematics__node-origin-dot"></span>
+                                    </div>
+                                    <div class="mr-v-telematics__node-line"></div>
+                                    <div class="mr-v-telematics__node-dest">
+                                        <span class="material-symbols-outlined mr-v-telematics__node-dest-icon">location_on</span>
+                                    </div>
+                                </div>
+
+                                <div class="mr-v-telematics__route-details">
+                                    <div class="mr-v-telematics__stop">
+                                        <div>
+                                            <p class="mr-v-telematics__stop-label">Punto de Origen</p>
+                                            <p class="mr-v-telematics__stop-name">Parque Industrial Pilar, Buenos Aires</p>
+                                        </div>
+                                        <span class="mr-v-telematics__stop-time">08:30 AM</span>
+                                    </div>
+
+                                    <div class="mr-v-telematics__stop">
+                                        <div>
+                                            <p class="mr-v-telematics__stop-label">Destino de Descarga</p>
+                                            <p class="mr-v-telematics__stop-name">Centro Logístico Rosario, Santa Fe</p>
+                                        </div>
+                                        <span class="mr-v-telematics__stop-eta">ETA 12:45 PM</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Unit Specs & Driver -->
+                            <div class="mr-v-telematics__specs">
+                                <div class="mr-v-telematics__spec-item">
+                                    <div class="mr-v-telematics__spec-icon">
+                                        <span class="material-symbols-outlined mr-v-icon-18 mr-v-text-primary">local_shipping</span>
+                                    </div>
+                                    <div>
+                                        <p class="mr-v-telematics__spec-label">Unidad</p>
+                                        <p class="mr-v-telematics__spec-val">Mercedes Sprinter Maxi</p>
+                                    </div>
+                                </div>
+                                <div class="mr-v-telematics__spec-item">
+                                    <div class="mr-v-telematics__spec-icon">
+                                        <span class="material-symbols-outlined mr-v-icon-18 mr-v-text-secondary">shield</span>
+                                    </div>
+                                    <div>
+                                        <p class="mr-v-telematics__spec-label">Seguro Carga</p>
+                                        <p class="mr-v-telematics__spec-val mr-v-text-secondary">Allianz $18.5M</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Provider Mini Card -->
+                            <div class="mr-v-telematics__provider">
+                                <div class="mr-v-telematics__provider-left">
+                                    <div class="mr-v-telematics__avatar">MR</div>
+                                    <div class="mr-v-telematics__provider-info">
+                                        <span class="mr-v-telematics__provider-name">Transportes Rosario Express</span>
+                                        <span class="mr-v-telematics__provider-driver">Chofer Matrículado: Marcelo R.</span>
+                                    </div>
+                                </div>
+                                <div class="mr-v-telematics__provider-right">
+                                    <span class="mr-v-telematics__price">$142.000</span>
+                                    <p class="mr-v-telematics__price-sub">Tarifa fija pactada</p>
+                                </div>
+                            </div>
+
+                            <!-- Decorative Live Ping Badge -->
+                            <div class="mr-v-telematics__gps">
+                                <span class="mr-v-telematics__gps-dot"></span>
+                                <span>GPS Telemetría 4G Activa</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="mr-home__seccion">
-        <div class="mr-container">
-            <h2 class="mr-section-title">Cómo funciona</h2>
-            <div class="mr-pasos">
-                <div class="mr-paso">
-                    <span class="mr-paso__numero">1</span>
-                    <h3>Solicitá</h3>
-                    <p>Completá origen, destino y tipo de servicio en pocos pasos.</p>
+        <!-- SECTION 2: "TODO EL VIAJE, DE PUNTA A PUNTA" -->
+        <section class="mr-v-steps-section" id="como-funciona">
+            <div class="mr-v-container">
+                <div class="mr-v-section-header">
+                    <h2 class="mr-v-section-title">Todo el viaje, de punta a punta</h2>
+                    <p class="mr-v-section-subtitle">
+                        Un proceso trazable y sin fricción diseñado para operar con absoluta tranquilidad desde la carga inicial hasta el remito final.
+                    </p>
                 </div>
 
-                <div class="mr-paso">
-                    <span class="mr-paso__numero">2</span>
-                    <h3>Coordiná</h3>
-                    <p>Compará las ofertas de los prestadores y acordá el viaje.</p>
-                </div>
+                <div class="mr-v-steps-grid">
+                    <!-- Step 1 Card -->
+                    <div class="mr-v-step-card">
+                        <div class="mr-v-step-card__top">
+                            <div class="mr-v-step-card__icon-box">
+                                <span class="material-symbols-outlined mr-v-icon-24">edit_document</span>
+                            </div>
+                            <div>
+                                <span class="mr-v-step-card__eyebrow">Paso 01</span>
+                                <h3 class="mr-v-step-card__title">Publicá tu solicitud</h3>
+                                <p class="mr-v-step-card__desc">
+                                    Elegí origen, destino y tipo de servicio. Contanos qué necesitás mover y cuándo. Podés adjuntar fotos de la carga y requisitos especiales.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mr-v-step-card__footer">
+                            <span>Tarda menos de 2 minutos</span>
+                            <span class="material-symbols-outlined mr-v-step-card__arrow">arrow_forward</span>
+                        </div>
+                    </div>
 
-                <div class="mr-paso">
-                    <span class="mr-paso__numero">3</span>
-                    <h3>Viajá</h3>
-                    <p>Seguí el estado del viaje y calificá al prestador al terminar.</p>
+                    <!-- Step 2 Card -->
+                    <div class="mr-v-step-card">
+                        <div class="mr-v-step-card__top">
+                            <div class="mr-v-step-card__icon-box">
+                                <span class="material-symbols-outlined mr-v-icon-24">local_offer</span>
+                            </div>
+                            <div>
+                                <span class="mr-v-step-card__eyebrow">Paso 02</span>
+                                <h3 class="mr-v-step-card__title">Recibí ofertas de prestadores</h3>
+                                <p class="mr-v-step-card__desc">
+                                    Aceptá, rechazá o contraofertá. Vos decidís con qué empresa o transportista homologado realizar el viaje evaluando reputación, vehículo y precio.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mr-v-step-card__footer">
+                            <span>Tarifas transparentes sin comisión oculta</span>
+                            <span class="material-symbols-outlined mr-v-step-card__arrow">arrow_forward</span>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 Card -->
+                    <div class="mr-v-step-card">
+                        <div class="mr-v-step-card__top">
+                            <div class="mr-v-step-card__icon-box">
+                                <span class="material-symbols-outlined mr-v-icon-24">pin_drop</span>
+                            </div>
+                            <div>
+                                <span class="mr-v-step-card__eyebrow">Paso 03</span>
+                                <h3 class="mr-v-step-card__title">Seguí el viaje hasta el final</h3>
+                                <p class="mr-v-step-card__desc">
+                                    Consultá el estado y monitoreo en vivo, recibí remito de entrega digital con firma y foto, coordiná el pago protegido y calificá el servicio.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mr-v-step-card__footer">
+                            <span>Garantía de entrega Mundo Ruta</span>
+                            <span class="material-symbols-outlined mr-v-step-card__arrow">arrow_forward</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="mr-cta">
-        <div class="mr-container">
-            <h2>¿Listo para empezar?</h2>
-            <p>Creá tu cuenta y publicá tu primera solicitud en minutos.</p>
-            <div class="mr-cta__acciones">
-                <a class="btn btn-primary" href="/registro">Crear cuenta</a>
-                <a class="btn mr-btn-claro" href="/login">Ya tengo cuenta</a>
+        <!-- SECTION 3: SERVICIOS Y CATEGORÍAS DE TRANSPORTE -->
+        <section class="mr-v-categories-section" id="servicios">
+            <div class="mr-v-container">
+                <div class="mr-v-categories-header">
+                    <div class="mr-v-categories-header__left">
+                        <span class="mr-v-categories-eyebrow">Flota Multimodal Certificada</span>
+                        <h2 class="mr-v-section-title">Categorías pensadas para cada escala</h2>
+                    </div>
+                    <p class="mr-v-categories-header__desc">
+                        Desde un envío urgente en ciudad hasta traslados industriales de gran porte con choferes experimentados.
+                    </p>
+                </div>
+
+                <div class="mr-v-bento-grid">
+                    <!-- Category 1 -->
+                    <div class="mr-v-bento-card">
+                        <div class="mr-v-bento-card__media">
+                            <img class="mr-v-bento-card__img"
+                                 alt="Fletes Utilitarios Express"
+                                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuBynHMlu6Px7jSgfTmILo2X4MuHRuqcb-vJ6G2ur4anGWXOMnzHQxocyBLB2dH_fLxKMJ5MXZ4Ff7mSubRTXVOGWWtZ4w9emJHCRI0RluZQIpn4ICeF3nAZFWbNfgndXMffqoVcWKWHBLNoXf748gO8zuYU9iBjGtnDvnY7Oq29-gepv5ii3vggyiM4r9hJl7CqsznIeuLGNHkNwvO0CT0t7nVlsU_l3CoyE16M" />
+                            <div class="mr-v-bento-card__badge mr-v-bento-card__badge--navy">Inmediato</div>
+                        </div>
+                        <div class="mr-v-bento-card__body">
+                            <div>
+                                <h3 class="mr-v-bento-card__title">Fletes Utilitarios Express</h3>
+                                <p class="mr-v-bento-card__desc">
+                                    Vehículos tipo Kangoo, Berlingo y pickups medianas. Ideal para compras grandes, repuestos y paquetes voluminosos en el día.
+                                </p>
+                            </div>
+                            <div class="mr-v-bento-card__footer">
+                                <span>Capacidad: hasta 800 kg</span>
+                                <span class="material-symbols-outlined mr-v-icon-18 mr-v-text-secondary">chevron_right</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category 2 -->
+                    <div class="mr-v-bento-card">
+                        <div class="mr-v-bento-card__media">
+                            <img class="mr-v-bento-card__img"
+                                 alt="Mudanzas y Cargas Medianas"
+                                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrMQ7TMgEQDjiq6yLGGUy0PW0JYUflQn2SgbdmUDhtR8vYMkrVK1YRSzq-2lXq6hO0k-1YpCt_yTCAf63yywNWM9OzMuDvlV8QuEbfrMpke5b8qlddaNSXDDAqEq4bc3JPwpCuUSLNdDnY4OgwSrJ9V_QzrlMThfFXr-MyJAyAF0wvon2jFY7Lu5MvF8VQwpLSsR4tAqsogbz1-Fa3VPeGhawwtKOKRzC-DC5e" />
+                            <div class="mr-v-bento-card__badge mr-v-bento-card__badge--emerald">Con Estibadores</div>
+                        </div>
+                        <div class="mr-v-bento-card__body">
+                            <div>
+                                <h3 class="mr-v-bento-card__title">Mudanzas &amp; Cargas Medianas</h3>
+                                <p class="mr-v-bento-card__desc">
+                                    Camiones con furgón cerrado térmico o baranda volcable. Servicio opcional de embalaje, mantas protectoras y peones de carga.
+                                </p>
+                            </div>
+                            <div class="mr-v-bento-card__footer">
+                                <span>Capacidad: 1.5 a 4.5 Tn</span>
+                                <span class="material-symbols-outlined mr-v-icon-18 mr-v-text-secondary">chevron_right</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category 3 -->
+                    <div class="mr-v-bento-card">
+                        <div class="mr-v-bento-card__media">
+                            <img class="mr-v-bento-card__img"
+                                 alt="Distribución B2B y Pesada"
+                                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOlbiTOwl6nNTFwdca57ZZpAs4RYtnIV8vuOXehtHRegy7HqTbv-SUPDrsSx-sjx8H2eWGut-bRvc21yqI6VAKQHvpqJVn-UkuqaRPKWjZJjrcmFhVGWUEHZzCvF-li75jkf1RRasjtaPOmv7jHi_rMH5bO4_fH6yzs7zcjesXJXvBLJN55FuGqbc_ksQAP37NhxA9dcKgaLYmyZ5AEkdrHwZsUOgigjDp77hY" />
+                            <div class="mr-v-bento-card__badge mr-v-bento-card__badge--navy">Interprovincial</div>
+                        </div>
+                        <div class="mr-v-bento-card__body">
+                            <div>
+                                <h3 class="mr-v-bento-card__title">Distribución B2B &amp; Pesada</h3>
+                                <p class="mr-v-bento-card__desc">
+                                    Carga completa (FTL) y consolidada (LTL). Conexión directa interprovincial para fábricas, depósitos y cadenas mayoristas.
+                                </p>
+                            </div>
+                            <div class="mr-v-bento-card__footer">
+                                <span>Capacidad: hasta 28 Tn</span>
+                                <span class="material-symbols-outlined mr-v-icon-18 mr-v-text-secondary">chevron_right</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category 4 -->
+                    <div class="mr-v-bento-card">
+                        <div class="mr-v-bento-card__media">
+                            <img class="mr-v-bento-card__img"
+                                 alt="Pasajeros y Corporativo"
+                                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzobt7p4j-H-GBqyHChGCbONvVgkKeZAPtf7NM4MK1pZfEa_OIXH2oOHvwz4CdW4OGNt_YF7R6pyxn7xSrPqnRLFY5yKUcnUFzy7h-8yiJgQ289Tq_2JMWiGEUvwnQO1wrt1Rl4m3eVABesZtZMMjW7Pcwz_9rAOyOY3drFMK6tB0W2bYKEl-ye9APdMQLOR0tqBVo_pq9SD1XMUwRDuWvQhilBn4rbcwNOGw1" />
+                            <div class="mr-v-bento-card__badge mr-v-bento-card__badge--emerald">Corporativo</div>
+                        </div>
+                        <div class="mr-v-bento-card__body">
+                            <div>
+                                <h3 class="mr-v-bento-card__title">Pasajeros &amp; Corporativo</h3>
+                                <p class="mr-v-bento-card__desc">
+                                    Traslado de dotaciones de personal, eventos empresariales y viajes contratados de media y larga distancia con chofer profesional.
+                                </p>
+                            </div>
+                            <div class="mr-v-bento-card__footer">
+                                <span>De 4 a 19 Pasajeros</span>
+                                <span class="material-symbols-outlined mr-v-icon-18 mr-v-text-secondary">chevron_right</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </section>
-</div>
+        </section>
+
+        <!-- SECTION 4: SOCIAL PROOF, CNRT COMPLIANCE & METRICS -->
+        <section class="mr-v-metrics-section" id="red-prestadores">
+            <div class="mr-v-container">
+                <!-- Metrics Strip -->
+                <div class="mr-v-metrics-strip">
+                    <div class="mr-v-metric-item">
+                        <span class="mr-v-metric-val">+12.000</span>
+                        <span class="mr-v-metric-title">Viajes Completados</span>
+                        <span class="mr-v-metric-sub">Conformes y auditados</span>
+                    </div>
+                    <div class="mr-v-metric-item">
+                        <span class="mr-v-metric-val">1.200+</span>
+                        <span class="mr-v-metric-title">Transportistas Verificados</span>
+                        <span class="mr-v-metric-sub">VTV, CNRT y RUTA al día</span>
+                    </div>
+                    <div class="mr-v-metric-item">
+                        <span class="mr-v-metric-val">99.4%</span>
+                        <span class="mr-v-metric-title">Entregas a Tiempo</span>
+                        <span class="mr-v-metric-sub">Desvío menor a 15 min</span>
+                    </div>
+                    <div class="mr-v-metric-item">
+                        <span class="mr-v-metric-val">0</span>
+                        <span class="mr-v-metric-title">Incidentes Sin Cobertura</span>
+                        <span class="mr-v-metric-sub">Póliza activa de extremo a extremo</span>
+                    </div>
+                </div>
+
+                <!-- Double CTA Banner: Solicitantes vs Prestadores -->
+                <div class="mr-v-cta-grid">
+                    <!-- Box 1: For Customers/Shippers -->
+                    <div class="mr-v-cta-box mr-v-cta-box--solicitante">
+                        <div class="mr-v-cta-box__top">
+                            <div class="mr-v-cta-box__icon mr-v-cta-box__icon--navy">
+                                <span class="material-symbols-outlined mr-v-icon-24">package_2</span>
+                            </div>
+                            <h3 class="mr-v-cta-box__title">¿Necesitás transportar cargas o personas?</h3>
+                            <p class="mr-v-cta-box__desc">
+                                Creá tu cuenta gratuita en segundos. Publicá tus rutas, elegí el presupuesto que más te convenga y monitoreá tus envíos desde cualquier dispositivo con soporte dedicado 24/7.
+                            </p>
+                        </div>
+                        <div class="mr-v-cta-box__actions">
+                            <a class="mr-v-btn-cta-navy" href="/registro">
+                                <span>Registrate como Solicitante</span>
+                                <span class="material-symbols-outlined mr-v-icon-18">chevron_right</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Box 2: For Drivers/Carriers -->
+                    <div class="mr-v-cta-box mr-v-cta-box--prestador">
+                        <div class="mr-v-cta-box__top">
+                            <div class="mr-v-cta-box__icon mr-v-cta-box__icon--emerald">
+                                <span class="material-symbols-outlined mr-v-icon-24">rv_hookup</span>
+                            </div>
+                            <h3 class="mr-v-cta-box__title">¿Tenés un vehículo o flota de transporte?</h3>
+                            <p class="mr-v-cta-box__desc">
+                                Sumate a la red oficial de Mundo Ruta. Minimizá retornos vacíos, recibí viajes compatibles con tu itinerario habitual y cobrá de forma asegurada y en plazos récord.
+                            </p>
+                        </div>
+                        <div class="mr-v-cta-box__actions">
+                            <a class="mr-v-btn-cta-emerald" href="/registro">
+                                <span>Sumarme como Prestador</span>
+                                <span class="material-symbols-outlined mr-v-icon-18">arrow_outward</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+}
+else
+{
+    <MundoRuta.Server.Client.Pages.Usuario.Panel />
+}
 
 @code {
     protected override void OnInitialized()
@@ -108,7 +461,11 @@
 
     private void AlCambiarSesion()
     {
-        _ = InvokeAsync(RedirigirSiCorresponde);
+        _ = InvokeAsync(() =>
+        {
+            RedirigirSiCorresponde();
+            StateHasChanged();
+        });
     }
 
     private void RedirigirSiCorresponde()
@@ -118,15 +475,10 @@
             return;
         }
 
-        if (string.Equals(Sesion.Rol, Roles.Admin, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(Sesion.Rol, Roles.Prestador, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(Sesion.Rol, Roles.Chofer, StringComparison.OrdinalIgnoreCase))
+        string destino = RutaInicioPorRol.Obtener(Sesion.Rol);
+        if (!string.Equals(destino, "/", StringComparison.Ordinal))
         {
-            string destino = RutaInicioPorRol.Obtener(Sesion.Rol);
-            if (!string.Equals(destino, "/", StringComparison.Ordinal))
-            {
-                Navegacion.NavigateTo(destino, replace: true);
-            }
+            Navegacion.NavigateTo(destino, replace: true);
         }
     }
 }

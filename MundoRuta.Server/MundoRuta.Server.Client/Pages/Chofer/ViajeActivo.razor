@@ -378,12 +378,22 @@
                         else if (EstadoNormalizado == "llegada-destino")
                         {
                             <div class="cn-validation-box d-flex flex-column gap-3">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="material-symbols-outlined" style="font-size: 24px; color: var(--cn-sky);">verified_user</span>
-                                    <div>
-                                        <h3 class="cn-display mb-0" style="font-size: 15px; font-weight: 700;">Validación de Entrega Obligatoria</h3>
-                                        <span style="font-size: 12px; color: var(--cn-on-surface-variant);">Verificá la identidad de quien recibe antes de entregar.</span>
+                                <div class="d-flex align-items-center justify-content-between gap-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="material-symbols-outlined" style="font-size: 24px; color: var(--cn-sky);">verified_user</span>
+                                        <div>
+                                            <h3 class="cn-display mb-0" style="font-size: 15px; font-weight: 700;">Validación de Entrega Obligatoria</h3>
+                                            <span style="font-size: 12px; color: var(--cn-on-surface-variant);">Verificá la identidad de quien recibe antes de entregar.</span>
+                                        </div>
                                     </div>
+                                    <button type="button"
+                                            class="cn-btn cn-btn--ghost"
+                                            style="font-size: 11px; padding: 0.35rem 0.65rem; min-height: auto;"
+                                            title="Autocompletar DNI del receptor y calificación de prueba"
+                                            @onclick="RellenarValidacionSimulada">
+                                        <span class="material-symbols-outlined" style="font-size: 15px;">auto_fix_high</span>
+                                        <span>Rellenar prueba</span>
+                                    </button>
                                 </div>
 
                                 @if (!string.IsNullOrWhiteSpace(_errorValidacion))
@@ -710,6 +720,30 @@
         }
 
         return char.ToUpperInvariant(nombre.Trim()[0]).ToString();
+    }
+
+    private static readonly string[] ComentariosEntregaSimulados =
+    {
+        "Entrega realizada en tiempo y forma. Receptor verificado sin inconvenientes.",
+        "Mercadería descargada en perfecto estado. Excelente predisposición del cliente.",
+        "Despacho completado según hoja de ruta. Recepción rápida en destino.",
+        "Todo en orden, bultos controlados junto al receptor al momento de la descarga."
+    };
+
+    private void RellenarValidacionSimulada()
+    {
+        if (_viaje is not null && !string.IsNullOrWhiteSpace(_viaje.DniReceptor))
+        {
+            _validarEntregaDto.DniIngresado = _viaje.DniReceptor;
+        }
+        else
+        {
+            _validarEntregaDto.DniIngresado = "45833061";
+        }
+
+        _validarEntregaDto.PuntajePasajero = Random.Shared.Next(4, 6);
+        _validarEntregaDto.Comentario = ComentariosEntregaSimulados[Random.Shared.Next(ComentariosEntregaSimulados.Length)];
+        _errorValidacion = string.Empty;
     }
 
     public void Dispose()

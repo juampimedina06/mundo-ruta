@@ -23,13 +23,19 @@
 
             <!-- HEADER BANNER -->
             <div class="mr-solicitar-header">
-                <div class="mr-header-title-row">
-                    <h1 class="mr-header-title">Solicitar Viaje</h1>
-                    <span class="mr-badge-module">Módulo Pasajero</span>
-                    <span class="mr-badge-active">
-                        <span class="mr-badge-dot"></span>
-                        <span>Ruta Activa</span>
-                    </span>
+                <div class="mr-header-title-row" style="justify-content: space-between; width: 100%;">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h1 class="mr-header-title">Solicitar Viaje</h1>
+                        <span class="mr-badge-module">Módulo Pasajero</span>
+                        <span class="mr-badge-active">
+                            <span class="mr-badge-dot"></span>
+                            <span>Ruta Activa</span>
+                        </span>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" @onclick="RellenarDatosSimulados">
+                        <span class="material-symbols-outlined mr-icon-xs">auto_fix_high</span>
+                        <span>Rellenar datos de prueba</span>
+                    </button>
                 </div>
             </div>
 
@@ -332,6 +338,38 @@
     {
         _modelo.Fecha = DateTime.Today;
         _mostrarSelectorFechaPersonalizada = false;
+    }
+
+    private static readonly (string Origen, string Destino, string Carga, decimal Precio)[] RutasSimuladas =
+    {
+        ("Av. Corrientes 1250, CABA", "Parque Industrial Pilar, Buenos Aires", "4 pallets estándar de mercadería embalada (850 kg).", 38000m),
+        ("Av. Santa Fe 3200, Palermo, CABA", "Av. Maipú 1800, Vicente López, GBA", "Mudanza residencial: heladera, lavarropas, sillón de 3 cuerpos y 12 cajas.", 29500m),
+        ("Centro Logístico Mercado Central, Tapiales", "Av. Cabildo 2040, Belgrano, CABA", "Lote de insumos gastronómicos secos y equipamiento comercial (620 kg).", 34000m),
+        ("Av. del Libertador 6100, Núñez, CABA", "Av. Hipólito Yrigoyen 8500, Lomas de Zamora", "Mobiliario de oficina: 6 escritorios, sillas ergonómicas y cajas de archivo.", 42000m),
+        ("Puerto Madero Dique 3, CABA", "Parque Industrial Garín, Escobar", "3 bultos de maquinaria liviana y repuestos industriales en cajas selladas.", 46500m),
+        ("Av. Rivadavia 5400, Caballito, CABA", "Av. Mitre 750, Avellaneda, GBA", "Electrodomésticos embalados con film alveolar y cajas frágiles.", 26000m),
+        ("Av. Warnes 1100, Villa Crespo, CABA", "Ruta Panamericana Km 32, El Talar", "Repuestos automotores, cubiertas y cajas de herramientas pesadas.", 36000m),
+        ("Av. Córdoba 4500, Palermo, CABA", "Av. Centenario 900, San Isidro, GBA", "Equipamiento de sonido e iluminación en racks rígidos de transporte.", 31500m)
+    };
+
+    private void RellenarDatosSimulados()
+    {
+        var seleccion = RutasSimuladas[Random.Shared.Next(RutasSimuladas.Length)];
+        int horasAdelante = Random.Shared.Next(1, 5);
+        DateTime salida = DateTime.Now.AddHours(horasAdelante);
+
+        _modelo.Origen = seleccion.Origen;
+        _modelo.Destino = seleccion.Destino;
+        _modelo.DniReceptor = "45833061";
+        _modelo.TipoCaja = Random.Shared.Next(2) == 0 ? TipoCajaCubierta : TipoCajaDescubierta;
+        _modelo.Fecha = salida.Date;
+        _modelo.Hora = TimeOnly.FromDateTime(salida);
+        _modelo.EquipajeCarga = true;
+        _modelo.DetalleCarga = seleccion.Carga;
+        _modelo.LlevaAcompanante = Random.Shared.Next(2) == 0;
+        _modelo.UsaBaulera = Random.Shared.Next(2) == 0;
+        _modelo.PrecioOfrecido = seleccion.Precio;
+        _errores.Clear();
     }
 
     private void SeleccionarManana()

@@ -1,10 +1,11 @@
 @page "/prestadores/{Id:int}"
+@using System.Globalization
 @using MundoRuta.Shared.DTO
 @inject IHttpServices Http
 
 <PageTitle>Detalle del prestador | Mundo Ruta</PageTitle>
 
-<div class="mr-page">
+<div class="mr-pdet-page">
     <div class="mr-container">
         @if (_cargando)
         {
@@ -14,7 +15,7 @@
         {
             <EmptyState Titulo="Prestador no encontrado"
                         Descripcion="No encontramos ese prestador o ya no está disponible.">
-                <a class="btn btn-outline-primary" href="/servicios/fletes">Volver al catálogo</a>
+                <a class="btn btn-outline-primary" href="/prestadores">Volver al catálogo</a>
             </EmptyState>
         }
         else if (!string.IsNullOrWhiteSpace(_error))
@@ -23,85 +24,126 @@
         }
         else if (_perfil is not null)
         {
-            <PageHeader Titulo="@TituloPrestador"
-                        Descripcion="Información pública del prestador y sus vehículos." />
-
-            <article class="mr-card mr-perfil">
-                <div class="mr-perfil__fila">
-                    <span class="mr-perfil__etiqueta">Estado</span>
-                    <EstadoBadge Estado="@_perfil.Estado" />
-                </div>
-
-                @if (!string.IsNullOrWhiteSpace(_perfil.RazonSocial))
-                {
-                    <div class="mr-perfil__fila">
-                        <span class="mr-perfil__etiqueta">Razón social</span>
-                        <span>@_perfil.RazonSocial</span>
+            <div class="mr-pdet-card">
+                @* Encabezado del Perfil Público *@
+                <div class="mr-pdet__header">
+                    <div class="mr-pdet__header-left">
+                        <div class="mr-pdet__id-box">
+                            #@_perfil.Id
+                        </div>
+                        <div class="mr-pdet__header-meta">
+                            <div class="mr-pdet__title-row">
+                                <h1 class="mr-pdet__title">@TituloPrestador</h1>
+                                <span class="mr-pdet__badge-active">
+                                    <span class="material-symbols-outlined mr-pdet__badge-icon">check_circle</span>
+                                    <span>Activo</span>
+                                </span>
+                                <span class="mr-pdet__badge-role">
+                                    Rol: @(string.IsNullOrWhiteSpace(_perfil.Rol) ? "Prestador" : _perfil.Rol)
+                                </span>
+                            </div>
+                            <div class="mr-pdet__sub-row">
+                                <span class="mr-pdet__cuit">
+                                    <strong>ID de Registro:</strong> #@_perfil.Id
+                                </span>
+                                <span>•</span>
+                                <span>
+                                    @if (_perfil.TotalCalificaciones > 0)
+                                    {
+                                        <text>
+                                            Calificación: @_perfil.PromedioCalificacion.ToString("0.0", CultureInfo.InvariantCulture) / 5.0
+                                            (@_perfil.TotalCalificaciones @(_perfil.TotalCalificaciones == 1 ? "calificación" : "calificaciones"))
+                                        </text>
+                                    }
+                                    else
+                                    {
+                                        <text>Sin calificaciones todavía</text>
+                                    }
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                }
 
-                <div class="mr-perfil__fila">
-                    <span class="mr-perfil__etiqueta">Calificaciones</span>
-                    @if (_perfil.TotalCalificaciones > 0)
-                    {
-                        <span>
-                            @_perfil.PromedioCalificacion.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)
-                            (@_perfil.TotalCalificaciones @(_perfil.TotalCalificaciones == 1 ? "calificación" : "calificaciones"))
-                        </span>
-                    }
-                    else
-                    {
-                        <span>Sin calificaciones todavía</span>
-                    }
+                    <a class="mr-pdet__close" href="/prestadores" title="Volver al catálogo">
+                        <span class="material-symbols-outlined">close</span>
+                    </a>
                 </div>
 
-                <div class="mr-perfil__fila">
-                    <span class="mr-perfil__etiqueta">Email</span>
-                    <a href="mailto:@_perfil.Email">@_perfil.Email</a>
+                @* Cuerpo del Perfil Detallado *@
+                <div class="mr-pdet__body">
+                    <div class="mr-pdet__section">
+                        <h2 class="mr-pdet__section-title">Datos del Prestador</h2>
+                        <div class="mr-pdet__info-grid">
+                            <div class="mr-pdet__info-item">
+                                <span class="mr-pdet__info-label">Nombre y Apellido</span>
+                                <span class="mr-pdet__info-val">@NombreCompleto</span>
+                            </div>
+                            <div class="mr-pdet__info-item">
+                                <span class="mr-pdet__info-label">Fecha de Registro</span>
+                                <span class="mr-pdet__info-val">@_perfil.FechaRegistro.ToString("dd/MM/yyyy")</span>
+                            </div>
+                            <div class="mr-pdet__info-item">
+                                <span class="mr-pdet__info-label">Email</span>
+                                <a class="mr-pdet__info-val mr-pdet__info-link" href="mailto:@_perfil.Email">@_perfil.Email</a>
+                            </div>
+                            <div class="mr-pdet__info-item">
+                                <span class="mr-pdet__info-label">Teléfono</span>
+                                <a class="mr-pdet__info-val mr-pdet__info-link" href="tel:@_perfil.Telefono">@_perfil.Telefono</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mr-pdet__section">
+                        <div class="mr-pdet__section-header">
+                            <h2 class="mr-pdet__section-title">Vehículos Registrados</h2>
+                            <span class="mr-pdet__vehiculos-count">
+                                @(_perfil.Vehiculos?.Count ?? 0) @((_perfil.Vehiculos?.Count ?? 0) == 1 ? "unidad registrada" : "unidades registradas")
+                            </span>
+                        </div>
+
+                        @if (_perfil.Vehiculos is null || _perfil.Vehiculos.Count == 0)
+                        {
+                            <EmptyState Titulo="Sin vehículos registrados"
+                                        Descripcion="Este prestador todavía no tiene vehículos cargados." />
+                        }
+                        else
+                        {
+                            <div class="mr-pdet__vehicles-grid">
+                                @foreach (VehiculoDTO vehiculo in _perfil.Vehiculos)
+                                {
+                                    <article class="mr-pdet__vehicle-card">
+                                        <div class="mr-pdet__vehicle-top">
+                                            <span class="mr-pdet__vehicle-name">
+                                                @(!string.IsNullOrWhiteSpace(vehiculo.Nombre) ? vehiculo.Nombre : vehiculo.Marca)
+                                            </span>
+                                            <span class="mr-pdet__vehicle-tag">
+                                                @(!string.IsNullOrWhiteSpace(vehiculo.TipoVehiculo) ? vehiculo.TipoVehiculo : (!string.IsNullOrWhiteSpace(vehiculo.Marca) ? vehiculo.Marca : "Furgón"))
+                                            </span>
+                                        </div>
+                                        <span class="mr-pdet__vehicle-cap">
+                                            @(!string.IsNullOrWhiteSpace(vehiculo.CapacidadCarga) ? $"Capacidad: {vehiculo.CapacidadCarga}" : $"Licencia: {vehiculo.Licencia}")
+                                        </span>
+                                        <span class="mr-pdet__vehicle-plate">
+                                            Patente: @vehiculo.Patente
+                                        </span>
+                                    </article>
+                                }
+                            </div>
+                        }
+                    </div>
                 </div>
 
-                <div class="mr-perfil__fila">
-                    <span class="mr-perfil__etiqueta">Teléfono</span>
-                    <a href="tel:@_perfil.Telefono">@_perfil.Telefono</a>
+                @* Footer de Acciones *@
+                <div class="mr-pdet__footer">
+                    <a class="mr-pdet__btn-back" href="/prestadores">
+                        Volver al catálogo
+                    </a>
+                    <a class="mr-pdet__btn-contact" href="tel:@_perfil.Telefono">
+                        <span class="material-symbols-outlined mr-pdet__contact-icon">call</span>
+                        <span>Contactar Prestador</span>
+                    </a>
                 </div>
-
-                <div class="mr-perfil__fila">
-                    <span class="mr-perfil__etiqueta">Fecha de registro</span>
-                    <span>@_perfil.FechaRegistro.ToString("dd/MM/yyyy")</span>
-                </div>
-            </article>
-
-            <h2 class="mr-section-title mt-4">Vehículos</h2>
-
-            @if (_perfil.Vehiculos is null || _perfil.Vehiculos.Count == 0)
-            {
-                <EmptyState Titulo="Sin vehículos registrados"
-                            Descripcion="Este prestador todavía no tiene vehículos cargados." />
-            }
-            else
-            {
-                <div class="mr-grid">
-                    @foreach (VehiculoDTO vehiculo in _perfil.Vehiculos)
-                    {
-                        <article class="mr-card">
-                            <h3 class="mr-card__title">@vehiculo.Patente</h3>
-                            <p class="mb-1">
-                                <span class="mr-muted">Marca: </span>@vehiculo.Marca
-                            </p>
-                            <p class="mb-1">
-                                <span class="mr-muted">Licencia: </span>@vehiculo.Licencia
-                            </p>
-                            <p class="mb-0">
-                                <EstadoBadge Estado="@vehiculo.Estado" />
-                            </p>
-                        </article>
-                    }
-                </div>
-            }
-
-            <p class="mt-4 mb-0">
-                <a href="/servicios/fletes">Volver al catálogo</a>
-            </p>
+            </div>
         }
     </div>
 </div>
@@ -117,12 +159,20 @@
 
     private string TituloPrestador =>
         !string.IsNullOrWhiteSpace(_perfil?.RazonSocial)
-            ? _perfil.RazonSocial
-            : $"{_perfil?.Nombre} {_perfil?.Apellido}".Trim();
+            ? _perfil.RazonSocial.Trim()
+            : NombreCompleto;
+
+    private string NombreCompleto
+    {
+        get
+        {
+            string nombre = $"{_perfil?.Nombre} {_perfil?.Apellido}".Trim();
+            return string.IsNullOrWhiteSpace(nombre) ? $"Prestador #{_perfil?.Id}" : nombre;
+        }
+    }
 
     protected override async Task OnParametersSetAsync()
     {
-        // Recarga cuando cambia el Id en la ruta (por ejemplo, "Ver detalle" otro prestador).
         _cargando = true;
         _noEncontrado = false;
         _error = null;

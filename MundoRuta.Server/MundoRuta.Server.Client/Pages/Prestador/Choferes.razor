@@ -290,9 +290,15 @@
                         <h2 class="pr-modal__title">Nuevo Chofer</h2>
                         <p class="pr-modal__subtitle">Completa los datos obligatorios para registrar al chofer.</p>
                     </div>
-                    <button type="button" class="pr-modal__close-btn" aria-label="Cerrar" @onclick="CerrarModalAlta">
-                        <span class="material-symbols-outlined text-[20px]">close</span>
-                    </button>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="pr-btn pr-btn--outline pr-btn-sm" @onclick="RellenarChoferSimulado">
+                            <span class="material-symbols-outlined text-[16px]">auto_fix_high</span>
+                            <span>Rellenar prueba</span>
+                        </button>
+                        <button type="button" class="pr-modal__close-btn" aria-label="Cerrar" @onclick="CerrarModalAlta">
+                            <span class="material-symbols-outlined text-[20px]">close</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Modal Form Body -->
@@ -654,6 +660,45 @@
         nuevoChofer = CrearFormularioVacio();
         nuevoChofer.IdPrestador = PrestadorIdEfectivo;
         _modalAltaAbierto = true;
+    }
+
+    private static readonly (string Nombre, string Slug)[] NombresChoferSimulados =
+    {
+        ("Esteban", "esteban"), ("Darío", "dario"), ("Hernán", "hernan"), ("Gustavo", "gustavo"),
+        ("Ramiro", "ramiro"), ("Gonzalo", "gonzalo"), ("Pablo", "pablo"), ("Claudio", "claudio"),
+        ("Mariano", "mariano"), ("Diego", "diego"), ("Leandro", "leandro"), ("Federico", "federico"),
+        ("Sebastián", "sebastian"), ("Javier", "javier")
+    };
+
+    private static readonly (string Apellido, string Slug)[] ApellidosChoferSimulados =
+    {
+        ("Ruiz", "ruiz"), ("Peralta", "peralta"), ("Molina", "molina"), ("Castro", "castro"),
+        ("Silva", "silva"), ("Ortiz", "ortiz"), ("Núñez", "nunez"), ("Cabrera", "cabrera"),
+        ("Ríos", "rios"), ("Vega", "vega"), ("Giménez", "gimenez"), ("Navarro", "navarro"),
+        ("Moreno", "moreno"), ("Quiroga", "quiroga")
+    };
+
+    private static readonly string[] CategoriasLicencia = { "B2", "C1", "C2", "E1" };
+
+    private void RellenarChoferSimulado()
+    {
+        int sufijo = Random.Shared.Next(100, 999);
+        var nombre = NombresChoferSimulados[Random.Shared.Next(NombresChoferSimulados.Length)];
+        var apellido = ApellidosChoferSimulados[Random.Shared.Next(ApellidosChoferSimulados.Length)];
+        string catLic = CategoriasLicencia[Random.Shared.Next(CategoriasLicencia.Length)];
+        int dniBase = Random.Shared.Next(24000000, 44999999);
+        int cuitVerif = Random.Shared.Next(1, 9);
+
+        nuevoChofer.Cuit = $"20-{dniBase}-{cuitVerif}";
+        nuevoChofer.Nombre = nombre.Nombre;
+        nuevoChofer.Apellido = apellido.Apellido;
+        nuevoChofer.Telefono = Random.Shared.Next(113000000, 119999999);
+        nuevoChofer.Licencia = $"{catLic}-{dniBase}";
+        nuevoChofer.Estado = "DISPONIBLE";
+        nuevoChofer.Email = $"{nombre.Slug}.{apellido.Slug}{sufijo}@mundoruta.com";
+        nuevoChofer.Password = "123456";
+        nuevoChofer.IdPrestador = PrestadorIdEfectivo;
+        error = null;
     }
 
     private void CerrarModalAlta()

@@ -25,7 +25,13 @@
             <!-- Stepper Indicator -->
             <div class="mr-stepper">
                 <span class="mr-stepper__title">Selecciona tu perfil</span>
-                <span class="mr-stepper__badge">Paso 1 de 2</span>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" @onclick="RellenarDatosSimulados">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">auto_fix_high</span>
+                        <span>Rellenar prueba</span>
+                    </button>
+                    <span class="mr-stepper__badge">Paso 1 de 2</span>
+                </div>
             </div>
 
             <!-- Selector Interactivo de Perfil -->
@@ -281,6 +287,53 @@
     private void SeleccionarPrestador()
     {
         _esPrestador = true;
+    }
+
+    private static readonly (string Nombre, string EmailSlug)[] NombresSimulados =
+    {
+        ("Martín", "martin"), ("Lucas", "lucas"), ("Sofía", "sofia"), ("Valentina", "valentina"),
+        ("Mateo", "mateo"), ("Camila", "camila"), ("Nicolás", "nicolas"), ("Julieta", "julieta"),
+        ("Santiago", "santiago"), ("Lucía", "lucia"), ("Facundo", "facundo"), ("Agustina", "agustina"),
+        ("Joaquín", "joaquin"), ("Florencia", "florencia"), ("Tomás", "tomas"), ("Carolina", "carolina")
+    };
+
+    private static readonly (string Apellido, string EmailSlug)[] ApellidosSimulados =
+    {
+        ("Gómez", "gomez"), ("Fernández", "fernandez"), ("Rodríguez", "rodriguez"), ("López", "lopez"),
+        ("Martínez", "martinez"), ("Sánchez", "sanchez"), ("Pérez", "perez"), ("Romero", "romero"),
+        ("Sosa", "sosa"), ("Torres", "torres"), ("Álvarez", "alvarez"), ("Ruiz", "ruiz"),
+        ("Benítez", "benitez"), ("Acosta", "acosta"), ("Medina", "medina"), ("Herrera", "herrera")
+    };
+
+    private static readonly string[] EmpresasSimuladas =
+    {
+        "Logística del Sur", "Expreso Río de la Plata", "Transportes Andinos", "Fletes Austral",
+        "Cargas Baires", "Mudanzas del Norte", "Grupo Vial Argentino", "Flota Metropolitana",
+        "Rutas Unidas", "TransCargas Federal", "Expreso Pampeano", "Logística Centenario"
+    };
+
+    private static readonly string[] TiposSociedad = { "S.A.", "S.R.L.", "S.A.S." };
+
+    private void RellenarDatosSimulados()
+    {
+        int sufijo = Random.Shared.Next(100, 999);
+        var nombre = NombresSimulados[Random.Shared.Next(NombresSimulados.Length)];
+        var apellido = ApellidosSimulados[Random.Shared.Next(ApellidosSimulados.Length)];
+        string empresa = EmpresasSimuladas[Random.Shared.Next(EmpresasSimuladas.Length)];
+        string sociedad = TiposSociedad[Random.Shared.Next(TiposSociedad.Length)];
+        int telSufijo = Random.Shared.Next(10000000, 99999999);
+        int cuitMedio = Random.Shared.Next(10000000, 99999999);
+        int cuitVerif = Random.Shared.Next(1, 9);
+
+        _modelo.Nombre = nombre.Nombre;
+        _modelo.Apellido = apellido.Apellido;
+        _modelo.Email = $"{nombre.EmailSlug}.{apellido.EmailSlug}{sufijo}@mundoruta.com";
+        _modelo.Telefono = $"11{telSufijo}";
+        _modelo.Password = "123456";
+        _modelo.ConfirmarPassword = "123456";
+        _modelo.RazonSocial = _esPrestador ? $"{empresa} {sufijo} {sociedad}" : string.Empty;
+        _modelo.Cuit = _esPrestador ? $"30-{cuitMedio}-{cuitVerif}" : string.Empty;
+        _error = null;
     }
 
     private int NivelFortaleza
