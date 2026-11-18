@@ -78,9 +78,26 @@ namespace MundoRuta.Server.Controllers
                 totalReseñas = lista.Count,
                 comentarios = lista.Select(c => new CalificacionItemDTO
                 {
+                    id = c.Id,
                     puntaje = c.Puntaje,
-                    comentario = c.Comentario,
-                    usuarioId = c.IdUsuario
+                    comentario = c.Comentario ?? string.Empty,
+                    usuarioId = c.IdUsuario,
+                    viajeId = c.IdViaje,
+                    nombrePasajero = c.Usuario != null
+                        ? $"{c.Usuario.Nombre} {c.Usuario.Apellido}".Trim()
+                        : $"Pasajero #{c.IdUsuario}",
+                    origen = c.Viaje?.Origen ?? string.Empty,
+                    destino = c.Viaje?.Destino ?? string.Empty,
+                    tipoSolicitud = c.Viaje?.TipoSolicitud ?? string.Empty,
+                    fechaViaje = c.Viaje?.Fecha,
+                    nombreChofer = c.Viaje?.Chofer != null
+                        ? $"{c.Viaje.Chofer.Nombre} {c.Viaje.Chofer.Apellido}".Trim()
+                        : string.Empty,
+                    vehiculo = c.Viaje?.Vehiculo != null
+                        ? (!string.IsNullOrWhiteSpace(c.Viaje.Vehiculo.Patente)
+                            ? $"{c.Viaje.Vehiculo.Marca} (Patente {c.Viaje.Vehiculo.Patente})".Trim()
+                            : (c.Viaje.Vehiculo.Marca ?? string.Empty))
+                        : string.Empty
                 }).ToList()
             };
 

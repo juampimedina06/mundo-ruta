@@ -130,25 +130,25 @@
                 </div>
             </div>
 
-            <!-- KPI 4: Tiempo de Respuesta / SLA -->
+            <!-- KPI 4: Vehículos en Flota -->
             <div class="pr-kpi-card">
                 <div class="pr-kpi-header">
-                    <span class="pr-kpi-label">Tiempo de Respuesta</span>
+                    <span class="pr-kpi-label">Vehículos Registrados</span>
                     <div class="pr-kpi-icon-wrap pr-kpi-icon-wrap--amber">
-                        <span class="material-symbols-outlined text-[20px]">bolt</span>
+                        <span class="material-symbols-outlined text-[20px]">rv_hookup</span>
                     </div>
                 </div>
                 <div class="pr-kpi-body">
                     <div class="pr-kpi-value-row">
-                        <span class="pr-kpi-value pr-tnum">6.2 <span style="font-size: 14px; font-weight: 600; color: var(--pr-text-muted);">min</span></span>
+                        <span class="pr-kpi-value pr-tnum">@_vehiculos.Count</span>
                         <span class="pr-kpi-badge pr-kpi-badge--emerald d-flex align-items-center gap-1">
                             <span class="material-symbols-outlined text-[14px]">verified</span>
-                            <span>Óptimo</span>
+                            <span>En Flota</span>
                         </span>
                     </div>
-                    <div class="pr-kpi-subtext">SLA Promedio (&lt; 15 min)</div>
+                    <div class="pr-kpi-subtext">Unidades disponibles para asignar</div>
                     <div class="pr-kpi-progress">
-                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--amber" style="width: 85%;"></div>
+                        <div class="pr-kpi-progress-bar pr-kpi-progress-bar--amber" style="width: @(_vehiculos.Count > 0 ? 100 : 0)%;"></div>
                     </div>
                 </div>
             </div>
@@ -160,6 +160,12 @@
                 <!-- Filtros rápidos por estado -->
                 <div class="pr-filter-pills">
                     <button type="button"
+                            class="pr-filter-pill @(_estadoFiltro == EstadoTodos ? "active" : "")"
+                            @onclick='() => _estadoFiltro = EstadoTodos'>
+                        <span>Todas</span>
+                        <span class="pr-filter-pill__count">@(_solicitudes.Count)</span>
+                    </button>
+                    <button type="button"
                             class="pr-filter-pill @(_estadoFiltro == EstadosViaje.Buscando ? "active" : "")"
                             @onclick='() => _estadoFiltro = EstadosViaje.Buscando'>
                         <span>Pendientes</span>
@@ -170,12 +176,6 @@
                             @onclick='() => _estadoFiltro = EstadosViaje.Contraofertado'>
                         <span>Contraofertadas</span>
                         <span class="pr-filter-pill__count">@TotalContraofertadas</span>
-                    </button>
-                    <button type="button"
-                            class="pr-filter-pill @(_estadoFiltro == EstadoTodos ? "active" : "")"
-                            @onclick='() => _estadoFiltro = EstadoTodos'>
-                        <span>Todas</span>
-                        <span class="pr-filter-pill__count">@(_solicitudes.Count)</span>
                     </button>
                 </div>
 
@@ -558,7 +558,7 @@
 
     private string _busqueda = string.Empty;
     private string _fechaTexto = string.Empty;
-    private string _estadoFiltro = EstadosViaje.Buscando;
+    private string _estadoFiltro = EstadoTodos;
 
     private int? _solicitudActivaId;
     private string _accionActiva = string.Empty;
@@ -569,7 +569,7 @@
 
     private int TotalPendientes => _solicitudes.Count(s => string.Equals(s.Estado, EstadosViaje.Buscando, StringComparison.OrdinalIgnoreCase));
     private int TotalContraofertadas => _solicitudes.Count(s => string.Equals(s.Estado, EstadosViaje.Contraofertado, StringComparison.OrdinalIgnoreCase));
-    private decimal MontoTotalPendiente => _solicitudes.Where(s => string.Equals(s.Estado, EstadosViaje.Buscando, StringComparison.OrdinalIgnoreCase)).Sum(s => s.Monto);
+    private decimal MontoTotalPendiente => _solicitudes.Where(s => string.Equals(s.Estado, EstadosViaje.Buscando, StringComparison.OrdinalIgnoreCase) || string.Equals(s.Estado, EstadosViaje.Contraofertado, StringComparison.OrdinalIgnoreCase)).Sum(s => s.Monto);
     private int TotalChoferesDisponibles => _choferes.Count(c => string.Equals(c.Estado, "DISPONIBLE", StringComparison.OrdinalIgnoreCase) || string.Equals(c.Estado, "Activo", StringComparison.OrdinalIgnoreCase));
 
     private List<ViajePrestadorDTO> SolicitudesFiltradas
@@ -795,7 +795,7 @@
     {
         _busqueda = string.Empty;
         _fechaTexto = string.Empty;
-        _estadoFiltro = EstadosViaje.Buscando;
+        _estadoFiltro = EstadoTodos;
     }
 
     private void CambiarFecha(ChangeEventArgs args)

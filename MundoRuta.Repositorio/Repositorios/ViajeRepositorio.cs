@@ -291,10 +291,11 @@ namespace MundoRuta.Repositorio.Repositorios
                 decimal montoFlete = v.Monto;
                 decimal comision = Math.Round(montoFlete * (porcentajeComision / 100m), 2);
 
-                string prestadorNombre = v.Usuario != null
-                    ? $"{v.Usuario.Nombre} {v.Usuario.Apellido}".Trim()
+                bool tienePrestador = v.Usuario != null && v.Usuario.Rol == Roles.Prestador;
+                string prestadorNombre = tienePrestador
+                    ? $"{v.Usuario!.Nombre} {v.Usuario.Apellido}".Trim()
                     : "Sin asignar";
-                string? razonSocial = v.Usuario?.RazonSocial;
+                string? razonSocial = tienePrestador ? v.Usuario?.RazonSocial : null;
 
                 string pasajeroNombre = v.Pasajero != null
                     ? $"{v.Pasajero.Nombre} {v.Pasajero.Apellido}".Trim()

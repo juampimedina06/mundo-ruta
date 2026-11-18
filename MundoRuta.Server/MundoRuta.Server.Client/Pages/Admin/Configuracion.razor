@@ -1,17 +1,123 @@
 @page "/admin/configuracion"
+@using MundoRuta.Shared
+@using MundoRuta.Shared.DTO
+@inject IHttpServices Http
 
 <PageTitle>Configuración | Mundo Ruta</PageTitle>
 
 <RoleGuard Permitidos="@Roles.Admin">
     <div class="mr-page">
         <div class="mr-container">
-            <PageHeader Titulo="Configuración"
-                        Descripcion="Parámetros generales del sistema." />
+            <div class="mr-context-header">
+                <nav class="mr-breadcrumb" aria-label="Ruta de navegación">
+                    <a href="/admin/dashboard">Inicio</a>
+                    <span class="mr-breadcrumb__sep">/</span>
+                    <span>Administración</span>
+                    <span class="mr-breadcrumb__sep">/</span>
+                    <span class="mr-breadcrumb__current">Configuración del Sistema</span>
+                </nav>
 
-            <EmptyState Titulo="Configuración en preparación"
-                        Descripcion="Acá vas a poder ajustar tarifas, recargos y parámetros de la plataforma.">
-                <a class="btn btn-outline-primary" href="/admin">Volver al panel</a>
-            </EmptyState>
+                <div class="mr-header-main">
+                    <div>
+                        <h1 class="mr-header-title">Parámetros Generales del Sistema</h1>
+                        <p class="mr-header-desc">
+                            Ajustá el porcentaje de recargo cuando el pasajero solicita viajar con acompañante.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_mensajeExito))
+            {
+                <div class="mr-alert mr-alert--exito mb-3">@_mensajeExito</div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(_error))
+            {
+                <div class="mr-alert mr-alert--error mb-3">@_error</div>
+            }
+
+            <div class="mr-tabla-card p-4" style="max-width: 560px;">
+                <h2 class="h5 fw-bold text-dark mb-2">Recargo por Acompañante (CU-44)</h2>
+                <p class="text-muted small mb-3">
+                    Este porcentaje se suma automáticamente sobre el monto ofrecido cuando el solicitante marca la opción <strong>Lleva acompañante</strong> al publicar un viaje.
+                </p>
+
+                @if (_cargando)
+                {
+                    <div class="py-3 text-muted small">Cargando configuración actual...</div>
+                }
+                else
+                {
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Porcentaje de recargo (%)</label>
+                        <input type="number"
+                               class="form-control"
+                               min="0"
+                               max="100"
+                               step="0.5"
+                               @bind="_porcentaje" />
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button"
+                                class="btn btn-primary"
+                                disabled="@_guardando"
+                                @onclick="GuardarRecargoAsync">
+                            @(_guardando ? "Guardando..." : "Guardar porcentaje")
+                        </button>
+                        <a class="btn btn-outline-secondary" href="/admin/dashboard">Volver al panel</a>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 </RoleGuard>
+
+@code {
+    private decimal _porcentaje = 15m;
+    private bool _cargando = true;
+    private bool _guardando;
+    private string? _mensajeExito;
+    private string? _error;
+
+    private sealed class RecargoRespDto
+    {
+        public decimal porcentajeRecargoAcompanante { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _cargando = true;
+        var resp = await Http.GetAsync<RecargoRespDto>("api/admin/configuracion/recargo-acompanante");
+        if (!resp.Error && resp.Respuesta is not null)
+        {
+            _porcentaje = resp.Respuesta.porcentajeRecargoAcompanante;
+        }
+        _cargando = false;
+    }
+
+    private async Task GuardarRecargoAsync()
+    {
+        _guardando = true;
+        _mensajeExito = null;
+        _error = null;
+
+        var dto = new ConfiguracionRecargoDTO
+        {
+            PorcentajeRecargoAcompanante = _porcentaje
+        };
+
+        var resp = await Http.PutAsync<ConfiguracionRecargoDTO, object>("api/admin/configuracion/recargo-acompanante", dto);
+        if (resp.Error)
+        {
+            _error = await resp.ObtenerMensajeAsync("No se pudo actualizar el recargo.");
+        }
+        else
+        {
+            _mensajeExito = $"Recargo por acompañante actualizado a {_porcentaje}%.";
+        }
+
+        _guardando = false;
+    }
+}

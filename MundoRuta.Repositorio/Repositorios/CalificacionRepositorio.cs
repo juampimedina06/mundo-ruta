@@ -25,7 +25,13 @@ public class CalificacionRepositorio : Repositorio<Calificacion>, ICalificacionR
     public async Task<List<Calificacion>> ObtenerPorPrestador(int idPrestador)
     {
         return await context.Calificaciones
+            .Include(c => c.Usuario)
+            .Include(c => c.Viaje)
+                .ThenInclude(v => v.Chofer)
+            .Include(c => c.Viaje)
+                .ThenInclude(v => v.Vehiculo)
             .Where(c => c.IdUsuarioPrestador == idPrestador)
+            .OrderByDescending(c => c.Id)
             .ToListAsync();
     }
 

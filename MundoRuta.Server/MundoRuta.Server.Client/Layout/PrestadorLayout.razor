@@ -75,6 +75,13 @@
                             </div>
                         </NavLink>
 
+                        <NavLink class="pr-sidebar__link" href="/prestador/calificaciones" Match="NavLinkMatch.Prefix" @onclick="CerrarMenuMovil">
+                            <div class="pr-sidebar__link-left">
+                                <span class="material-symbols-outlined">reviews</span>
+                                <span>Opiniones y Calificaciones</span>
+                            </div>
+                        </NavLink>
+
                         <NavLink class="pr-sidebar__link" href="/prestador/perfil" Match="NavLinkMatch.Prefix" @onclick="CerrarMenuMovil">
                             <div class="pr-sidebar__link-left">
                                 <span class="material-symbols-outlined">business</span>
@@ -85,24 +92,12 @@
                 </div>
             </div>
 
-            <!-- Sidebar Footer: Central 24/7 & User Logout -->
+            <!-- Sidebar Footer: User Logout -->
             <div class="pr-sidebar__footer">
-                <div class="pr-sidebar__support-card">
-                    <div class="pr-sidebar__support-header">
-                        <span>Central de Despacho</span>
-                        <span class="material-symbols-outlined text-[16px]">headset_mic</span>
-                    </div>
-                    <div class="pr-sidebar__support-title">24/7 Dispatch SOS</div>
-                    <div class="d-flex align-items-center justify-content-between mt-1">
-                        <span class="small text-secondary-fixed fw-bold" style="color: #6cf8bb; font-size: 11px;">Canal Prioritario</span>
-                        <span class="badge bg-secondary-container text-on-secondary-container" style="font-size: 10px; background-color: #6cf8bb; color: #00714d;">ACTIVO</span>
-                    </div>
-                </div>
-
                 <div class="pr-sidebar__user">
                     <div class="pr-sidebar__user-info">
                         <span class="pr-sidebar__user-name">@(string.IsNullOrWhiteSpace(Sesion.Nombre) ? "Prestador" : Sesion.Nombre)</span>
-                        <span class="pr-sidebar__user-role">Jefe de Despacho</span>
+                        <span class="pr-sidebar__user-role">Prestador</span>
                     </div>
                     <button type="button" class="pr-icon-btn pr-icon-btn--danger" title="Cerrar sesión" @onclick="CerrarSesion">
                         <span class="material-symbols-outlined text-[18px]">logout</span>
@@ -128,22 +123,15 @@
 
                     <div class="pr-topbar__verified-pill">
                         <span class="material-symbols-outlined text-[16px]">verified</span>
-                        <span>@(string.IsNullOrWhiteSpace(Sesion.Nombre) ? "TransLog Express S.A." : Sesion.Nombre) • Prestador Verificado</span>
+                        <span>@(string.IsNullOrWhiteSpace(Sesion.Nombre) ? "Prestador" : Sesion.Nombre) • Cuenta Aprobada</span>
                     </div>
                 </div>
 
                 <div class="pr-topbar__right">
-                    <button type="button" class="pr-topbar__action-btn" aria-label="Notificaciones">
-                        <span class="material-symbols-outlined text-[20px]">notifications</span>
-                        <span class="pr-topbar__unread-dot"></span>
-                    </button>
-
-                    <div class="pr-topbar__divider"></div>
-
                     <div class="pr-topbar__profile">
                         <div class="pr-topbar__profile-info">
-                            <span class="pr-topbar__profile-name">@(string.IsNullOrWhiteSpace(Sesion.Nombre) ? "Operador Logístico" : Sesion.Nombre)</span>
-                            <span class="pr-topbar__profile-role">Jefe de Despacho</span>
+                            <span class="pr-topbar__profile-name">@(string.IsNullOrWhiteSpace(Sesion.Nombre) ? "Prestador" : Sesion.Nombre)</span>
+                            <span class="pr-topbar__profile-role">Prestador</span>
                         </div>
                         <div class="pr-topbar__avatar">
                             <span class="material-symbols-outlined text-[20px]">person</span>
@@ -159,13 +147,13 @@
 
             <!-- Footer -->
             <footer class="pr-footer">
-                <p class="mb-0">© @DateTime.Now.Year Mundo Ruta Logística B2B. Red de Prestadores y Flotas Conectadas.</p>
+                <p class="mb-0">© @DateTime.Now.Year Mundo Ruta — Portal de Prestadores y Gestión de Flota.</p>
                 <div class="d-flex align-items-center gap-3">
-                    <a href="#">Términos de Servicio</a>
+                    <a href="/prestador/solicitudes">Solicitudes</a>
                     <span>•</span>
-                    <a href="#">Privacidad y Telemetría</a>
+                    <a href="/prestador/viajes">Viajes</a>
                     <span>•</span>
-                    <a href="#">Estado del Sistema</a>
+                    <a href="/prestador/vehiculos">Flota</a>
                 </div>
             </footer>
         </div>

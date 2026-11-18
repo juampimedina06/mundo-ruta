@@ -17,7 +17,7 @@
                 <div class="mr-u-topbar__left">
                     <span class="mr-u-context-pill">
                         <span class="mr-u-context-pill__dot"></span>
-                        <span>CUENTA CORPORATIVA ACTIVA</span>
+                        <span>PANEL DE PASAJERO • SESIÓN ACTIVA</span>
                     </span>
                 </div>
             </div>
@@ -30,8 +30,8 @@
                 <div class="mr-u-hero__content">
                     <div class="mr-u-hero__copy">
                         <div class="mr-u-hero__badge">
-                            <span class="material-symbols-outlined mr-u-icon-16">bolt</span>
-                            <span>Despacho Inmediato • Tiempo promedio de asignación 3.5 min</span>
+                            <span class="material-symbols-outlined mr-u-icon-16">local_shipping</span>
+                            <span>Solicitudes de Fletes y Mudanzas • Subasta de hasta 5 ofertas</span>
                         </div>
 
                         <h1 class="mr-u-hero__title">
@@ -40,7 +40,7 @@
                         </h1>
 
                         <p class="mr-u-hero__desc">
-                            Gestioná tus envíos corporativos, programá traslados con peones o solicitá una cotización instantánea con tarifa garantizada.
+                            Publicá tu solicitud de viaje o flete, compará las ofertas y contraofertas de prestadores aprobados y seguí el estado de tu envío hasta validar la entrega con DNI.
                         </p>
 
                         <div class="mr-u-hero__actions">
@@ -62,126 +62,162 @@
             <section class="mr-u-mid-grid">
                 <!-- Active Shipment Telemetry Card (8 Cols) -->
                 <div class="mr-u-telemetry-card">
-                    <div>
-                        <div class="mr-u-telemetry-card__header">
-                            <div class="mr-u-telemetry-card__header-left">
-                                <span class="mr-u-live-pill">
-                                    <span class="mr-u-live-pill__dot"></span>
-                                    <span>@(_viajeActivo is not null ? FormatearEstadoActivo(_viajeActivo.Estado) : "EN TRÁNSITO ACTIVO")</span>
-                                </span>
-                                <span class="mr-u-shipment-id">
-                                    Envío #MR-@(_viajeActivo is not null ? _viajeActivo.Id.ToString(CultureInfo.InvariantCulture) : "8488")
-                                </span>
-                                <span class="mr-u-shipment-meta">
-                                    • @(_viajeActivo is not null && !string.IsNullOrWhiteSpace(_viajeActivo.DetalleCarga) ? _viajeActivo.DetalleCarga : "4 Pallets Estándar (1.200 kg)")
-                                </span>
-                                @if (_viajeActivo is not null && !string.IsNullOrWhiteSpace(_viajeActivo.DniReceptor))
-                                {
-                                    <span class="mr-u-driver-box__cnrt">
-                                        DNI Receptor: @_viajeActivo.DniReceptor
+                    @if (_viajeActivo is not null)
+                    {
+                        <div>
+                            <div class="mr-u-telemetry-card__header">
+                                <div class="mr-u-telemetry-card__header-left">
+                                    <span class="mr-u-live-pill">
+                                        <span class="mr-u-live-pill__dot"></span>
+                                        <span>@FormatearEstadoActivo(_viajeActivo.Estado)</span>
                                     </span>
-                                }
-                            </div>
-
-                            <div class="mr-u-telemetry-card__eta">
-                                <span class="mr-u-telemetry-card__eta-label">ETA Estimado</span>
-                                <p class="mr-u-telemetry-card__eta-val">
-                                    @(_viajeActivo is not null ? FormatearHora(_viajeActivo.Hora) : "12 min (14:38 hrs)")
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Telemetry Progress Track -->
-                        <div class="mr-u-progress-wrap">
-                            <div class="mr-u-progress-bar">
-                                <div class="mr-u-progress-bar__fill" style="width: @(ObtenerPorcentajeProgreso())%;"></div>
-                            </div>
-                            <div class="mr-u-progress-labels">
-                                <span class="mr-u-progress-stop">
-                                    <span class="mr-u-progress-dot mr-u-progress-dot--active"></span>
-                                    <span>@(_viajeActivo is not null ? _viajeActivo.Origen : "Terminal Norte (13:10)")</span>
-                                </span>
-                                <span class="mr-u-progress-mid">
-                                    @(_viajeActivo is not null ? "Ruta monitoreada por GPS" : "Km 28.4 / Autopista Central")
-                                </span>
-                                <span class="mr-u-progress-stop">
-                                    <span>@(_viajeActivo is not null ? _viajeActivo.Destino : "Parque Logístico Sur (Destino)")</span>
-                                    <span class="mr-u-progress-dot mr-u-progress-dot--end"></span>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Driver and Vehicle Pill -->
-                    <div class="mr-u-driver-box">
-                        <div class="mr-u-driver-box__left">
-                            <img class="mr-u-driver-box__avatar"
-                                 alt="Conductor asignado"
-                                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSOUu6NPm_379o5CeOScojDTNGAkA8AfZZ9ty16cW80hruBO3xt3YAvRCGZwREj4jXrG2gosx0GtYZBhWLlvOkFa1tryKwHD_ryp_sHPY3bukkM5-2KUpI2jQE2pUQ81TLNUq1tbaBniZMYoKYea6FRaBVvA6G4RePTwL1yNfIKSBzzDf4Gf9P6h58qzwiAkTxFcgxhvT8dJvZ5T6kOahqtpPu4SR2esVhyvVx" />
-                            <div>
-                                <div class="mr-u-driver-box__name-row">
-                                    <span class="mr-u-driver-box__name">
-                                        @(_viajeActivo is not null && !string.IsNullOrWhiteSpace(_viajeActivo.NombreChofer) ? _viajeActivo.NombreChofer : "Esteban Ruiz")
+                                    <span class="mr-u-shipment-id">
+                                        Viaje #MR-@_viajeActivo.Id
                                     </span>
-                                    <span class="mr-u-driver-box__rating">
-                                        <span class="material-symbols-outlined mr-u-star-filled">star</span>
-                                        <span>4.96</span>
-                                    </span>
-                                    <span class="mr-u-driver-box__cnrt">Habilitación CNRT OK</span>
+                                    @if (!string.IsNullOrWhiteSpace(_viajeActivo.DetalleCarga))
+                                    {
+                                        <span class="mr-u-shipment-meta">
+                                            • @_viajeActivo.DetalleCarga
+                                        </span>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(_viajeActivo.DniReceptor))
+                                    {
+                                        <span class="mr-u-driver-box__cnrt">
+                                            DNI Receptor: @_viajeActivo.DniReceptor
+                                        </span>
+                                    }
                                 </div>
-                                <p class="mr-u-driver-box__vehicle">
-                                    @if (_viajeActivo is not null && !string.IsNullOrWhiteSpace(_viajeActivo.Patente))
-                                    {
-                                        @($"{_viajeActivo.Marca} • Patente {_viajeActivo.Patente}")
-                                    }
-                                    else
-                                    {
-                                        <text>Renault Kangoo Maxi • Patente LK-7921 • Precinto #99214</text>
-                                    }
-                                </p>
+
+                                <div class="mr-u-telemetry-card__eta">
+                                    <span class="mr-u-telemetry-card__eta-label">Horario Programado</span>
+                                    <p class="mr-u-telemetry-card__eta-val">
+                                        @_viajeActivo.Fecha.ToString("dd/MM/yyyy") • @FormatearHora(_viajeActivo.Hora)
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Telemetry Progress Track -->
+                            <div class="mr-u-progress-wrap">
+                                <div class="mr-u-progress-bar">
+                                    <div class="mr-u-progress-bar__fill" style="width: @(ObtenerPorcentajeProgreso())%;"></div>
+                                </div>
+                                <div class="mr-u-progress-labels">
+                                    <span class="mr-u-progress-stop">
+                                        <span class="mr-u-progress-dot mr-u-progress-dot--active"></span>
+                                        <span>@_viajeActivo.Origen</span>
+                                    </span>
+                                    <span class="mr-u-progress-mid">
+                                        @FormatearMonto(_viajeActivo.Monto > 0 ? _viajeActivo.Monto : _viajeActivo.MontoEstimado)
+                                    </span>
+                                    <span class="mr-u-progress-stop">
+                                        <span>@_viajeActivo.Destino</span>
+                                        <span class="mr-u-progress-dot mr-u-progress-dot--end"></span>
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="mr-u-driver-box__actions">
-                            <a class="mr-u-btn-contact" href="@ObtenerUrlSeguimiento()">
-                                <span class="material-symbols-outlined mr-u-icon-18">phone</span>
-                                <span>Contactar</span>
-                            </a>
-                            <a class="mr-u-btn-gps" href="@ObtenerUrlSeguimiento()">
-                                <span class="material-symbols-outlined mr-u-icon-18 mr-u-text-mint">my_location</span>
-                                <span>Seguimiento GPS en Vivo</span>
-                            </a>
+                        <!-- Driver and Vehicle Pill -->
+                        <div class="mr-u-driver-box">
+                            <div class="mr-u-driver-box__left">
+                                <div class="mr-u-kpi-card__icon" style="width: 44px; height: 44px; border-radius: 12px;">
+                                    <span class="material-symbols-outlined mr-u-icon-22">local_shipping</span>
+                                </div>
+                                <div>
+                                    <div class="mr-u-driver-box__name-row">
+                                        <span class="mr-u-driver-box__name">
+                                            @(!string.IsNullOrWhiteSpace(_viajeActivo.NombreChofer)
+                                                ? $"Chofer: {_viajeActivo.NombreChofer}"
+                                                : (!string.IsNullOrWhiteSpace(_viajeActivo.NombrePrestador) ? $"Prestador: {_viajeActivo.NombrePrestador}" : "Esperando postulaciones de prestadores"))
+                                        </span>
+                                        @if (!string.IsNullOrWhiteSpace(_viajeActivo.NombrePrestador))
+                                        {
+                                            <span class="mr-u-driver-box__cnrt">@_viajeActivo.NombrePrestador</span>
+                                        }
+                                    </div>
+                                    <p class="mr-u-driver-box__vehicle">
+                                        @if (!string.IsNullOrWhiteSpace(_viajeActivo.Patente))
+                                        {
+                                            @($"{_viajeActivo.Marca} • Patente {_viajeActivo.Patente}")
+                                        }
+                                        else
+                                        {
+                                            <text>Todavía sin unidad asignada (en etapa de selección de oferta)</text>
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mr-u-driver-box__actions">
+                                <a class="mr-u-btn-gps" href="@ObtenerUrlSeguimiento()">
+                                    <span class="material-symbols-outlined mr-u-icon-18 mr-u-text-mint">visibility</span>
+                                    <span>@(EstadosViaje.Normalizar(_viajeActivo.Estado) is "buscando" or "contraofertado" ? "Ver Propuestas" : "Ver Seguimiento")</span>
+                                </a>
+                            </div>
                         </div>
-                    </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column justify-content-between h-100 gap-3">
+                            <div class="mr-u-telemetry-card__header">
+                                <div class="mr-u-telemetry-card__header-left">
+                                    <span class="mr-u-live-pill" style="background: #f1f5f9; color: #475569;">
+                                        <span>SIN VIAJES ACTIVOS</span>
+                                    </span>
+                                    <span class="mr-u-shipment-id">No tenés envíos en curso en este momento</span>
+                                </div>
+                            </div>
+                            <p class="text-muted mb-0" style="font-size: 0.92rem;">
+                                Cuando publiques una solicitud de flete o tengas un viaje asignado, vas a poder consultar acá mismo su estado, el chofer, el vehículo y el DNI del receptor.
+                            </p>
+                            <div class="mr-u-driver-box">
+                                <div class="mr-u-driver-box__left">
+                                    <div class="mr-u-kpi-card__icon">
+                                        <span class="material-symbols-outlined mr-u-icon-22">add_road</span>
+                                    </div>
+                                    <div>
+                                        <span class="mr-u-driver-box__name">¿Necesitás programar un nuevo traslado?</span>
+                                        <p class="mr-u-driver-box__vehicle">Publicá origen, destino y carga para recibir ofertas.</p>
+                                    </div>
+                                </div>
+                                <div class="mr-u-driver-box__actions">
+                                    <a class="mr-u-btn-gps" href="/usuario/solicitar">
+                                        <span class="material-symbols-outlined mr-u-icon-18 mr-u-text-mint">add</span>
+                                        <span>Solicitar Viaje</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
 
                 <!-- User Snapshot KPIs (4 Cols) -->
                 <div class="mr-u-kpis">
-                    <!-- Metric 1 -->
+                    <!-- Metric 1: Total Viajes -->
                     <div class="mr-u-kpi-card">
                         <div class="mr-u-kpi-card__left">
                             <div class="mr-u-kpi-card__icon">
                                 <span class="material-symbols-outlined mr-u-icon-22">local_shipping</span>
                             </div>
                             <div>
-                                <p class="mr-u-kpi-card__label">Despachos este mes</p>
-                                <p class="mr-u-kpi-card__val">@(_todosLosViajes.Count > 0 ? $"{_todosLosViajes.Count} Viajes" : "14 Viajes")</p>
+                                <p class="mr-u-kpi-card__label">Total de Viajes Solicitados</p>
+                                <p class="mr-u-kpi-card__val">@_todosLosViajes.Count @(_todosLosViajes.Count == 1 ? "Viaje" : "Viajes")</p>
                             </div>
                         </div>
-                        <span class="mr-u-kpi-card__delta">+22% vs mes ant.</span>
+                        <span class="mr-u-kpi-card__delta">@ViajesCompletadosCount finalizados</span>
                     </div>
 
-                    <!-- Metric 2 -->
+                    <!-- Metric 2: En Curso / En Subasta -->
                     <div class="mr-u-kpi-card">
                         <div class="mr-u-kpi-card__left">
                             <div class="mr-u-kpi-card__icon">
-                                <span class="material-symbols-outlined mr-u-icon-22 mr-u-star-filled">star</span>
+                                <span class="material-symbols-outlined mr-u-icon-22">pending_actions</span>
                             </div>
                             <div>
-                                <p class="mr-u-kpi-card__label">Tu Reputación Remitente</p>
+                                <p class="mr-u-kpi-card__label">Viajes en Curso / Subasta</p>
                                 <div class="mr-u-kpi-card__rep-row">
-                                    <span class="mr-u-kpi-card__val">4.92 / 5.0</span>
-                                    <span class="mr-u-kpi-card__tier">(Nivel Oro)</span>
+                                    <span class="mr-u-kpi-card__val">@ViajesActivosCount @((ViajesActivosCount == 1) ? "Activo" : "Activos")</span>
+                                    <span class="mr-u-kpi-card__tier">(@ViajesCanceladosCount cancelados)</span>
                                 </div>
                             </div>
                         </div>
@@ -190,23 +226,19 @@
                 </div>
             </section>
 
-            <!-- Recent Shipments & One-Click Reorder Section -->
+            <!-- Recent Shipments Section -->
             <section class="mr-u-history">
                 <div class="mr-u-history__header">
                     <div>
-                        <h2 class="mr-u-history__title">Historial Reciente de Envíos</h2>
+                        <h2 class="mr-u-history__title">Últimos Viajes Solicitados</h2>
                         <p class="mr-u-history__subtitle">
-                            Reordená rutas frecuentes con un solo clic o descargá tus remitos y facturas comerciales.
+                            Consultá el estado de tus solicitudes recientes, el DNI del receptor y el detalle de cada operación.
                         </p>
                     </div>
                     <div class="mr-u-history__actions">
                         <a class="mr-u-btn-tool" href="/usuario/viajes">
-                            <span class="material-symbols-outlined mr-u-icon-18">tune</span>
-                            <span>Filtrar</span>
-                        </a>
-                        <a class="mr-u-btn-tool" href="/usuario/viajes">
-                            <span class="material-symbols-outlined mr-u-icon-18">download</span>
-                            <span>Descargar Excel</span>
+                            <span class="material-symbols-outlined mr-u-icon-18">list_alt</span>
+                            <span>Ver todos mis viajes</span>
                         </a>
                     </div>
                 </div>
@@ -217,19 +249,19 @@
                         <table class="mr-u-table">
                             <thead>
                                 <tr>
-                                    <th>ID de Envío</th>
+                                    <th>ID de Viaje</th>
                                     <th>Ruta (Origen → Destino)</th>
-                                    <th>Unidad / Chofer</th>
-                                    <th>Fecha de Entrega</th>
-                                    <th class="mr-u-text-right">Tarifa Abonada</th>
+                                    <th>DNI Receptor / Pago</th>
+                                    <th>Fecha y Hora</th>
+                                    <th class="mr-u-text-right">Monto</th>
                                     <th>Estado</th>
-                                    <th class="mr-u-text-center">Acción Directa</th>
+                                    <th class="mr-u-text-center">Acción</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @if (_todosLosViajes.Count > 0)
                                 {
-                                    @foreach (ListadoViajeDTO viaje in _todosLosViajes.OrderByDescending(v => v.Fecha).ThenByDescending(v => v.Id).Take(3))
+                                    @foreach (ListadoViajeDTO viaje in _todosLosViajes.OrderByDescending(v => v.Fecha).ThenByDescending(v => v.Id).Take(5))
                                     {
                                         <tr>
                                             <td>
@@ -242,11 +274,11 @@
                                                     <span class="material-symbols-outlined mr-u-route-arrow">arrow_right_alt</span>
                                                     <span class="mr-u-route-node">@viaje.Destino</span>
                                                 </div>
-                                                <span class="mr-u-cell-sub">@(viaje.EquipajeCarga ? "Servicio con carga verificada" : "Traslado directo")</span>
+                                                <span class="mr-u-cell-sub">@(viaje.EquipajeCarga ? "Con equipaje / carga declarada" : "Traslado estándar")</span>
                                             </td>
                                             <td>
-                                                <div class="mr-u-cell-main">Red Homologada</div>
-                                                <div class="mr-u-cell-sub">Unidad Asignada CNRT</div>
+                                                <div class="mr-u-cell-main">DNI: @(string.IsNullOrWhiteSpace(viaje.DniReceptor) ? "—" : viaje.DniReceptor)</div>
+                                                <div class="mr-u-cell-sub">@(string.IsNullOrWhiteSpace(viaje.MetodoDePago) ? "Efectivo" : viaje.MetodoDePago) (@(string.IsNullOrWhiteSpace(viaje.EstadoPago) ? "PENDIENTE" : viaje.EstadoPago))</div>
                                             </td>
                                             <td class="mr-u-cell-date">
                                                 @FormatearFechaTabla(viaje.Fecha, viaje.Hora)
@@ -261,9 +293,9 @@
                                                 </span>
                                             </td>
                                             <td class="mr-u-text-center">
-                                                <a class="mr-u-btn-reorder" href="/usuario/solicitar">
-                                                    <span class="material-symbols-outlined mr-u-icon-16">replay</span>
-                                                    <span>Repetir Viaje</span>
+                                                <a class="mr-u-btn-reorder" href="@ObtenerUrlViaje(viaje)">
+                                                    <span class="material-symbols-outlined mr-u-icon-16">visibility</span>
+                                                    <span>Ver Detalle</span>
                                                 </a>
                                             </td>
                                         </tr>
@@ -271,117 +303,9 @@
                                 }
                                 else
                                 {
-                                    <!-- Row 1 -->
                                     <tr>
-                                        <td>
-                                            <span class="mr-u-cell-id">#MR-904</span>
-                                            <span class="mr-u-cell-sub">Flete Express</span>
-                                        </td>
-                                        <td>
-                                            <div class="mr-u-route-line">
-                                                <span class="mr-u-route-node">Terminal Norte</span>
-                                                <span class="material-symbols-outlined mr-u-route-arrow">arrow_right_alt</span>
-                                                <span class="mr-u-route-node">Parque Industrial Sur</span>
-                                            </div>
-                                            <span class="mr-u-cell-sub">Distancia: 34.2 km • 800 kg carga seca</span>
-                                        </td>
-                                        <td>
-                                            <div class="mr-u-cell-main">Carlos Méndez</div>
-                                            <div class="mr-u-cell-sub">Ford Transit (AB-441-CD)</div>
-                                        </td>
-                                        <td class="mr-u-cell-date">
-                                            18/10/2025 • 11:20
-                                        </td>
-                                        <td class="mr-u-text-right mr-u-cell-price">
-                                            $24.500
-                                        </td>
-                                        <td>
-                                            <span class="mr-u-status-pill">
-                                                <span class="mr-u-status-pill__dot"></span>
-                                                <span>Completado</span>
-                                            </span>
-                                        </td>
-                                        <td class="mr-u-text-center">
-                                            <a class="mr-u-btn-reorder" href="/usuario/solicitar">
-                                                <span class="material-symbols-outlined mr-u-icon-16">replay</span>
-                                                <span>Repetir Viaje</span>
-                                            </a>
-                                        </td>
-                                    </tr>
-
-                                    <!-- Row 2 -->
-                                    <tr>
-                                        <td>
-                                            <span class="mr-u-cell-id">#MR-871</span>
-                                            <span class="mr-u-cell-sub">Paquetería B2B</span>
-                                        </td>
-                                        <td>
-                                            <div class="mr-u-route-line">
-                                                <span class="mr-u-route-node">CD Pudahuel (Bodega Central)</span>
-                                                <span class="material-symbols-outlined mr-u-route-arrow">arrow_right_alt</span>
-                                                <span class="mr-u-route-node">Sede Providencia</span>
-                                            </div>
-                                            <span class="mr-u-cell-sub">Distancia: 19.8 km • 12 bultos etiquetados</span>
-                                        </td>
-                                        <td>
-                                            <div class="mr-u-cell-main">Ignacio Salgado</div>
-                                            <div class="mr-u-cell-sub">Peugeot Partner (GH-109-LM)</div>
-                                        </td>
-                                        <td class="mr-u-cell-date">
-                                            14/10/2025 • 16:45
-                                        </td>
-                                        <td class="mr-u-text-right mr-u-cell-price">
-                                            $18.900
-                                        </td>
-                                        <td>
-                                            <span class="mr-u-status-pill">
-                                                <span class="mr-u-status-pill__dot"></span>
-                                                <span>Completado</span>
-                                            </span>
-                                        </td>
-                                        <td class="mr-u-text-center">
-                                            <a class="mr-u-btn-reorder" href="/usuario/solicitar">
-                                                <span class="material-symbols-outlined mr-u-icon-16">replay</span>
-                                                <span>Repetir Viaje</span>
-                                            </a>
-                                        </td>
-                                    </tr>
-
-                                    <!-- Row 3 -->
-                                    <tr>
-                                        <td>
-                                            <span class="mr-u-cell-id">#MR-852</span>
-                                            <span class="mr-u-cell-sub">Carga Especial</span>
-                                        </td>
-                                        <td>
-                                            <div class="mr-u-route-line">
-                                                <span class="mr-u-route-node">Estación Central</span>
-                                                <span class="material-symbols-outlined mr-u-route-arrow">arrow_right_alt</span>
-                                                <span class="mr-u-route-node">Aeropuerto Internacional SCL</span>
-                                            </div>
-                                            <span class="mr-u-cell-sub">Distancia: 22.1 km • Valijas diplomáticas con precinto</span>
-                                        </td>
-                                        <td>
-                                            <div class="mr-u-cell-main">Hernán Gómez</div>
-                                            <div class="mr-u-cell-sub">Mercedes Sprinter (JK-882-RT)</div>
-                                        </td>
-                                        <td class="mr-u-cell-date">
-                                            10/10/2025 • 09:15
-                                        </td>
-                                        <td class="mr-u-text-right mr-u-cell-price">
-                                            $31.200
-                                        </td>
-                                        <td>
-                                            <span class="mr-u-status-pill">
-                                                <span class="mr-u-status-pill__dot"></span>
-                                                <span>Completado</span>
-                                            </span>
-                                        </td>
-                                        <td class="mr-u-text-center">
-                                            <a class="mr-u-btn-reorder" href="/usuario/solicitar">
-                                                <span class="material-symbols-outlined mr-u-icon-16">replay</span>
-                                                <span>Repetir Viaje</span>
-                                            </a>
+                                        <td colspan="7" class="text-center py-4 text-muted">
+                                            Todavía no registraste solicitudes de viaje en tu cuenta. Podés crear la primera desde <strong>Solicitar viaje</strong>.
                                         </td>
                                     </tr>
                                 }
@@ -391,10 +315,10 @@
 
                     <div class="mr-u-table-footer">
                         <span>
-                            Mostrando los últimos @(_todosLosViajes.Count > 0 ? Math.Min(3, _todosLosViajes.Count) : 3) envíos de @(_todosLosViajes.Count > 0 ? _todosLosViajes.Count : 42) registrados en tu cuenta
+                            Mostrando @(Math.Min(5, _todosLosViajes.Count)) de @_todosLosViajes.Count @(_todosLosViajes.Count == 1 ? "viaje registrado" : "viajes registrados") en tu cuenta
                         </span>
                         <a class="mr-u-table-footer__link" href="/usuario/viajes">
-                            <span>Ver historial completo de despachos</span>
+                            <span>Ir a Mis Viajes</span>
                             <span class="material-symbols-outlined mr-u-icon-16">chevron_right</span>
                         </a>
                     </div>
@@ -407,6 +331,24 @@
 @code {
     private List<ListadoViajeDTO> _todosLosViajes = new List<ListadoViajeDTO>();
     private ViajeDetalladoDTO? _viajeActivo;
+
+    private int ViajesCompletadosCount => _todosLosViajes.Count(v => string.Equals(EstadosViaje.Normalizar(v.Estado), "finalizado", StringComparison.OrdinalIgnoreCase));
+    private int ViajesCanceladosCount => _todosLosViajes.Count(v =>
+    {
+        string n = EstadosViaje.Normalizar(v.Estado);
+        return n == "cancelado" || n == "rechazado";
+    });
+    private int ViajesActivosCount => _todosLosViajes.Count - ViajesCompletadosCount - ViajesCanceladosCount;
+
+    private static string ObtenerUrlViaje(ListadoViajeDTO viaje)
+    {
+        string estadoNorm = EstadosViaje.Normalizar(viaje.Estado);
+        if (estadoNorm == "buscando" || estadoNorm == "contraofertado")
+        {
+            return $"/viajes/{viaje.Id}/propuestas";
+        }
+        return $"/viajes/{viaje.Id}";
+    }
 
     protected override void OnInitialized()
     {
