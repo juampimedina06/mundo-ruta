@@ -1,38 +1,569 @@
-.mr-auth {
-    display: flex;
-    justify-content: center;
-    padding-top: 1rem;
-    padding-bottom: 4rem;
-}
+/* ==========================================================================
+   Mundo Ruta — Estilos Scoped de Registro (Crea tu cuenta)
+   ========================================================================== */
 
-.mr-auth__card {
+.mr-register-page {
+    position: relative;
     width: 100%;
-    max-width: 620px;
+    min-height: calc(100vh - 120px);
+    background-color: #faf8ff;
+    padding: 2.5rem 1.25rem 4.5rem;
+    overflow: hidden;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: #131b2e;
 }
 
-.mr-auth__titulo {
-    margin: 0 0 .35rem;
-    font-size: 1.6rem;
-    color: var(--mr-azul-marino);
+/* --- Fondos de profundidad ambiental (Glows difuminados) --- */
+.mr-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    pointer-events: none;
+    z-index: 0;
 }
 
-.mr-auth__tipos {
+.mr-glow--left {
+    top: -50px;
+    left: 10%;
+    width: 440px;
+    height: 440px;
+    background: radial-gradient(circle, rgba(218, 226, 253, 0.5) 0%, rgba(218, 226, 253, 0) 70%);
+}
+
+.mr-glow--right {
+    top: 45%;
+    right: 5%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255, 219, 202, 0.4) 0%, rgba(255, 219, 202, 0) 70%);
+}
+
+/* --- Contenedor Central --- */
+.mr-register-container {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+}
+
+.mr-register-card {
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(19, 27, 46, 0.06), 0 8px 10px -6px rgba(19, 27, 46, 0.03);
+    border: 1px solid rgba(226, 232, 240, 0.75);
+    padding: 2.25rem 2rem;
     display: flex;
-    flex-wrap: wrap;
-    gap: .5rem;
-    margin-bottom: 1.25rem;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
-.mr-auth__tipos .btn {
-    flex: 1 1 180px;
+@media (max-width: 576px) {
+    .mr-register-card {
+        padding: 1.5rem 1.25rem;
+    }
 }
 
-.mr-auth__pie {
-    margin: 1.25rem 0 0;
+/* --- Encabezado --- */
+.mr-header {
     text-align: center;
-    color: var(--mr-texto-suave);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
 }
 
-.mr-auth__pie a {
+.mr-header__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.85rem;
+    border-radius: 9999px;
+    background-color: #eaedff;
+    color: #1e3a8a;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-family: 'Inter', system-ui, sans-serif;
+    margin-bottom: 0.25rem;
+}
+
+.mr-header__pill-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #00236f;
+}
+
+.mr-header__title {
+    font-size: clamp(1.75rem, 3.2vw, 2.25rem);
+    font-weight: 800;
+    color: #00236f;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.mr-header__subtitle {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.45;
+}
+
+/* --- Indicador de Paso / Stepper --- */
+.mr-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.mr-stepper__title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #00236f;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+.mr-stepper__badge {
+    background-color: #f2f3ff;
+    color: #64748b;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* --- Selector de Rol / Perfil --- */
+.mr-roles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 576px) {
+    .mr-roles {
+        grid-template-columns: 1fr;
+    }
+}
+
+.mr-role-card {
+    cursor: pointer;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1rem 1.15rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.85rem;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.mr-role-card:hover {
+    border-color: #cbd5e1;
+    background-color: #fafbff;
+}
+
+.mr-role-card--active {
+    background-color: #f2f3ff !important;
+    border: 2px solid #00236f !important;
+    box-shadow: 0 4px 12px rgba(0, 35, 111, 0.08);
+}
+
+.mr-role-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.mr-role-card__icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background-color: #eaedff;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.mr-role-card__icon .material-symbols-outlined {
+    font-size: 20px;
+}
+
+.mr-role-card--active .mr-role-card__icon {
+    background-color: #00236f;
+    color: #ffffff;
+}
+
+.mr-role-card__badge {
+    font-size: 0.6875rem;
     font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+    background-color: #f2f3ff;
+    color: #64748b;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.mr-role-card--active .mr-role-card__badge {
+    background-color: #dce1ff;
+    color: #00164e;
+    font-weight: 700;
+}
+
+.mr-role-card__main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.mr-role-card__title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mr-role-card__title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #131b2e;
+    margin: 0;
+}
+
+.mr-role-card__check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid #c5c5d3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    transition: all 0.2s ease;
+}
+
+.mr-role-card__check .material-symbols-outlined {
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.mr-role-card--active .mr-role-card__check {
+    background-color: #00236f;
+    border-color: #00236f;
+    color: #ffffff;
+}
+
+.mr-role-card__desc {
+    font-size: 0.775rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.4;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* --- Alerta de Error --- */
+.mr-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    font-size: 0.825rem;
+    line-height: 1.45;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.mr-alert__icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.mr-alert--error {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+/* --- Formulario y Cuadrícula de Campos --- */
+.mr-auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.mr-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.9rem;
+}
+
+@media (max-width: 576px) {
+    .mr-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.mr-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+}
+
+.mr-field__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mr-field__label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #131b2e;
+    font-family: 'Inter', system-ui, sans-serif;
+    margin: 0;
+}
+
+.mr-field__req {
+    color: #fd761a;
+    font-weight: 700;
+}
+
+.mr-field__hint {
+    font-size: 0.75rem;
+    color: #757682;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* --- Contenedor de Input con Icono e Inputs Estilizados --- */
+.mr-input-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.mr-input,
+.mr-input-box input,
+::deep input.mr-input,
+::deep .mr-input-box input {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 46px !important;
+    padding-left: 44px !important;
+    padding-right: 16px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    font-size: 0.875rem !important;
+    font-family: 'Inter', system-ui, sans-serif !important;
+    color: #131b2e !important;
+    box-shadow: 0 1px 2px rgba(19, 27, 46, 0.03) !important;
+    box-sizing: border-box !important;
+    outline: none !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+}
+
+.mr-input::placeholder,
+.mr-input-box input::placeholder,
+::deep input.mr-input::placeholder,
+::deep .mr-input-box input::placeholder {
+    color: #94a3b8 !important;
+    opacity: 1 !important;
+}
+
+.mr-input:focus,
+.mr-input-box input:focus,
+::deep input.mr-input:focus,
+::deep .mr-input-box input:focus {
+    outline: none !important;
+    border-color: #00236f !important;
+    box-shadow: 0 0 0 3px rgba(0, 35, 111, 0.12) !important;
+    background-color: #fbfbfe !important;
+}
+
+.mr-input--toggle,
+.mr-input-box input.mr-input--toggle,
+::deep input.mr-input--toggle,
+::deep .mr-input-box input.mr-input--toggle {
+    padding-right: 44px !important;
+}
+
+.mr-input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    color: #757682;
+    pointer-events: none;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.mr-toggle-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #757682;
+    padding: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 6px;
+    z-index: 2;
+    transition: color 0.15s ease;
+    line-height: 1;
+}
+
+.mr-toggle-btn:hover {
+    color: #131b2e;
+}
+
+.mr-toggle-btn .material-symbols-outlined {
+    font-size: 20px;
+}
+
+/* --- Medidor de Fortaleza de Contraseña --- */
+.mr-strength {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-top: 0.35rem;
+}
+
+.mr-strength__bars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35rem;
+    height: 5px;
+    width: 100%;
+}
+
+.mr-strength__bar {
+    height: 100%;
+    border-radius: 9999px;
+    background-color: #eaedff;
+    transition: background-color 0.3s ease;
+}
+
+.mr-strength__bar--active.mr-strength--debil {
+    background-color: #fd761a;
+}
+
+.mr-strength__bar--active.mr-strength--media {
+    background-color: #fd761a;
+}
+
+.mr-strength__bar--active.mr-strength--segura {
+    background-color: #10b981;
+}
+
+.mr-strength__label {
+    align-self: flex-end;
+    font-size: 0.72rem;
+    color: #757682;
+    font-family: 'Inter', system-ui, sans-serif;
+    transition: color 0.2s ease;
+}
+
+.mr-strength__label.mr-strength--debil {
+    color: #fd761a;
+    font-weight: 700;
+}
+
+.mr-strength__label.mr-strength--media {
+    color: #e64a12;
+    font-weight: 700;
+}
+
+.mr-strength__label.mr-strength--segura {
+    color: #059669;
+    font-weight: 700;
+}
+
+/* --- Botón CTA Registrar --- */
+.mr-btn-cta {
+    width: 100%;
+    height: 48px;
+    margin-top: 0.75rem;
+    border: none;
+    border-radius: 8px;
+    background-color: #fd761a;
+    color: #ffffff;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 12px rgba(253, 118, 26, 0.28);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mr-btn-cta .material-symbols-outlined {
+    font-size: 18px;
+    transition: transform 0.2s ease;
+}
+
+.mr-btn-cta:hover:not(:disabled) {
+    background-color: #e64a12;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(253, 118, 26, 0.35);
+}
+
+.mr-btn-cta:hover:not(:disabled) .material-symbols-outlined {
+    transform: translateX(2px);
+}
+
+.mr-btn-cta:active:not(:disabled) {
+    transform: scale(0.99);
+}
+
+.mr-btn-cta:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    background-color: #fd761a;
+}
+
+/* --- Pie de la Tarjeta --- */
+.mr-card-footer {
+    text-align: center;
+    font-size: 0.8125rem;
+    color: #64748b;
+    font-family: 'Inter', system-ui, sans-serif;
+    padding-top: 0.25rem;
+}
+
+.mr-card-footer__link {
+    font-weight: 700;
+    color: #00236f;
+    text-decoration: none;
+    margin-left: 0.25rem;
+    transition: color 0.15s ease;
+}
+
+.mr-card-footer__link:hover {
+    color: #fd761a;
 }
