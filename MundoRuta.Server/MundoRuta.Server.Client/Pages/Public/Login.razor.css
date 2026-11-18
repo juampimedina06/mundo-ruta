@@ -1,27 +1,649 @@
-.mr-auth {
-    display: flex;
-    justify-content: center;
-    padding-top: 1rem;
-    padding-bottom: 4rem;
-}
+/* ==========================================================================
+   Mundo Ruta — Estilos Scoped de Login (Inspirado en Sistema de Diseño Logístico)
+   ========================================================================== */
 
-.mr-auth__card {
+.mr-login-page {
+    position: relative;
     width: 100%;
-    max-width: 460px;
+    min-height: calc(100vh - 120px);
+    background-color: #faf8ff;
+    padding: 2.5rem 1.5rem 4rem;
+    overflow: hidden;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: #131b2e;
 }
 
-.mr-auth__titulo {
-    margin: 0 0 .35rem;
-    font-size: 1.6rem;
-    color: var(--mr-azul-marino);
+/* --- Fondos de profundidad ambiental (Glows difuminados) --- */
+.mr-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    pointer-events: none;
+    z-index: 0;
 }
 
-.mr-auth__pie {
-    margin: 1.25rem 0 0;
-    text-align: center;
-    color: var(--mr-texto-suave);
+.mr-glow--left {
+    top: -60px;
+    left: -80px;
+    width: 420px;
+    height: 420px;
+    background: radial-gradient(circle, rgba(220, 225, 255, 0.6) 0%, rgba(220, 225, 255, 0) 70%);
 }
 
-.mr-auth__pie a {
+.mr-glow--right {
+    top: 40%;
+    right: -100px;
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(255, 219, 202, 0.45) 0%, rgba(255, 219, 202, 0) 70%);
+}
+
+/* --- Layout Principal en Rejilla --- */
+.mr-login-container {
+    position: relative;
+    z-index: 1;
+    max-width: 1360px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    align-items: start;
+}
+
+@media (min-width: 1024px) {
+    .mr-login-container {
+        grid-template-columns: minmax(0, 1.28fr) minmax(380px, 470px);
+        gap: 3.5rem;
+    }
+}
+
+/* ==========================================================================
+   Lateral Izquierdo: Hero, Banner, Métricas y Corredor
+   ========================================================================== */
+
+.mr-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.mr-hero__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    align-self: flex-start;
+    padding: 0.35rem 0.9rem;
+    border-radius: 9999px;
+    background-color: #eaedff;
+    color: #00236f;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.mr-hero__badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #fd761a;
+    box-shadow: 0 0 6px rgba(253, 118, 26, 0.6);
+}
+
+.mr-hero__title {
+    font-size: clamp(2rem, 3.4vw, 3rem);
+    line-height: 1.15;
+    font-weight: 800;
+    color: #1e3a8a;
+    letter-spacing: -0.025em;
+    margin: 0;
+}
+
+.mr-hero__title-accent {
+    color: #fd761a;
+}
+
+.mr-hero__desc {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: #444651;
+    max-width: 620px;
+    margin: 0;
+}
+
+/* --- Banner Visual --- */
+.mr-hero__banner {
+    position: relative;
+    width: 100%;
+    height: 250px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1e3a8a 0%, #00236f 100%);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.mr-hero__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    mix-blend-mode: multiply;
+    opacity: 0.88;
+    transition: transform 0.6s ease;
+}
+
+.mr-hero__banner:hover .mr-hero__img {
+    transform: scale(1.04);
+}
+
+.mr-hero__banner-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(14, 30, 80, 0.95) 0%, rgba(30, 58, 138, 0.35) 60%, transparent 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.25rem 1.5rem;
+}
+
+.mr-hero__banner-tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #ffdbca;
+    margin-bottom: 0.25rem;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.mr-hero__banner-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+/* --- Métricas Logísticas (3 Tarjetas KPI) --- */
+.mr-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 640px) {
+    .mr-kpis {
+        grid-template-columns: 1fr;
+    }
+}
+
+.mr-kpi-card {
+    background-color: #ffffff;
+    border: 1px solid #eaedff;
+    border-radius: 14px;
+    padding: 1rem 1.15rem;
+    box-shadow: 0 1px 3px rgba(19, 27, 46, 0.04);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100px;
+}
+
+.mr-kpi-card__label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.mr-kpi-card__value {
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: #1e3a8a;
+    line-height: 1.2;
+    margin: 0.25rem 0;
+}
+
+.mr-kpi-card__value--orange {
+    color: #fd761a;
+}
+
+.mr-kpi-card__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.mr-kpi-card__meta .material-symbols-outlined {
+    font-size: 14px;
+}
+
+.mr-kpi-card__meta--success {
+    color: #006c49;
     font-weight: 600;
+}
+
+/* --- Tarjeta de Trazabilidad Activa --- */
+.mr-corridor {
+    background-color: #f2f3ff;
+    border: 1px solid #eaedff;
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.mr-corridor__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.mr-corridor__title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mr-corridor__icon {
+    color: #1e3a8a;
+    font-size: 20px;
+}
+
+.mr-corridor__title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #1e3a8a;
+}
+
+.mr-corridor__badge {
+    background-color: #eaedff;
+    color: #00236f;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-family: 'Inter', monospace;
+    letter-spacing: 0.02em;
+}
+
+.mr-corridor__track-wrap {
+    padding: 0.25rem 0;
+}
+
+.mr-corridor__track {
+    width: 100%;
+    height: 6px;
+    background-color: #dae2fd;
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.mr-corridor__progress {
+    height: 100%;
+    background-color: #fd761a;
+    border-radius: 9999px;
+    transition: width 0.6s ease;
+}
+
+.mr-corridor__points {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #64748b;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.mr-corridor__point--active {
+    color: #9d4300;
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   Lateral Derecho: Card de Autenticación
+   ========================================================================== */
+
+.mr-auth-pane {
+    width: 100%;
+}
+
+.mr-auth-card {
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(19, 27, 46, 0.06), 0 8px 10px -6px rgba(19, 27, 46, 0.03);
+    border: 1px solid rgba(226, 232, 240, 0.75);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    transition: box-shadow 0.2s ease;
+}
+
+/* --- Pestañas Superiores (Iniciar Sesión / Registrarse) --- */
+.mr-auth-tabs {
+    display: flex;
+    padding: 4px;
+    background-color: #f2f3ff;
+    border-radius: 12px;
+    gap: 4px;
+}
+
+.mr-auth-tab {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    color: #64748b;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mr-auth-tab:hover {
+    color: #131b2e;
+}
+
+.mr-auth-tab--active {
+    background-color: #ffffff;
+    color: #1e3a8a;
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(19, 27, 46, 0.08);
+    cursor: default;
+}
+
+/* --- Cabecera de la Card --- */
+.mr-card-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.mr-card-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    align-self: flex-start;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    background-color: #eaedff;
+    color: #00236f;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.mr-card-pill .material-symbols-outlined {
+    font-size: 14px;
+}
+
+.mr-card-title {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #1e3a8a;
+    margin: 0.25rem 0 0;
+    letter-spacing: -0.015em;
+}
+
+.mr-card-desc {
+    font-size: 0.825rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.45;
+}
+
+/* --- Alertas de Estado --- */
+.mr-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    font-size: 0.825rem;
+    line-height: 1.45;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.mr-alert__icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.mr-alert--info {
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+}
+
+.mr-alert--success {
+    background-color: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+}
+
+.mr-alert--error {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+/* --- Formulario y Campos --- */
+.mr-auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+}
+
+.mr-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+}
+
+.mr-field__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mr-field__label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #131b2e;
+    font-family: 'Inter', system-ui, sans-serif;
+    margin: 0;
+}
+
+.mr-forgot-link {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #1e3a8a;
+    text-decoration: none;
+    transition: color 0.15s ease;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.mr-forgot-link:hover {
+    color: #fd761a;
+}
+
+/* --- Contenedor de Input con Icono e Inputs Estilizados --- */
+.mr-input-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.mr-input,
+.mr-input-box input,
+::deep input.mr-input,
+::deep .mr-input-box input {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 46px !important;
+    padding-left: 44px !important;
+    padding-right: 16px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    font-size: 0.875rem !important;
+    font-family: 'Inter', system-ui, sans-serif !important;
+    color: #131b2e !important;
+    box-shadow: 0 1px 2px rgba(19, 27, 46, 0.03) !important;
+    box-sizing: border-box !important;
+    outline: none !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+}
+
+.mr-input::placeholder,
+.mr-input-box input::placeholder,
+::deep input.mr-input::placeholder,
+::deep .mr-input-box input::placeholder {
+    color: #94a3b8 !important;
+    opacity: 1 !important;
+}
+
+.mr-input:focus,
+.mr-input-box input:focus,
+::deep input.mr-input:focus,
+::deep .mr-input-box input:focus {
+    outline: none !important;
+    border-color: #1e3a8a !important;
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.12) !important;
+    background-color: #fbfbfe !important;
+}
+
+.mr-input--toggle,
+.mr-input-box input.mr-input--toggle,
+::deep input.mr-input--toggle,
+::deep .mr-input-box input.mr-input--toggle {
+    padding-right: 44px !important;
+}
+
+.mr-input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    color: #757682;
+    pointer-events: none;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.mr-toggle-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #757682;
+    padding: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 6px;
+    z-index: 2;
+    transition: color 0.15s ease;
+    line-height: 1;
+}
+
+.mr-toggle-btn:hover {
+    color: #131b2e;
+}
+
+.mr-toggle-btn .material-symbols-outlined {
+    font-size: 20px;
+}
+
+/* --- Botón CTA --- */
+.mr-btn-cta {
+    width: 100%;
+    height: 46px;
+    margin-top: 0.5rem;
+    border: none;
+    border-radius: 8px;
+    background-color: #fd761a;
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 700;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 3px 10px rgba(253, 118, 26, 0.28);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mr-btn-cta .material-symbols-outlined {
+    font-size: 18px;
+    transition: transform 0.2s ease;
+}
+
+.mr-btn-cta:hover:not(:disabled) {
+    background-color: #e64a12;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(253, 118, 26, 0.35);
+}
+
+.mr-btn-cta:hover:not(:disabled) .material-symbols-outlined {
+    transform: translateX(2px);
+}
+
+.mr-btn-cta:active:not(:disabled) {
+    transform: scale(0.99);
+}
+
+.mr-btn-cta:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    background-color: #fd761a;
+}
+
+/* --- Pie de la Tarjeta --- */
+.mr-card-footer {
+    text-align: center;
+    font-size: 0.78rem;
+    color: #64748b;
+    font-family: 'Inter', system-ui, sans-serif;
+    padding-top: 0.25rem;
+}
+
+.mr-card-footer__link {
+    font-weight: 600;
+    color: #1e3a8a;
+    text-decoration: underline;
+    margin-left: 0.25rem;
+    transition: color 0.15s ease;
+}
+
+.mr-card-footer__link:hover {
+    color: #fd761a;
 }

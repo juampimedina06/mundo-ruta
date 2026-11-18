@@ -6,50 +6,197 @@
 
 <PageTitle>Iniciar sesión | Mundo Ruta</PageTitle>
 
-<div class="mr-page">
-    <div class="mr-container mr-auth">
-        <div class="mr-card mr-auth__card">
-            <h1 class="mr-auth__titulo">Iniciar sesión</h1>
-            <p class="mr-muted">Accedé a tu panel de Mundo Ruta.</p>
+<div class="mr-login-page">
+    <!-- Fondos de profundidad ambiental (ambient glow) -->
+    <div class="mr-glow mr-glow--left" aria-hidden="true"></div>
+    <div class="mr-glow mr-glow--right" aria-hidden="true"></div>
 
-            @if (Registrado == 2)
-            {
-                <div class="mr-alert mr-alert--exito mb-3">
-                    Tu cuenta de prestador quedó pendiente de aprobación. Podrás ingresar cuando un administrador la habilite.
-                </div>
-            }
-            else if (Registrado == 1)
-            {
-                <div class="mr-alert mr-alert--exito mb-3">
-                    Tu cuenta fue creada. Ya podés iniciar sesión.
-                </div>
-            }
+    <div class="mr-login-container">
+        <!-- Lateral Izquierdo: Visual & Propuesta de Valor -->
+        <section class="mr-hero" aria-label="Información y monitoreo de la red">
+            <div class="mr-hero__badge">
+                <span class="mr-hero__badge-dot"></span>
+                <span>Ecosistema Logístico SaaS</span>
+            </div>
 
-            @if (!string.IsNullOrWhiteSpace(_error))
-            {
-                <div class="mr-alert mr-alert--error mb-3">@_error</div>
-            }
+            <h1 class="mr-hero__title">
+                Logística &amp; Movilidad <span class="mr-hero__title-accent">Inteligente</span>
+            </h1>
 
-            <EditForm Model="_modelo" OnSubmit="IngresarAsync">
-                <div class="mb-3">
-                    <label class="form-label" for="email">Email</label>
-                    <InputText id="email" class="form-control" type="email" autocomplete="email" @bind-Value="_modelo.Email" />
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label" for="password">Contraseña</label>
-                    <InputText id="password" class="form-control" type="password" autocomplete="current-password" @bind-Value="_modelo.Password" />
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100" disabled="@_cargando">
-                    @(_cargando ? "Ingresando..." : "Iniciar sesión")
-                </button>
-            </EditForm>
-
-            <p class="mr-auth__pie">
-                ¿No tenés cuenta? <a href="@ObtenerRegistroUrl()">Registrate</a>
+            <p class="mr-hero__desc">
+                Gestión integral de fletes, trazabilidad satelital en vivo y despacho inteligente para conectar remitentes exigentes con transportistas certificados en minutos.
             </p>
-        </div>
+
+            <!-- Banner Visual / Imagen Contextual -->
+            <div class="mr-hero__banner">
+                <img class="mr-hero__img"
+                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsHSaiGfBU3re00B6RZ4ciOXwGu-2GuF_9D4UJySkQpQUARzATiG0DfWszFmdNpZlLpgIQw5S8-lZ4b29XpDBSHavGMFB39Nhxct82pm711sh0xqM2MG8WltW5bgSPW8RxxA0e2yksLm9ncrlQG8qHvwZkPLUdZTQuxQ2yUr7uapFc-aMrhEl3RBIOYPB1N3zbQf2CO0-kXzgvJ15evqT0k9OWaaj93OkZWv2UCa81bHw3ab4bZnGD"
+                     alt="Centro de despacho y monitoreo logístico" />
+                <div class="mr-hero__banner-overlay">
+                    <span class="mr-hero__banner-tag">Despacho Dinámico</span>
+                    <p class="mr-hero__banner-title">Monitoreo y optimización de corredores viales 24/7</p>
+                </div>
+            </div>
+
+            <!-- Métricas Logísticas -->
+            <div class="mr-kpis">
+                <div class="mr-kpi-card">
+                    <span class="mr-kpi-card__label">Puntualidad</span>
+                    <span class="mr-kpi-card__value">99.4%</span>
+                    <span class="mr-kpi-card__meta mr-kpi-card__meta--success">
+                        <span class="material-symbols-outlined">trending_up</span>
+                        <span>Cumplimiento SLA</span>
+                    </span>
+                </div>
+
+                <div class="mr-kpi-card">
+                    <span class="mr-kpi-card__label">Red Activa</span>
+                    <span class="mr-kpi-card__value">+18.5k</span>
+                    <span class="mr-kpi-card__meta">
+                        <span class="material-symbols-outlined">local_shipping</span>
+                        <span>Vehículos FTL/LTL</span>
+                    </span>
+                </div>
+
+                <div class="mr-kpi-card">
+                    <span class="mr-kpi-card__label">Tiempo Respuesta</span>
+                    <span class="mr-kpi-card__value mr-kpi-card__value--orange">&lt; 3 min</span>
+                    <span class="mr-kpi-card__meta">
+                        <span class="material-symbols-outlined">bolt</span>
+                        <span>Asignación directa</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Trazabilidad Vectorial de Corredor -->
+            <div class="mr-corridor">
+                <div class="mr-corridor__header">
+                    <div class="mr-corridor__title-wrap">
+                        <span class="material-symbols-outlined mr-corridor__icon">alt_route</span>
+                        <span class="mr-corridor__title">Corredor Activo: Centro - Puerto Norte</span>
+                    </div>
+                    <span class="mr-corridor__badge">TRK-88421-AR</span>
+                </div>
+                <div class="mr-corridor__track-wrap">
+                    <div class="mr-corridor__track">
+                        <div class="mr-corridor__progress" style="width: 66%;"></div>
+                    </div>
+                </div>
+                <div class="mr-corridor__points">
+                    <span>Terminal CABA (Despachado)</span>
+                    <span class="mr-corridor__point--active">En Tránsito (km 340)</span>
+                    <span>Hub Rosario (Destino)</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Lateral Derecho: Card Principal de Autenticación -->
+        <section class="mr-auth-pane" aria-label="Acceso a la plataforma">
+            <div class="mr-auth-card">
+                <!-- Selector de Modo: Iniciar Sesión / Registrarse -->
+                <div class="mr-auth-tabs">
+                    <div class="mr-auth-tab mr-auth-tab--active">
+                        Iniciar Sesión
+                    </div>
+                    <a class="mr-auth-tab" href="@ObtenerRegistroUrl()">
+                        Registrarse
+                    </a>
+                </div>
+
+                <!-- Encabezado de la Card -->
+                <div class="mr-card-header">
+                    <div class="mr-card-pill">
+                        <span class="material-symbols-outlined">local_shipping</span>
+                        <span>Logística &amp; Movilidad Inteligente</span>
+                    </div>
+                    <h2 class="mr-card-title">Acceso a la Plataforma</h2>
+                    <p class="mr-card-desc">Ingresa tus credenciales para gestionar despachos, rutas y operaciones.</p>
+                </div>
+
+                <!-- Mensajes Informativos / Alertas -->
+                @if (Registrado == 2)
+                {
+                    <div class="mr-alert mr-alert--info" role="status">
+                        <span class="material-symbols-outlined mr-alert__icon">info</span>
+                        <div>
+                            <strong>Cuenta pendiente de aprobación</strong>
+                            <p class="mb-0">Tu registro como prestador se completó. Podrás ingresar cuando un administrador habilite la cuenta.</p>
+                        </div>
+                    </div>
+                }
+                else if (Registrado == 1)
+                {
+                    <div class="mr-alert mr-alert--success" role="status">
+                        <span class="material-symbols-outlined mr-alert__icon">check_circle</span>
+                        <div>
+                            <strong>¡Cuenta creada con éxito!</strong>
+                            <p class="mb-0">Ya podés ingresar con tus datos de acceso.</p>
+                        </div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(_error))
+                {
+                    <div class="mr-alert mr-alert--error" role="alert">
+                        <span class="material-symbols-outlined mr-alert__icon">error</span>
+                        <div>@_error</div>
+                    </div>
+                }
+
+                <!-- Formulario -->
+                <EditForm Model="_modelo" OnSubmit="IngresarAsync" class="mr-auth-form">
+                    <!-- Correo Electrónico -->
+                    <div class="mr-field">
+                        <label class="mr-field__label" for="login-email">Correo Electrónico</label>
+                        <div class="mr-input-box">
+                            <span class="material-symbols-outlined mr-input-icon">mail</span>
+                            <input id="login-email"
+                                   class="mr-input"
+                                   type="email"
+                                   autocomplete="email"
+                                   placeholder="ejemplo@mundoruta.com"
+                                   @bind="_modelo.Email" />
+                        </div>
+                    </div>
+
+                    <!-- Contraseña -->
+                    <div class="mr-field">
+                        <div class="mr-field__header">
+                            <label class="mr-field__label" for="login-password">Contraseña</label>
+                            <a class="mr-forgot-link" href="#" @onclick:preventDefault>¿Olvidaste tu contraseña?</a>
+                        </div>
+                        <div class="mr-input-box">
+                            <span class="material-symbols-outlined mr-input-icon">lock</span>
+                            <input id="login-password"
+                                   class="mr-input mr-input--toggle"
+                                   type="@(_mostrarPassword ? "text" : "password")"
+                                   autocomplete="current-password"
+                                   placeholder="Ingresa tu contraseña"
+                                   @bind="_modelo.Password" />
+                            <button type="button"
+                                    class="mr-toggle-btn"
+                                    @onclick="() => _mostrarPassword = !_mostrarPassword"
+                                    title="@(_mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña")"
+                                    tabindex="-1">
+                                <span class="material-symbols-outlined">@(_mostrarPassword ? "visibility_off" : "visibility")</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Botón CTA Ingresar -->
+                    <button type="submit" class="mr-btn-cta" disabled="@_cargando">
+                        <span>@(_cargando ? "Ingresando..." : "Ingresar")</span>
+                        <span class="material-symbols-outlined">arrow_forward</span>
+                    </button>
+                </EditForm>
+
+                <!-- Pie de soporte -->
+                <div class="mr-card-footer">
+                    <span>¿Problemas con el acceso?</span>
+                    <a class="mr-card-footer__link" href="#" @onclick:preventDefault>Contactar a soporte</a>
+                </div>
+            </div>
+        </section>
     </div>
 </div>
 
@@ -57,6 +204,7 @@
     private readonly LoginRequestDto _modelo = new LoginRequestDto();
     private bool _cargando;
     private bool _redirigido;
+    private bool _mostrarPassword;
     private string? _error;
 
     [SupplyParameterFromQuery(Name = "redirect")]
