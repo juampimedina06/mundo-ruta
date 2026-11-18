@@ -51,8 +51,8 @@
             }
             else
             {
-                <a class="mr-navbar__btn-login" href="/login">Iniciar sesión</a>
-                <a class="mr-navbar__btn-register" href="/registro">Registrarse</a>
+                <a class="mr-navbar__btn-login" href="@ObtenerLoginUrl()">Iniciar sesión</a>
+                <a class="mr-navbar__btn-register" href="@ObtenerRegistroUrl()">Registrarse</a>
             }
         </div>
     </div>
@@ -64,16 +64,78 @@
     protected override void OnInitialized()
     {
         Sesion.CambioSesion += AlCambiarSesion;
+        Navegacion.LocationChanged += AlCambiarUbicacion;
     }
 
     public void Dispose()
     {
         Sesion.CambioSesion -= AlCambiarSesion;
+        Navegacion.LocationChanged -= AlCambiarUbicacion;
+    }
+
+    private void AlCambiarUbicacion(object? sender, LocationChangedEventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private void AlCambiarSesion()
     {
         _ = InvokeAsync(StateHasChanged);
+    }
+
+    private string ObtenerLoginUrl()
+    {
+        string? redirect = ObtenerRedirectActual();
+        return string.IsNullOrEmpty(redirect)
+            ? "/login"
+            : "/login?redirect=" + Uri.EscapeDataString(redirect);
+    }
+
+    private string ObtenerRegistroUrl()
+    {
+        string? redirect = ObtenerRedirectActual();
+        return string.IsNullOrEmpty(redirect)
+            ? "/registro"
+            : "/registro?redirect=" + Uri.EscapeDataString(redirect);
+    }
+
+    private string? ObtenerRedirectActual()
+    {
+        try
+        {
+            Uri uri = Navegacion.ToAbsoluteUri(Navegacion.Uri);
+            string query = uri.Query;
+            if (string.IsNullOrEmpty(query))
+            {
+                return null;
+            }
+
+            if (query.StartsWith('?'))
+            {
+                query = query.Substring(1);
+            }
+
+            string[] pares = query.Split('&', StringSplitOptions.RemoveEmptyEntries);
+            foreach (string par in pares)
+            {
+                int sep = par.IndexOf('=');
+                string clave = sep >= 0 ? par.Substring(0, sep) : par;
+                if (string.Equals(clave, "redirect", StringComparison.OrdinalIgnoreCase))
+                {
+                    string valorRaw = sep >= 0 ? par.Substring(sep + 1) : string.Empty;
+                    string unescaped = Uri.UnescapeDataString(valorRaw);
+                    if (unescaped.StartsWith('/') && !unescaped.StartsWith("//"))
+                    {
+                        return unescaped;
+                    }
+                }
+            }
+        }
+        catch
+        {
+        }
+
+        return null;
     }
 
     private void AlternarMenu()
