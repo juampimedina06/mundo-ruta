@@ -294,9 +294,7 @@
 
                             </span>
 
-                            <span>@EtiquetaEstadoVivo</span>
-
-                            <span class="sv-live-pill__time">Actualizado: hace 4s</span>
+                            <span>@EstadosViajeUI.Etiqueta(_viaje.Estado)</span>
 
                         </div>
 
@@ -306,7 +304,7 @@
 
                             <span class="material-symbols-outlined sv-icon-18">share</span>
 
-                            Compartir Seguimiento
+                            Copiar enlace
 
                         </button>
 
@@ -316,7 +314,7 @@
 
 
 
-                <!-- Título y Tarjeta de Estado ETA Superior -->
+                <!-- Título y Tarjeta de Fecha/Hora Superior -->
 
                 <div class="sv-card sv-hero-card">
 
@@ -326,11 +324,11 @@
 
                             <div class="sv-hero-card__title-row">
 
-                                <h1 class="sv-hero-card__title">Viaje en Curso #MR-@_viaje.Id</h1>
+                                <h1 class="sv-hero-card__title">Detalle del Viaje #MR-@_viaje.Id</h1>
 
                                 <span class="sv-type-badge">
 
-                                    @(!string.IsNullOrWhiteSpace(_viaje.TipoSolicitud) ? $"Mudanza • {_viaje.TipoSolicitud}" : "Mudanza • Flete Express")
+                                    @(!string.IsNullOrWhiteSpace(_viaje.TipoSolicitud) ? _viaje.TipoSolicitud : "Flete Exclusivo")
 
                                 </span>
 
@@ -338,9 +336,8 @@
 
                             <p class="sv-hero-card__subtitle">
 
-                                Seguimiento de carga asignada • Operador autorizado: @NombreOperadorDisplay
-
-                                · @_viaje.Fecha.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) (@_viaje.Hora.ToString(@"hh\:mm") hs)
+                                Prestador: @NombreOperadorDisplay
+                                · Chofer: @NombreChoferDisplay
 
                             </p>
 
@@ -352,19 +349,19 @@
 
                             <div class="sv-eta-card__icon-box">
 
-                                <span class="material-symbols-outlined sv-icon-28">schedule</span>
+                                <span class="material-symbols-outlined sv-icon-28">event</span>
 
                             </div>
 
                             <div class="sv-eta-card__content">
 
-                                <span class="sv-eta-card__label">Tiempo Estimado de Arribo</span>
+                                <span class="sv-eta-card__label">Fecha y Hora Programada</span>
 
                                 <div class="sv-eta-card__values">
 
-                                    <span class="sv-eta-card__main">@TiempoEstimadoTexto</span>
+                                    <span class="sv-eta-card__main">@_viaje.Fecha.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)</span>
 
-                                    <span class="sv-eta-card__sub">(@HoraEstimadaArribo hs)</span>
+                                    <span class="sv-eta-card__sub">(@_viaje.Hora.ToString(@"hh\:mm") hs)</span>
 
                                 </div>
 
@@ -436,17 +433,17 @@
 
                                 <div class="sv-map-header__left">
 
-                                    <span class="material-symbols-outlined sv-icon-20 sv-text-primary-container">fmd_good</span>
+                                    <span class="material-symbols-outlined sv-icon-20 sv-text-primary-container">route</span>
 
-                                    <span class="sv-map-header__title">Visualización Telemetría GPS</span>
+                                    <span class="sv-map-header__title">Recorrido de Origen a Destino</span>
 
                                 </div>
 
                                 <div class="sv-map-header__badge">
 
-                                    <span class="material-symbols-outlined sv-icon-14">sensors</span>
+                                    <span class="material-symbols-outlined sv-icon-14">local_shipping</span>
 
-                                    Señal Satelital Alta
+                                    @EstadosViajeUI.Etiqueta(_viaje.Estado)
 
                                 </div>
 
@@ -568,54 +565,6 @@
 
                                 </div>
 
-
-
-                                <!-- Botones de Control de Mapa (Zoom & Recenter) -->
-
-                                <div class="sv-map-controls">
-
-                                    <button type="button" class="sv-map-control-btn" title="Centrar Vehículo">
-
-                                        <span class="material-symbols-outlined sv-icon-20">my_location</span>
-
-                                    </button>
-
-                                    <button type="button" class="sv-map-control-btn" title="Acercar">
-
-                                        <span class="material-symbols-outlined sv-icon-20">add</span>
-
-                                    </button>
-
-                                    <button type="button" class="sv-map-control-btn" title="Alejar">
-
-                                        <span class="material-symbols-outlined sv-icon-20">remove</span>
-
-                                    </button>
-
-                                </div>
-
-
-
-                                <!-- Alerta Flotante de Tráfico sobre el mapa -->
-
-                                <div class="sv-map-traffic-alert">
-
-                                    <div class="sv-map-traffic-alert__icon">
-
-                                        <span class="material-symbols-outlined sv-icon-16">traffic</span>
-
-                                    </div>
-
-                                    <div class="sv-map-traffic-alert__text">
-
-                                        <span class="sv-map-traffic-alert__title">Tráfico fluido en corredor norte</span>
-
-                                        <span class="sv-map-traffic-alert__sub">Sin demoras detectadas</span>
-
-                                    </div>
-
-                                </div>
-
                             </div>
 
                         </div>
@@ -683,304 +632,120 @@
 
 
 
-                            <!-- Tarjeta de Contacto Directo con el Prestador -->
-
+                            <!-- Tarjeta de Contacto con el Chofer -->
                             <div class="sv-base-box">
-
                                 <div class="sv-base-box__top">
-
                                     <div class="sv-base-box__brand">
-
                                         <div class="sv-base-box__icon">
-
                                             <span class="material-symbols-outlined sv-icon-20">business</span>
-
                                         </div>
-
                                         <div class="sv-base-box__info">
-
-                                            <span class="sv-base-box__label">Base de Operaciones</span>
-
+                                            <span class="sv-base-box__label">Empresa Prestadora</span>
                                             <h3 class="sv-base-box__name">@NombreOperadorDisplay</h3>
-
                                         </div>
-
                                     </div>
-
-                                    <span class="sv-base-box__id">ID: OP-@(_viaje.IdUsuario > 0 ? _viaje.IdUsuario.ToString("D4") : "4402")</span>
-
+                                    <span class="sv-base-box__id">ID #@_viaje.IdUsuario</span>
                                 </div>
 
-
-
-                                <div class="sv-base-box__actions">
-
-                                    <button type="button" class="sv-btn-call" @onclick="MostrarAvisoEmpresa">
-
-                                        <span class="material-symbols-outlined sv-icon-18">call</span>
-
-                                        Llamar a Base
-
-                                    </button>
-
+                                <div class="sv-base-box__actions" style="grid-template-columns: 1fr;">
                                     <button type="button"
-
                                             class="sv-btn-chat"
-
                                             disabled="@(!PuedeChatear)"
-
                                             @onclick="AlternarChat">
-
                                         <span class="material-symbols-outlined sv-icon-18">chat</span>
-
-                                        Chat chofer
-
+                                        @(_chatAbierto ? "Ocultar chat con el chofer" : "Abrir chat con el chofer")
                                     </button>
-
                                 </div>
-
-
-
-                                @if (_avisoEmpresa)
-
-                                {
-
-                                    <p class="sv-contact-hint">
-
-                                        El número directo de la base operativa se habilitará próximamente (Central: 0800-555-RUTA).
-
-                                    </p>
-
-                                }
-
-
 
                                 @if (!PuedeChatear)
-
                                 {
-
                                     <p class="sv-contact-hint">
-
-                                        El chat con el chofer estará disponible cuando el viaje sea asignado.
-
+                                        El chat con el chofer está disponible mientras el viaje se encuentra activo.
                                     </p>
-
                                 }
-
                             </div>
-
-
 
                             @if (_chatAbierto)
-
                             {
-
                                 <div class="mr-chat">
-
                                     <div class="mr-chat__mensajes" @ref="_panelMensajes">
-
                                         @if (_cargandoMensajes)
-
                                         {
-
                                             <p class="sv-chat-placeholder">Cargando mensajes...</p>
-
                                         }
-
                                         else if (_mensajes.Count == 0)
-
                                         {
-
                                             <p class="sv-chat-placeholder">Todavía no hay mensajes. Escribí el primero.</p>
-
                                         }
-
                                         else
-
                                         {
-
                                             @foreach (MensajeDTO mensaje in _mensajes)
-
                                             {
-
                                                 bool mio = mensaje.IdEmisor == Sesion.Id;
 
-
-
                                                 <div class="mr-chat__mensaje @(mio ? "mr-chat__mensaje--mio" : null)">
-
                                                     <span class="mr-chat__texto">@mensaje.Contenido</span>
-
                                                     <span class="mr-chat__hora">@mensaje.EnviadoEn.ToString("dd/MM HH:mm", CultureInfo.InvariantCulture)</span>
-
                                                 </div>
-
                                             }
-
                                         }
-
                                     </div>
-
-
 
                                     <div class="mr-chat__envio">
-
                                         <input class="sv-chat-input"
-
                                                placeholder="Escribí un mensaje al chofer..."
-
                                                maxlength="500"
-
                                                @bind="_nuevoMensaje"
-
                                                @bind:event="oninput"
-
                                                @onkeydown="TeclaChat" />
-
                                         <button type="button"
-
                                                 class="sv-chat-send-btn"
-
                                                 disabled="@(_enviando || string.IsNullOrWhiteSpace(_nuevoMensaje))"
-
                                                 @onclick="EnviarMensaje">
-
                                             <span class="material-symbols-outlined sv-icon-18">send</span>
-
                                             Enviar
-
                                         </button>
-
                                     </div>
-
                                 </div>
-
                             }
 
-
-
-                            <!-- Información del Chofer (Solo Informativa / Operativa) -->
-
+                            <!-- Información del Chofer -->
                             <div class="sv-driver-section">
-
-                                <span class="sv-section-label">Unidad en Tránsito • Conductor</span>
-
+                                <span class="sv-section-label">Conductor Asignado</span>
                                 <div class="sv-driver-row">
-
-                                    <div class="sv-driver-avatar">
-
-                                        <img class="sv-driver-avatar__img"
-
-                                             alt="Conductor asignado"
-
-                                             src="https://lh3.googleusercontent.com/aida-public/AB6AXuAa-xwyZXQE4ipkkBaQivEtpFMyexMuQ8o_Lz39dXdfrSCZaZVnLH5RJm1doEV1zpVXxK5iIVMY1_qWSecvbKOg0Ddo3rgO6iLbcqgLlK_UVvK8XxJBz9RguT_E4ojwX0hMKf8kJwtdDaJtcIeI0szBB_Droqjkbv7tFYqs3pbsMcvTa7YgBPAb0VS-dTG0juv2o-ltSU5EkqbqGwBQ5nuFEa3f4aTiiunVvLgG7pjr1v9TTsc-X3fS" />
-
+                                    <div class="sv-base-box__icon" style="width: 44px; height: 44px; border-radius: 12px;">
+                                        <span class="material-symbols-outlined sv-icon-22">badge</span>
                                     </div>
-
                                     <div class="sv-driver-info">
-
                                         <div class="sv-driver-info__top">
-
                                             <h4 class="sv-driver-name">@NombreChoferDisplay</h4>
-
-                                            <span class="sv-driver-rating">★ 4.9 <span class="sv-driver-rating__sub">(142 viajes)</span></span>
-
                                         </div>
-
                                         <span class="sv-driver-meta">Conductor asignado por @NombreOperadorDisplay</span>
-
                                     </div>
-
                                 </div>
-
-
-
-                                <div class="sv-safety-banner">
-
-                                    <span class="material-symbols-outlined sv-icon-16 sv-safety-banner__icon">shield_with_heart</span>
-
-                                    <span class="sv-safety-banner__text">Por protocolos de seguridad vial, el chofer en tránsito no atiende llamados directos. Comuníquese con la base operativa.</span>
-
-                                </div>
-
                             </div>
-
                         </div>
 
-
-
-                        <!-- Ficha del Vehículo & Documentación -->
-
+                        <!-- Ficha del Vehículo -->
                         <div class="sv-card sv-vehicle-card">
-
                             <span class="sv-section-label">Vehículo Asignado</span>
-
                             <div class="sv-vehicle-top">
-
                                 <div class="sv-vehicle-brand">
-
                                     <div class="sv-vehicle-icon">
-
-                                        <span class="material-symbols-outlined sv-icon-26">airport_shuttle</span>
-
+                                        <span class="material-symbols-outlined sv-icon-26">local_shipping</span>
                                     </div>
-
                                     <div class="sv-vehicle-text">
-
                                         <span class="sv-vehicle-name">@MarcaVehiculoDisplay</span>
-
-                                        <span class="sv-vehicle-sub">Furgón Techo Elevado</span>
-
+                                        <span class="sv-vehicle-sub">Unidad asignada al viaje</span>
                                     </div>
-
                                 </div>
-
-
 
                                 <!-- Patente Destacada -->
-
                                 <div class="sv-plate-badge">
-
-                                    <span class="sv-plate-badge__country">Argentina</span>
-
+                                    <span class="sv-plate-badge__country">Patente</span>
                                     <span class="sv-plate-badge__number">@PatenteDisplay</span>
-
                                 </div>
-
                             </div>
-
-
-
-                            <!-- Badges de Documentación y Seguridad -->
-
-                            <div class="sv-doc-badges">
-
-                                <span class="sv-doc-badge sv-doc-badge--warm">
-
-                                    <span class="material-symbols-outlined sv-icon-14">task_alt</span>
-
-                                    VTV Vigente (Sep 2025)
-
-                                </span>
-
-                                <span class="sv-doc-badge sv-doc-badge--warm">
-
-                                    <span class="material-symbols-outlined sv-icon-14">shield</span>
-
-                                    Seguro de Carga Activo
-
-                                </span>
-
-                                <span class="sv-doc-badge sv-doc-badge--navy">
-
-                                    <span class="material-symbols-outlined sv-icon-14">description</span>
-
-                                    R.N.R. Aprobado
-
-                                </span>
-
-                            </div>
-
                         </div>
 
                         }
@@ -1093,28 +858,12 @@
 
 
 
-                        <!-- Botones de Acción de Seguridad & Compartir -->
-
+                        <!-- Botón de Compartir -->
                         <div class="sv-quick-actions">
-
                             <button type="button" class="sv-btn-share-full" @onclick="CompartirViajeAsync">
-
                                 <span class="material-symbols-outlined sv-icon-20">share_location</span>
-
-                                Compartir Link de Viaje en Vivo
-
+                                Copiar enlace del viaje
                             </button>
-
-
-
-                            <button type="button" class="sv-btn-sos" @onclick="AbrirModalSos">
-
-                                <span class="material-symbols-outlined sv-icon-20 sv-text-error">emergency</span>
-
-                                Centro de Ayuda / SOS en Ruta
-
-                            </button>
-
                         </div>
 
 
@@ -1278,15 +1027,10 @@
 
 
                     <div class="sv-footer-bar__support">
-
-                        <button type="button" class="sv-support-link" @onclick="AbrirModalSos">
-
-                            <span class="material-symbols-outlined sv-icon-18">support_agent</span>
-
-                            ¿Dudas con la entrega? Contactar al prestador o soporte
-
-                        </button>
-
+                        <a class="sv-support-link" href="/usuario/viajes">
+                            <span class="material-symbols-outlined sv-icon-18">list_alt</span>
+                            Volver al listado de Mis Viajes
+                        </a>
                     </div>
 
                 </div>
@@ -1297,107 +1041,13 @@
 
     </div>
 
-
-
-    <!-- Modal SOS / Asistencia en Ruta -->
-
-    @if (_sosModalAbierto && _viaje is not null)
-
-    {
-
-        <div class="sv-modal-backdrop" @onclick="CerrarModalSos">
-
-            <div class="sv-modal" @onclick:stopPropagation="true">
-
-                <div class="sv-modal__header">
-
-                    <div class="sv-modal__title-wrap">
-
-                        <span class="material-symbols-outlined sv-icon-28 sv-text-error">report_problem</span>
-
-                        <h3 class="sv-modal__title">Asistencia y Emergencia</h3>
-
-                    </div>
-
-                    <button type="button" class="sv-modal__close" @onclick="CerrarModalSos">
-
-                        <span class="material-symbols-outlined sv-icon-24">close</span>
-
-                    </button>
-
-                </div>
-
-
-
-                <p class="sv-modal__desc">
-
-                    Si detectaste un incidente vial, una desviación injustificada o una emergencia durante el traslado del viaje <strong>#MR-@_viaje.Id</strong>, el equipo de respuesta rápida de Mundo Ruta está activo las 24 hs.
-
-                </p>
-
-
-
-                <div class="sv-modal__actions">
-
-                    <a class="sv-modal__call-btn" href="tel:08005559111">
-
-                        <div class="sv-modal__btn-left">
-
-                            <span class="material-symbols-outlined">call</span>
-
-                            <span class="sv-modal__call-title">Línea SOS Central 24/7</span>
-
-                        </div>
-
-                        <span class="sv-modal__call-number">0800-555-RUTA</span>
-
-                    </a>
-
-
-
-                    <button type="button" class="sv-modal__report-btn" @onclick="ReportarDemoraBase">
-
-                        <div class="sv-modal__btn-left">
-
-                            <span class="material-symbols-outlined">sync_problem</span>
-
-                            <span>Reportar desvío o demora excesiva</span>
-
-                        </div>
-
-                        <span class="material-symbols-outlined sv-icon-18">chevron_right</span>
-
-                    </button>
-
-                </div>
-
-
-
-                <div class="sv-modal__footer">
-
-                    <button type="button" class="sv-modal__cancel-btn" @onclick="CerrarModalSos">
-
-                        Volver al Monitoreo
-
-                    </button>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    }
-
-
-
     <!-- Toast Notificación Copiado Link -->
 
     <div class="sv-toast @(_mostrarToast ? "sv-toast--visible" : string.Empty)">
 
         <span class="material-symbols-outlined sv-toast__icon">check_circle</span>
 
-        <span>Enlace de rastreo satelital copiado al portapapeles</span>
+        <span>Enlace del viaje copiado al portapapeles</span>
 
     </div>
 
@@ -1442,12 +1092,6 @@
     private string _nuevoMensaje = string.Empty;
 
     private ElementReference _panelMensajes;
-
-
-
-    private bool _avisoEmpresa;
-
-    private bool _sosModalAbierto;
 
     private bool _mostrarToast;
 
@@ -1981,48 +1625,6 @@
         _mensajeExito = "¡Gracias por calificar el viaje!";
 
         await CargarViajeAsync();
-
-    }
-
-
-
-    private void MostrarAvisoEmpresa()
-
-    {
-
-        _avisoEmpresa = true;
-
-    }
-
-
-
-    private void AbrirModalSos()
-
-    {
-
-        _sosModalAbierto = true;
-
-    }
-
-
-
-    private void CerrarModalSos()
-
-    {
-
-        _sosModalAbierto = false;
-
-    }
-
-
-
-    private void ReportarDemoraBase()
-
-    {
-
-        _sosModalAbierto = false;
-
-        _mensajeExito = "Incidencia de demora enviada a la central de despacho satelital de Mundo Ruta. Un operador revisará la telemetría en breve.";
 
     }
 

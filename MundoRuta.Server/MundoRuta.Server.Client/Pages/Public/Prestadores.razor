@@ -29,40 +29,28 @@
             <div class="mr-catalogo__header-row">
                 <div class="mr-catalogo__header-info">
                     <div class="mr-catalogo__title-wrap">
-                        <h1 class="mr-catalogo__title">Catálogo de Servicios de Fletes</h1>
-                        <span class="mr-catalogo__badge-b2b">Red Verificada B2B</span>
+                        <h1 class="mr-catalogo__title">Catálogo de Prestadores de Fletes</h1>
+                        <span class="mr-catalogo__badge-b2b">Empresas Aprobadas</span>
                     </div>
                     <p class="mr-catalogo__subtitle">
-                        Encontrá transportistas y empresas de mudanzas con habilitación y póliza vigente.
+                        Conocé las empresas y transportistas habilitados en la plataforma, sus calificaciones y vehículos registrados.
                     </p>
                 </div>
 
                 <div class="mr-catalogo__audit">
                     <span class="material-symbols-outlined mr-catalogo__audit-icon">verified</span>
-                    <span>Auditado CNRT / RNR</span>
+                    <span>Aprobados por Administración</span>
                 </div>
             </div>
 
-            <div class="mr-catalogo__filters">
+            <div class="mr-catalogo__filters" style="grid-template-columns: 1fr;">
                 <div class="mr-catalogo__search-box">
                     <span class="material-symbols-outlined mr-catalogo__field-icon">search</span>
                     <input type="text"
                            class="mr-catalogo__search-input"
-                           placeholder="Buscar fletes, empresa, correo, teléfono o ID..."
+                           placeholder="Buscar por razón social, nombre, correo, teléfono o ID..."
                            @bind="_busqueda"
                            @bind:event="oninput" />
-                </div>
-
-                <div class="mr-catalogo__zone-box">
-                    <span class="material-symbols-outlined mr-catalogo__field-icon">location_on</span>
-                    <select class="mr-catalogo__zone-select" @bind="_zonaSeleccionada" aria-label="Zona de cobertura">
-                        <option value="CABA y GBA Norte">CABA y GBA Norte</option>
-                        <option value="Gran Buenos Aires Sur y Oeste">Gran Buenos Aires Sur y Oeste</option>
-                        <option value="Córdoba y Zona Centro">Córdoba y Zona Centro</option>
-                        <option value="Rosario / Litoral">Rosario / Litoral</option>
-                        <option value="Todo el país">Todo el país</option>
-                    </select>
-                    <span class="material-symbols-outlined mr-catalogo__select-chevron">expand_more</span>
                 </div>
             </div>
         </section>
@@ -88,15 +76,15 @@
             <section class="mr-catalogo__list-section">
                 <div class="mr-catalogo__toolbar">
                     <span class="mr-catalogo__count">
-                        Mostrando <strong>@prestadoresMostrados.Count @(prestadoresMostrados.Count == 1 ? "empresa verificada" : "empresas verificadas")</strong> @(prestadoresMostrados.Count == 1 ? "disponible" : "disponibles") en tu zona
+                        Mostrando <strong>@prestadoresMostrados.Count @(prestadoresMostrados.Count == 1 ? "prestador aprobado" : "prestadores aprobados")</strong>
                     </span>
 
                     <div class="mr-catalogo__sort">
                         <span class="mr-catalogo__sort-label">Ordenar por:</span>
                         <select class="mr-catalogo__sort-select" @bind="_ordenSeleccionado" aria-label="Ordenar prestadores">
                             <option value="calificados">Mejor Calificados</option>
-                            <option value="flota">Mayor Flota</option>
-                            <option value="disponibilidad">Disponibilidad Inmediata</option>
+                            <option value="nombre">Nombre (A-Z)</option>
+                            <option value="recientes">Más Recientes</option>
                         </select>
                     </div>
                 </div>
@@ -249,7 +237,7 @@
                                         }
                                         else
                                         {
-                                            <text>Prestador Verificado CNRT</text>
+                                            <text>Sin calificaciones todavía</text>
                                         }
                                     </span>
                                 </div>
@@ -349,7 +337,6 @@
     private bool _cargando = true;
     private string? _error;
     private string _busqueda = string.Empty;
-    private string _zonaSeleccionada = "CABA y GBA Norte";
     private string _ordenSeleccionado = "calificados";
     private int? _prestadorSeleccionadoId;
     private readonly string _fechaActual = FormatearFechaActual();
@@ -430,8 +417,8 @@
 
         consulta = _ordenSeleccionado switch
         {
-            "flota" => consulta.OrderByDescending(p => p.Id),
-            "disponibilidad" => consulta.OrderBy(p => p.Id),
+            "nombre" => consulta.OrderBy(p => ObtenerNombreMostrado(p), StringComparer.OrdinalIgnoreCase),
+            "recientes" => consulta.OrderByDescending(p => p.Id),
             _ => consulta.OrderByDescending(p => p.PromedioCalificacion)
                          .ThenByDescending(p => p.TotalCalificaciones)
                          .ThenBy(p => p.Id)

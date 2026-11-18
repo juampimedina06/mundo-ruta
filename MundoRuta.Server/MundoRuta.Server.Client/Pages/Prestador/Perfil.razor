@@ -1,8 +1,12 @@
 @page "/prestador/perfil"
 @layout PrestadorLayout
 @using MundoRuta.Shared
+@using MundoRuta.Shared.DTO
 @using MundoRuta.Servicios.Sesion
+@using MundoRuta.Servicios.Usuarios
 @inject SesionEstado Sesion
+@inject IUsuarioServicio UsuarioServicio
+@implements IDisposable
 
 <PageTitle>Perfil de Empresa | Mundo Ruta</PageTitle>
 
@@ -14,13 +18,13 @@
                 <div class="pr-header-meta">
                     <span class="pr-tag--pulse">
                         <span class="pr-pulse-dot"></span>
-                        <span>Prestador Verificado</span>
+                        <span>@(_perfil?.Estado ?? "APROBADO")</span>
                     </span>
                     <span class="pr-tag pr-tag--mono">Cuenta #@Sesion.Id</span>
                 </div>
-                <h1 class="pr-page-title">Perfil de Empresa Transportista</h1>
+                <h1 class="pr-page-title">Perfil de Empresa Prestadora</h1>
                 <p class="pr-page-subtitle">
-                    Información corporativa, acreditación fiscal y estado de servicio en la red de logística Mundo Ruta.
+                    Consultá y actualizá los datos de tu empresa, información de contacto y razón social registrada en Mundo Ruta.
                 </p>
             </div>
             <div class="pr-header-actions">
@@ -31,75 +35,290 @@
             </div>
         </div>
 
-        <!-- 2. Tarjeta Principal de Perfil -->
-        <div class="pr-manifest-card">
-            <div class="d-flex align-items-center gap-3 pb-3 border-bottom flex-wrap">
-                <div class="pr-sidebar__logo" style="width: 52px; height: 52px; border-radius: 14px;">
-                    <span class="material-symbols-outlined text-[32px]">local_shipping</span>
-                </div>
-                <div>
-                    <h2 class="fw-bold mb-0 text-dark" style="font-family: var(--pr-font-display); font-size: 22px;">
-                        @(string.IsNullOrWhiteSpace(Sesion.Nombre) ? "TransLog Express S.A." : Sesion.Nombre)
-                    </h2>
-                    <div class="d-flex align-items-center gap-2 mt-1">
-                        <span class="pr-tag pr-tag--emerald d-inline-flex align-items-center gap-1">
-                            <span class="material-symbols-outlined text-[14px]">verified</span>
-                            <span>Acreditación Fiscal &amp; Operativa Aprobada</span>
-                        </span>
-                        <span class="small text-muted">• ID de Prestador: <strong>#@Sesion.Id</strong></span>
-                    </div>
-                </div>
+        @if (_cargando)
+        {
+            <div class="pr-loading">
+                <div class="pr-spinner"></div>
+                <span>Cargando datos del perfil...</span>
             </div>
-
-            <!-- Datos de la empresa -->
-            <div class="row g-3 pt-2">
-                <div class="col-12 col-md-6">
-                    <div class="p-3 rounded-xl bg-surface-subtle border" style="background-color: var(--pr-surface-subtle);">
-                        <div class="text-muted small uppercase fw-bold mb-1">Razón Social Registrada</div>
-                        <div class="fw-bold text-dark fs-6">@(string.IsNullOrWhiteSpace(Sesion.Nombre) ? "TransLog Express S.A." : Sesion.Nombre)</div>
+        }
+        else if (!string.IsNullOrWhiteSpace(_errorCarga))
+        {
+            <div class="pr-alert pr-alert--error">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">error</span>
+                    <span>@_errorCarga</span>
+                </div>
+                <button type="button" class="pr-btn pr-btn--outline pr-btn-sm" @onclick="CargarAsync">
+                    Reintentar
+                </button>
+            </div>
+        }
+        else if (_perfil is not null)
+        {
+            @if (!string.IsNullOrWhiteSpace(_mensajeExito))
+            {
+                <div class="pr-alert" style="background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46;">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="material-symbols-outlined text-[20px]">check_circle</span>
+                        <span>@_mensajeExito</span>
                     </div>
                 </div>
+            }
 
-                <div class="col-12 col-md-6">
-                    <div class="p-3 rounded-xl bg-surface-subtle border" style="background-color: var(--pr-surface-subtle);">
-                        <div class="text-muted small uppercase fw-bold mb-1">Rol Operativo</div>
-                        <div class="fw-bold text-dark fs-6">Prestador Logístico / Flota Habilitada</div>
+            @if (!string.IsNullOrWhiteSpace(_mensajeError))
+            {
+                <div class="pr-alert pr-alert--error">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="material-symbols-outlined text-[20px]">error</span>
+                        <span>@_mensajeError</span>
                     </div>
                 </div>
+            }
 
-                <div class="col-12 col-md-6">
-                    <div class="p-3 rounded-xl bg-surface-subtle border" style="background-color: var(--pr-surface-subtle);">
-                        <div class="text-muted small uppercase fw-bold mb-1">Estado de Habilitación</div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="pr-pulse-dot"></span>
-                            <span class="fw-bold text-success">Activo para recepcionar fletes</span>
+            <!-- 2. Tarjeta Principal de Perfil -->
+            <div class="pr-manifest-card">
+                <div class="d-flex align-items-center justify-content-between gap-3 pb-3 border-bottom flex-wrap">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="pr-sidebar__logo" style="width: 52px; height: 52px; border-radius: 14px;">
+                            <span class="material-symbols-outlined text-[32px]">local_shipping</span>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold mb-0 text-dark" style="font-family: var(--pr-font-display); font-size: 22px;">
+                                @(!string.IsNullOrWhiteSpace(_perfil.RazonSocial) ? _perfil.RazonSocial : $"{_perfil.Nombre} {_perfil.Apellido}".Trim())
+                            </h2>
+                            <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                                <span class="pr-tag pr-tag--emerald d-inline-flex align-items-center gap-1">
+                                    <span class="material-symbols-outlined text-[14px]">verified</span>
+                                    <span>Estado: @_perfil.Estado</span>
+                                </span>
+                                <span class="small text-muted">• ID de Prestador: <strong>#@Sesion.Id</strong></span>
+                                @if (_perfil.FechaRegistro != default)
+                                {
+                                    <span class="small text-muted">• Registrado el <strong>@_perfil.FechaRegistro.ToString("dd/MM/yyyy")</strong></span>
+                                }
+                            </div>
                         </div>
                     </div>
+
+                    @if (!_editando)
+                    {
+                        <button type="button" class="pr-btn pr-btn--navy" @onclick="IniciarEdicion">
+                            <span class="material-symbols-outlined text-[18px]">edit</span>
+                            <span>Editar Perfil</span>
+                        </button>
+                    }
                 </div>
 
-                <div class="col-12 col-md-6">
-                    <div class="p-3 rounded-xl bg-surface-subtle border" style="background-color: var(--pr-surface-subtle);">
-                        <div class="text-muted small uppercase fw-bold mb-1">SLA de Despacho</div>
-                        <div class="fw-bold text-dark fs-6">99.1% Cumplimiento Conforme</div>
+                <!-- Formulario de Datos de la Empresa -->
+                <div class="row g-3 pt-2">
+                    <div class="col-12 col-md-6">
+                        <label class="pr-label">Razón Social</label>
+                        <input type="text"
+                               class="pr-input"
+                               disabled="@(!_editando)"
+                               @bind="_form.RazonSocial"
+                               placeholder="Nombre de la empresa" />
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="pr-label">CUIT</label>
+                        <input type="text"
+                               class="pr-input"
+                               disabled="@(!_editando)"
+                               @bind="_form.Cuit"
+                               placeholder="30-00000000-0" />
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="pr-label">Nombre del Titular / Responsable</label>
+                        <input type="text"
+                               class="pr-input"
+                               disabled="@(!_editando)"
+                               @bind="_form.Nombre" />
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="pr-label">Apellido del Titular / Responsable</label>
+                        <input type="text"
+                               class="pr-input"
+                               disabled="@(!_editando)"
+                               @bind="_form.Apellido" />
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="pr-label">Correo Electrónico</label>
+                        <input type="email"
+                               class="pr-input"
+                               disabled="@(!_editando)"
+                               @bind="_form.Email" />
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label class="pr-label">Teléfono de Contacto</label>
+                        <input type="tel"
+                               class="pr-input"
+                               disabled="@(!_editando)"
+                               @bind="_form.Telefono" />
                     </div>
                 </div>
-            </div>
 
-            <!-- Accesos rápidos -->
-            <div class="d-flex align-items-center justify-content-end gap-2 pt-3 border-top mt-2">
-                <a href="/prestador/choferes" class="pr-btn pr-btn--outline pr-btn-sm">
-                    <span class="material-symbols-outlined text-[16px]">badge</span>
-                    <span>Gestionar Choferes</span>
-                </a>
-                <a href="/prestador/vehiculos" class="pr-btn pr-btn--outline pr-btn-sm">
-                    <span class="material-symbols-outlined text-[16px]">rv_hookup</span>
-                    <span>Gestionar Flota</span>
-                </a>
-                <a href="/prestador/solicitudes" class="pr-btn pr-btn--emerald pr-btn-sm">
-                    <span class="material-symbols-outlined text-[16px]">inbox</span>
-                    <span>Ver Solicitudes</span>
-                </a>
+                @if (_editando)
+                {
+                    <div class="d-flex align-items-center justify-content-end gap-2 pt-3 border-top mt-3">
+                        <button type="button" class="pr-btn pr-btn--subtle" disabled="@_guardando" @onclick="CancelarEdicion">
+                            Cancelar
+                        </button>
+                        <button type="button" class="pr-btn pr-btn--emerald" disabled="@_guardando" @onclick="GuardarAsync">
+                            <span class="material-symbols-outlined text-[18px]">save</span>
+                            <span>@(_guardando ? "Guardando..." : "Guardar cambios")</span>
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex align-items-center justify-content-end gap-2 pt-3 border-top mt-3">
+                        <a href="/prestador/choferes" class="pr-btn pr-btn--outline pr-btn-sm">
+                            <span class="material-symbols-outlined text-[16px]">badge</span>
+                            <span>Gestionar Choferes</span>
+                        </a>
+                        <a href="/prestador/vehiculos" class="pr-btn pr-btn--outline pr-btn-sm">
+                            <span class="material-symbols-outlined text-[16px]">rv_hookup</span>
+                            <span>Gestionar Flota</span>
+                        </a>
+                        <a href="/prestador/solicitudes" class="pr-btn pr-btn--emerald pr-btn-sm">
+                            <span class="material-symbols-outlined text-[16px]">inbox</span>
+                            <span>Ver Solicitudes</span>
+                        </a>
+                    </div>
+                }
             </div>
-        </div>
+        }
     </div>
 </RoleGuard>
+
+@code {
+    private UsuarioDTO? _perfil;
+    private UpdateUserRequestDto _form = new();
+    private bool _cargando = true;
+    private bool _cargado;
+    private bool _editando;
+    private bool _guardando;
+    private string? _errorCarga;
+    private string? _mensajeExito;
+    private string? _mensajeError;
+
+    protected override void OnInitialized()
+    {
+        Sesion.CambioSesion += AlCambiarSesion;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_cargado && Sesion.Restaurada && Sesion.EstaLogueado && Sesion.Id > 0)
+        {
+            _cargado = true;
+            await CargarAsync();
+        }
+    }
+
+    private void AlCambiarSesion()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            if (!_cargado && Sesion.Restaurada && Sesion.EstaLogueado && Sesion.Id > 0)
+            {
+                _cargado = true;
+                await CargarAsync();
+            }
+            StateHasChanged();
+        });
+    }
+
+    private async Task CargarAsync()
+    {
+        _cargando = true;
+        _errorCarga = null;
+        StateHasChanged();
+
+        HttpResp<UsuarioDTO> resp = await UsuarioServicio.ObtenerPorIdAsync(Sesion.Id);
+        if (resp.Error || resp.Respuesta is null)
+        {
+            _errorCarga = await resp.ObtenerMensajeAsync("No pudimos cargar los datos de tu perfil.");
+        }
+        else
+        {
+            _perfil = resp.Respuesta;
+            SincronizarFormulario();
+        }
+
+        _cargando = false;
+        StateHasChanged();
+    }
+
+    private void SincronizarFormulario()
+    {
+        if (_perfil is null) return;
+        _form = new UpdateUserRequestDto
+        {
+            Nombre = _perfil.Nombre ?? string.Empty,
+            Apellido = _perfil.Apellido ?? string.Empty,
+            Email = _perfil.Email ?? string.Empty,
+            Telefono = _perfil.Telefono ?? string.Empty,
+            RazonSocial = _perfil.RazonSocial ?? string.Empty,
+            Cuit = _perfil.Cuit ?? string.Empty,
+            Password = string.Empty
+        };
+    }
+
+    private void IniciarEdicion()
+    {
+        SincronizarFormulario();
+        _mensajeExito = null;
+        _mensajeError = null;
+        _editando = true;
+    }
+
+    private void CancelarEdicion()
+    {
+        SincronizarFormulario();
+        _mensajeError = null;
+        _editando = false;
+    }
+
+    private async Task GuardarAsync()
+    {
+        if (_guardando || _perfil is null) return;
+
+        if (string.IsNullOrWhiteSpace(_form.Nombre) || string.IsNullOrWhiteSpace(_form.Email) || string.IsNullOrWhiteSpace(_form.Telefono))
+        {
+            _mensajeError = "Completá al menos nombre, correo electrónico y teléfono.";
+            return;
+        }
+
+        _guardando = true;
+        _mensajeError = null;
+        _mensajeExito = null;
+
+        HttpResp<object> resp = await UsuarioServicio.ActualizarAsync(Sesion.Id, _form);
+        if (resp.Error)
+        {
+            _mensajeError = await resp.ObtenerMensajeAsync("No se pudieron guardar los cambios.");
+        }
+        else
+        {
+            _mensajeExito = "Datos del perfil actualizados correctamente.";
+            _editando = false;
+            await CargarAsync();
+            Sesion.Iniciar(Sesion.Id, _form.Nombre, Sesion.Rol ?? Roles.Prestador);
+        }
+
+        _guardando = false;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        Sesion.CambioSesion -= AlCambiarSesion;
+    }
+}

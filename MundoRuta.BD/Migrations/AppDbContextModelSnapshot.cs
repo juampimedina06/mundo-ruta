@@ -46,22 +46,13 @@ namespace MundoRuta.BD.Migrations
                     b.Property<int>("Puntaje")
                         .HasColumnType("int");
 
-                    b.Property<int>("UsuarioId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UsuarioPrestadorId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ViajeId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("UsuarioId");
+                    b.HasIndex("IdUsuario");
 
-                    b.HasIndex("UsuarioPrestadorId");
+                    b.HasIndex("IdUsuarioPrestador");
 
-                    b.HasIndex("ViajeId");
+                    b.HasIndex("IdViaje");
 
                     b.ToTable("Calificaciones");
                 });
@@ -638,20 +629,20 @@ namespace MundoRuta.BD.Migrations
                 {
                     b.HasOne("MundoRuta.BD.Datos.Entity.Usuario", "Usuario")
                         .WithMany()
-                        .HasForeignKey("UsuarioId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("IdUsuario")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MundoRuta.BD.Datos.Entity.Usuario", "UsuarioPrestador")
                         .WithMany()
-                        .HasForeignKey("UsuarioPrestadorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("IdUsuarioPrestador")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("MundoRuta.BD.Datos.Entity.Viaje", "Viaje")
                         .WithMany()
-                        .HasForeignKey("ViajeId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("IdViaje")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Usuario");

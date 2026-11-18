@@ -47,7 +47,7 @@ public class PrestadorController : ControllerBase
     [HttpGet("{prestadorId:int}/solicitudes")]
     public async Task<ActionResult> GetSolicitudes(int prestadorId, [FromQuery] string? estado = null)
     {
-        var solicitudes = await _viajeRepositorio.ListadoSolicitudesDisponibles(estado ?? EstadosViaje.Buscando);
+        var solicitudes = await _viajeRepositorio.ListadoSolicitudesDisponibles(estado);
 
         if (prestadorId > 0 && solicitudes.Count > 0)
         {
@@ -188,9 +188,9 @@ public class PrestadorController : ControllerBase
             return NotFound("No encontrado");
         }
 
-        if (viaje.Estado != EstadosViaje.Buscando)
+        if (viaje.Estado != EstadosViaje.Buscando && viaje.Estado != EstadosViaje.Contraofertado)
         {
-            return BadRequest("El viaje no se encuentra en estado BUSCANDO para recibir ofertas");
+            return BadRequest("El viaje no se encuentra disponible para recibir ofertas");
         }
 
         int ofertasActivas = _context.OfertasViajes.Count(o => o.IdViaje == id && o.EstadoOferta == "ACTIVA");
@@ -280,6 +280,12 @@ public class PrestadorController : ControllerBase
 
         var prestadorId2 = idPrestador;
         if (prestadorId2 <= 0 && viaje.IdUsuario > 0) prestadorId2 = viaje.IdUsuario;
+
+        bool yaOferto2 = _context.OfertasViajes.Any(o => o.IdViaje == id && o.IdPrestador == prestadorId2 && o.EstadoOferta == "ACTIVA");
+        if (yaOferto2)
+        {
+            return BadRequest("Ya enviaste una oferta para esta solicitud.");
+        }
         var oferta2 = new OfertaViaje
         {
             IdViaje = id,

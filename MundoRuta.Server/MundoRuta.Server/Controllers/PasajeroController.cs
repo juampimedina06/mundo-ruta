@@ -243,10 +243,12 @@ namespace MundoRuta.Server.Controllers
                 NombrePasajero = string.IsNullOrWhiteSpace(v.Pasajero?.Nombre) && string.IsNullOrWhiteSpace(v.Pasajero?.Apellido)
                     ? (v.Pasajero?.Email ?? string.Empty)
                     : ((v.Pasajero?.Nombre ?? string.Empty) + " " + (v.Pasajero?.Apellido ?? string.Empty)).Trim(),
-                IdUsuario = v.IdUsuario,
-                NombrePrestador = string.IsNullOrWhiteSpace(v.Usuario?.RazonSocial)
-                    ? ((v.Usuario?.Nombre ?? string.Empty) + " " + (v.Usuario?.Apellido ?? string.Empty)).Trim()
-                    : v.Usuario?.RazonSocial,
+                IdUsuario = v.Usuario?.Rol == Roles.Prestador ? v.IdUsuario : 0,
+                NombrePrestador = v.Usuario?.Rol == Roles.Prestador
+                    ? (string.IsNullOrWhiteSpace(v.Usuario.RazonSocial)
+                        ? ((v.Usuario.Nombre ?? string.Empty) + " " + (v.Usuario.Apellido ?? string.Empty)).Trim()
+                        : v.Usuario.RazonSocial)
+                    : string.Empty,
                 IdChofer = v.IdChofer,
                 NombreChofer = string.IsNullOrWhiteSpace(v.Chofer?.Nombre) && string.IsNullOrWhiteSpace(v.Chofer?.Apellido)
                     ? (v.Chofer?.Usuario?.Email ?? string.Empty)

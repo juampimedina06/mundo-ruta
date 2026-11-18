@@ -215,7 +215,7 @@ namespace MundoRuta.Server.Controllers
 
             var puntajes = await _context.Calificaciones
                 .Include(c => c.Viaje)
-                .Where(c => c.Viaje.IdChofer == chofer.Id)
+                .Where(c => c.Viaje.IdChofer == chofer.Id && c.IdUsuarioPrestador == chofer.IdPrestador)
                 .Select(c => c.Puntaje)
                 .ToListAsync();
 

@@ -30,6 +30,7 @@ namespace MundoRuta.Server.Client.Navigation
             new MenuItem("Viajes", "/prestador/viajes"),
             new MenuItem("Choferes", "/prestador/choferes"),
             new MenuItem("Vehículos", "/prestador/vehiculos"),
+            new MenuItem("Calificaciones", "/prestador/calificaciones"),
             new MenuItem("Mi perfil", "/prestador/perfil")
         };
 
@@ -44,7 +45,8 @@ namespace MundoRuta.Server.Client.Navigation
         {
             new MenuItem("Dashboard", "/admin/dashboard"),
             new MenuItem("Comisiones", "/admin/comisiones"),
-            new MenuItem("Usuarios", "/admin/usuarios")
+            new MenuItem("Usuarios", "/admin/usuarios"),
+            new MenuItem("Configuración", "/admin/configuracion")
         };
 
         public static IReadOnlyList<MenuItem> Obtener(string? rol)

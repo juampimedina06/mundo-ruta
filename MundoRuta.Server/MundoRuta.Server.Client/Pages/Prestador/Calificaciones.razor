@@ -1,0 +1,630 @@
+@page "/prestador/calificaciones"
+@page "/prestador/opiniones"
+@layout PrestadorLayout
+@using System.Globalization
+@using MundoRuta.Shared
+@using MundoRuta.Shared.DTO
+@inject IHttpServices Http
+@inject SesionEstado Sesion
+@implements IDisposable
+
+<PageTitle>Opiniones y Calificaciones | Mundo Ruta</PageTitle>
+
+<RoleGuard Permitidos="@Roles.Prestador">
+    <div class="cal-page">
+        <!-- Encabezado de Pantalla -->
+        <div class="cal-header">
+            <div class="cal-header__eyebrow">
+                <span class="material-symbols-outlined cal-icon-16">verified_user</span>
+                <span>Auditoría de Calidad &amp; Satisfacción</span>
+            </div>
+            <h1 class="cal-header__title">Reputación y Opiniones de Clientes</h1>
+            <p class="cal-header__subtitle">
+                Monitoreá las calificaciones y comentarios reales que registraron los pasajeros al finalizar los viajes realizados con tu flota.
+            </p>
+        </div>
+
+        @if (_cargando)
+        {
+            <div class="pr-loading">
+                <div class="pr-spinner"></div>
+                <span>Cargando calificaciones del prestador...</span>
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <div class="pr-alert pr-alert--error">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">error</span>
+                    <span>@_error</span>
+                </div>
+                <button type="button" class="pr-btn pr-btn--outline pr-btn-sm" @onclick="CargarAsync">
+                    Reintentar
+                </button>
+            </div>
+        }
+        else
+        {
+            <!-- Bento Superior: Score Global + Desglose 5★-1★ + KPIs Reales -->
+            <div class="cal-bento-grid">
+                <!-- Columna 1 (4 cols): Score Global -->
+                <div class="cal-score-card">
+                    <div class="cal-score-card__glow"></div>
+                    <div>
+                        <div class="cal-score-card__top">
+                            <span class="cal-score-card__label">Promedio General</span>
+                            <span class="cal-score-card__pill">
+                                @(TotalResenas > 0 ? $"{TotalResenas} {(TotalResenas == 1 ? "opinión" : "opiniones")}" : "Sin opiniones")
+                            </span>
+                        </div>
+
+                        <div class="cal-score-card__number-row">
+                            <span class="cal-score-card__big">@PromedioFormateado</span>
+                            <span class="cal-score-card__outof">/ 5.0</span>
+                        </div>
+
+                        <div class="cal-stars-row">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                bool llena = _datos.promedioCalificacion >= i - 0.25;
+                                bool media = !llena && _datos.promedioCalificacion >= i - 0.75;
+                                <span class="material-symbols-outlined cal-star-lg @(llena || media ? "cal-star--filled" : "cal-star--empty")">
+                                    @(media ? "star_half" : "star")
+                                </span>
+                            }
+                        </div>
+
+                        <p class="cal-score-card__desc">
+                            Basado en <strong>@TotalResenas @(TotalResenas == 1 ? "calificación registrada" : "calificaciones registradas")</strong> por pasajeros con viajes finalizados.
+                        </p>
+                    </div>
+
+                    <div class="cal-score-card__footer">
+                        <div class="cal-score-card__footer-left">
+                            <span class="material-symbols-outlined cal-score-card__verified-icon">verified</span>
+                            <div>
+                                <span class="cal-score-card__footer-title">Prestador #@Sesion.Id</span>
+                                <span class="cal-score-card__footer-sub">@(string.IsNullOrWhiteSpace(Sesion.Nombre) ? "Cuenta Activa" : Sesion.Nombre)</span>
+                            </div>
+                        </div>
+                        <span class="cal-score-card__grade">@(TotalResenas > 0 ? PromedioFormateado : "—")</span>
+                    </div>
+                </div>
+
+                <!-- Columna 2 (5 cols): Desglose de Calificaciones 5★ a 1★ -->
+                <div class="cal-breakdown-card">
+                    <div class="cal-breakdown-card__header">
+                        <span class="cal-breakdown-card__title">Desglose de Calificaciones</span>
+                        <span class="cal-breakdown-card__sub">@TotalResenas @(TotalResenas == 1 ? "opinión" : "opiniones")</span>
+                    </div>
+
+                    <div class="cal-breakdown-list">
+                        @for (int estrella = 5; estrella >= 1; estrella--)
+                        {
+                            int cant = ObtenerCantidadEstrella(estrella);
+                            int porc = ObtenerPorcentajeEstrella(estrella);
+                            string colorBarra = estrella switch
+                            {
+                                5 => "cal-bar--5",
+                                4 => "cal-bar--4",
+                                3 => "cal-bar--3",
+                                2 => "cal-bar--2",
+                                _ => "cal-bar--1"
+                            };
+
+                            <div class="cal-breakdown-row">
+                                <div class="cal-breakdown-row__star">
+                                    <span>@estrella</span>
+                                    <span class="material-symbols-outlined cal-star-xs cal-star--filled">star</span>
+                                </div>
+                                <div class="cal-breakdown-row__track">
+                                    <div class="cal-breakdown-row__fill @colorBarra" style="width: @(porc)%;"></div>
+                                </div>
+                                <div class="cal-breakdown-row__stats">
+                                    <span class="cal-breakdown-row__pct">@(porc)%</span>
+                                    <span class="cal-breakdown-row__cnt">(@cant)</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Columna 3 (3 cols): 3 Métricas Reales del Sistema -->
+                <div class="cal-kpis-col">
+                    <div class="cal-mini-kpi">
+                        <div>
+                            <span class="cal-mini-kpi__label">Valoraciones Positivas</span>
+                            <div class="cal-mini-kpi__val">@PorcentajePositivas%</div>
+                            <span class="cal-mini-kpi__sub cal-mini-kpi__sub--emerald">@TotalPositivas de @TotalResenas con 4★ o 5★</span>
+                        </div>
+                        <div class="cal-mini-kpi__icon cal-mini-kpi__icon--emerald">
+                            <span class="material-symbols-outlined">thumb_up</span>
+                        </div>
+                    </div>
+
+                    <div class="cal-mini-kpi">
+                        <div>
+                            <span class="cal-mini-kpi__label">Con Comentario Escrito</span>
+                            <div class="cal-mini-kpi__val">@TotalConComentario</div>
+                            <span class="cal-mini-kpi__sub">@(TotalResenas - TotalConComentario) solo puntuación</span>
+                        </div>
+                        <div class="cal-mini-kpi__icon cal-mini-kpi__icon--navy">
+                            <span class="material-symbols-outlined">chat</span>
+                        </div>
+                    </div>
+
+                    <div class="cal-mini-kpi">
+                        <div>
+                            <span class="cal-mini-kpi__label">Choferes Evaluados</span>
+                            <div class="cal-mini-kpi__val">@TotalChoferesEvaluados</div>
+                            <span class="cal-mini-kpi__sub cal-mini-kpi__sub--emerald">En viajes calificados</span>
+                        </div>
+                        <div class="cal-mini-kpi__icon cal-mini-kpi__icon--navy">
+                            <span class="material-symbols-outlined">badge</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barra de Búsqueda, Ordenamiento y Filtros Rápidos -->
+            <div class="cal-filter-card">
+                <div class="cal-filter-top">
+                    <div class="cal-search-wrap">
+                        <span class="material-symbols-outlined cal-search-icon">search</span>
+                        <input type="text"
+                               class="cal-search-input"
+                               placeholder="Buscar por pasajero, chofer, viaje (#MR-...), ruta o comentario..."
+                               @bind="_busqueda"
+                               @bind:event="oninput"
+                               @bind:after="ReiniciarPagina" />
+                    </div>
+
+                    <div class="cal-sort-wrap">
+                        <span class="cal-sort-label">Ordenar por:</span>
+                        <select class="cal-sort-select" @bind="_orden" @bind:after="ReiniciarPagina">
+                            <option value="recientes">Más recientes</option>
+                            <option value="mejor">Mejor calificación</option>
+                            <option value="menor">Menor calificación</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="cal-pills-row">
+                    <button type="button"
+                            class="cal-pill @(_filtro == FiltroTodas ? "cal-pill--active" : string.Empty)"
+                            @onclick="() => CambiarFiltro(FiltroTodas)">
+                        <span>Todas las opiniones (@TotalResenas)</span>
+                    </button>
+
+                    <button type="button"
+                            class="cal-pill @(_filtro == Filtro5 ? "cal-pill--active" : string.Empty)"
+                            @onclick="() => CambiarFiltro(Filtro5)">
+                        <span>5 Estrellas</span>
+                        <span class="cal-pill__count">(@ObtenerCantidadEstrella(5))</span>
+                    </button>
+
+                    <button type="button"
+                            class="cal-pill @(_filtro == Filtro4 ? "cal-pill--active" : string.Empty)"
+                            @onclick="() => CambiarFiltro(Filtro4)">
+                        <span>4 Estrellas</span>
+                        <span class="cal-pill__count">(@ObtenerCantidadEstrella(4))</span>
+                    </button>
+
+                    <button type="button"
+                            class="cal-pill @(_filtro == Filtro3OMenos ? "cal-pill--active" : string.Empty)"
+                            @onclick="() => CambiarFiltro(Filtro3OMenos)">
+                        <span>3 Estrellas o menos</span>
+                        <span class="cal-pill__count">(@ObtenerCantidadMenorIgual3())</span>
+                    </button>
+
+                    <button type="button"
+                            class="cal-pill @(_filtro == FiltroConComentario ? "cal-pill--active" : string.Empty)"
+                            @onclick="() => CambiarFiltro(FiltroConComentario)">
+                        <span>Con comentario escrito</span>
+                        <span class="cal-pill__count">(@TotalConComentario)</span>
+                    </button>
+
+                    @if (TotalChoferesEvaluados > 0)
+                    {
+                        <button type="button"
+                                class="cal-pill @(_filtro == FiltroConChofer ? "cal-pill--active" : string.Empty)"
+                                @onclick="() => CambiarFiltro(FiltroConChofer)">
+                            <span class="material-symbols-outlined cal-icon-16">badge</span>
+                            <span>Con chofer asignado (@TotalConChofer)</span>
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <!-- Listado de Tarjetas de Calificaciones Reales -->
+            @if (TotalResenas == 0)
+            {
+                <div class="pr-empty-state">
+                    <div class="pr-empty-icon">
+                        <span class="material-symbols-outlined">reviews</span>
+                    </div>
+                    <h3 class="pr-empty-title">Todavía no tenés calificaciones registradas</h3>
+                    <p class="pr-empty-desc">
+                        Cuando tus viajes finalicen y los pasajeros califiquen el servicio, vas a ver acá cada reseña con su puntaje y comentario.
+                    </p>
+                </div>
+            }
+            else if (ResenasFiltradas.Count == 0)
+            {
+                <div class="pr-empty-state">
+                    <div class="pr-empty-icon">
+                        <span class="material-symbols-outlined">filter_alt_off</span>
+                    </div>
+                    <h3 class="pr-empty-title">No hay opiniones con esos filtros</h3>
+                    <p class="pr-empty-desc">Probá cambiando el filtro seleccionado o limpiando el cuadro de búsqueda.</p>
+                    <button type="button" class="pr-btn pr-btn--outline" @onclick="LimpiarFiltros">
+                        Limpiar filtros
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="cal-feed">
+                    @foreach (CalificacionItemDTO item in ResenasPaginadas)
+                    {
+                        <article class="cal-review-card" @key="item.id">
+                            <div class="cal-review-card__head">
+                                <div class="cal-review-card__user">
+                                    <div class="cal-avatar">
+                                        @ObtenerIniciales(item.nombrePasajero)
+                                    </div>
+                                    <div>
+                                        <div class="cal-review-card__name-row">
+                                            <h2 class="cal-review-card__name">
+                                                @(string.IsNullOrWhiteSpace(item.nombrePasajero) ? $"Pasajero #{item.usuarioId}" : item.nombrePasajero)
+                                            </h2>
+                                            <span class="cal-verified-tag">
+                                                <span class="material-symbols-outlined cal-icon-12">verified</span>
+                                                <span>Cliente #@item.usuarioId</span>
+                                            </span>
+                                        </div>
+
+                                        <div class="cal-review-card__meta">
+                                            @if (item.viajeId > 0)
+                                            {
+                                                <span class="cal-review-card__trip">#MR-@item.viajeId</span>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(item.origen) || !string.IsNullOrWhiteSpace(item.destino))
+                                            {
+                                                <span>•</span>
+                                                <span>
+                                                    @(!string.IsNullOrWhiteSpace(item.tipoSolicitud) ? $"{item.tipoSolicitud}: " : string.Empty)@item.origen &rarr; @item.destino
+                                                </span>
+                                            }
+                                            @if (item.fechaViaje.HasValue && item.fechaViaje.Value != default)
+                                            {
+                                                <span>•</span>
+                                                <span class="cal-review-card__date">
+                                                    <span class="material-symbols-outlined cal-icon-14">calendar_today</span>
+                                                    @item.fechaViaje.Value.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Píldora de Estrellas y Puntaje -->
+                                <div class="cal-score-pill">
+                                    <div class="cal-score-pill__stars">
+                                        @for (int s = 1; s <= 5; s++)
+                                        {
+                                            <span class="material-symbols-outlined cal-star-sm @(s <= item.puntaje ? "cal-star--filled" : "cal-star--empty")">
+                                                star
+                                            </span>
+                                        }
+                                    </div>
+                                    <span class="cal-score-pill__num">@item.puntaje.ToString("0.0", CultureInfo.InvariantCulture)</span>
+                                </div>
+                            </div>
+
+                            <!-- Etiqueta de Chofer y Vehículo Asignado (si el viaje los tiene) -->
+                            @if (!string.IsNullOrWhiteSpace(item.nombreChofer) || !string.IsNullOrWhiteSpace(item.vehiculo))
+                            {
+                                <div class="cal-driver-pill">
+                                    <span class="material-symbols-outlined cal-icon-18">person</span>
+                                    <span class="cal-driver-pill__label">Chofer asignado:</span>
+                                    <span class="cal-driver-pill__name">
+                                        @(!string.IsNullOrWhiteSpace(item.nombreChofer) ? item.nombreChofer : "Sin chofer especificado")
+                                    </span>
+                                    @if (!string.IsNullOrWhiteSpace(item.vehiculo))
+                                    {
+                                        <span class="cal-driver-pill__veh">• @item.vehiculo</span>
+                                    }
+                                </div>
+                            }
+
+                            <!-- Texto del Comentario -->
+                            @if (!string.IsNullOrWhiteSpace(item.comentario))
+                            {
+                                <p class="cal-review-card__comment">
+                                    “@item.comentario”
+                                </p>
+                            }
+                            else
+                            {
+                                <p class="cal-review-card__comment cal-review-card__comment--empty">
+                                    Calificación registrada sin comentario escrito.
+                                </p>
+                            }
+                        </article>
+                    }
+                </div>
+
+                <!-- Paginación -->
+                <div class="cal-pagination-bar">
+                    <div class="cal-pagination-bar__info">
+                        Mostrando <strong>@IndiceInicio - @IndiceFin</strong> de <strong>@ResenasFiltradas.Count</strong> @(ResenasFiltradas.Count == 1 ? "opinión" : "opiniones")
+                    </div>
+
+                    @if (TotalPaginas > 1)
+                    {
+                        <div class="cal-pagination-bar__controls">
+                            <button type="button"
+                                    class="cal-page-btn"
+                                    disabled="@(_pagina <= 1)"
+                                    @onclick="() => CambiarPagina(_pagina - 1)">
+                                <span class="material-symbols-outlined cal-icon-18">chevron_left</span>
+                                <span>Anterior</span>
+                            </button>
+
+                            @for (int p = 1; p <= TotalPaginas; p++)
+                            {
+                                int num = p;
+                                <button type="button"
+                                        class="cal-page-num @(_pagina == num ? "cal-page-num--active" : string.Empty)"
+                                        @onclick="() => CambiarPagina(num)">
+                                    @num
+                                </button>
+                            }
+
+                            <button type="button"
+                                    class="cal-page-btn"
+                                    disabled="@(_pagina >= TotalPaginas)"
+                                    @onclick="() => CambiarPagina(_pagina + 1)">
+                                <span>Siguiente</span>
+                                <span class="material-symbols-outlined cal-icon-18">chevron_right</span>
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+</RoleGuard>
+
+@code {
+    private const string FiltroTodas = "TODAS";
+    private const string Filtro5 = "5";
+    private const string Filtro4 = "4";
+    private const string Filtro3OMenos = "3_MENOS";
+    private const string FiltroConComentario = "COMENTARIO";
+    private const string FiltroConChofer = "CHOFER";
+    private const int TamanoPagina = 6;
+
+    private ListadoCalificacionesDTO _datos = new();
+    private bool _cargando = true;
+    private bool _cargado;
+    private string? _error;
+
+    private string _busqueda = string.Empty;
+    private string _orden = "recientes";
+    private string _filtro = FiltroTodas;
+    private int _pagina = 1;
+
+    private int TotalResenas => _datos.comentarios.Count;
+
+    private string PromedioFormateado =>
+        TotalResenas > 0
+            ? _datos.promedioCalificacion.ToString("0.0", CultureInfo.InvariantCulture)
+            : "0.0";
+
+    private int TotalPositivas => _datos.comentarios.Count(c => c.puntaje >= 4);
+
+    private int PorcentajePositivas =>
+        TotalResenas > 0
+            ? (int)Math.Round(TotalPositivas * 100.0 / TotalResenas)
+            : 0;
+
+    private int TotalConComentario =>
+        _datos.comentarios.Count(c => !string.IsNullOrWhiteSpace(c.comentario));
+
+    private int TotalConChofer =>
+        _datos.comentarios.Count(c => !string.IsNullOrWhiteSpace(c.nombreChofer));
+
+    private int TotalChoferesEvaluados =>
+        _datos.comentarios
+            .Where(c => !string.IsNullOrWhiteSpace(c.nombreChofer))
+            .Select(c => c.nombreChofer.Trim().ToLowerInvariant())
+            .Distinct()
+            .Count();
+
+    private List<CalificacionItemDTO> ResenasFiltradas
+    {
+        get
+        {
+            IEnumerable<CalificacionItemDTO> query = _datos.comentarios;
+
+            query = _filtro switch
+            {
+                Filtro5 => query.Where(c => c.puntaje == 5),
+                Filtro4 => query.Where(c => c.puntaje == 4),
+                Filtro3OMenos => query.Where(c => c.puntaje <= 3),
+                FiltroConComentario => query.Where(c => !string.IsNullOrWhiteSpace(c.comentario)),
+                FiltroConChofer => query.Where(c => !string.IsNullOrWhiteSpace(c.nombreChofer)),
+                _ => query
+            };
+
+            if (!string.IsNullOrWhiteSpace(_busqueda))
+            {
+                string b = _busqueda.Trim();
+                query = query.Where(c =>
+                    (c.nombrePasajero?.Contains(b, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (c.comentario?.Contains(b, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (c.nombreChofer?.Contains(b, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (c.vehiculo?.Contains(b, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (c.origen?.Contains(b, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (c.destino?.Contains(b, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    $"#MR-{c.viajeId}".Contains(b, StringComparison.OrdinalIgnoreCase) ||
+                    c.viajeId.ToString().Contains(b, StringComparison.OrdinalIgnoreCase));
+            }
+
+            query = _orden switch
+            {
+                "mejor" => query.OrderByDescending(c => c.puntaje).ThenByDescending(c => c.id),
+                "menor" => query.OrderBy(c => c.puntaje).ThenByDescending(c => c.id),
+                _ => query.OrderByDescending(c => c.id)
+            };
+
+            return query.ToList();
+        }
+    }
+
+    private int TotalPaginas
+    {
+        get
+        {
+            int count = ResenasFiltradas.Count;
+            return count == 0 ? 1 : (int)Math.Ceiling(count / (double)TamanoPagina);
+        }
+    }
+
+    private List<CalificacionItemDTO> ResenasPaginadas
+    {
+        get
+        {
+            int pag = Math.Clamp(_pagina, 1, TotalPaginas);
+            return ResenasFiltradas
+                .Skip((pag - 1) * TamanoPagina)
+                .Take(TamanoPagina)
+                .ToList();
+        }
+    }
+
+    private int IndiceInicio =>
+        ResenasFiltradas.Count == 0 ? 0 : ((Math.Clamp(_pagina, 1, TotalPaginas) - 1) * TamanoPagina) + 1;
+
+    private int IndiceFin =>
+        Math.Min(Math.Clamp(_pagina, 1, TotalPaginas) * TamanoPagina, ResenasFiltradas.Count);
+
+    protected override void OnInitialized()
+    {
+        Sesion.CambioSesion += AlCambiarSesion;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_cargado && Sesion.Restaurada && Sesion.TieneRol(Roles.Prestador) && Sesion.Id > 0)
+        {
+            _cargado = true;
+            await CargarAsync();
+        }
+    }
+
+    private void AlCambiarSesion()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            if (!_cargado && Sesion.Restaurada && Sesion.TieneRol(Roles.Prestador) && Sesion.Id > 0)
+            {
+                _cargado = true;
+                await CargarAsync();
+            }
+            StateHasChanged();
+        });
+    }
+
+    private async Task CargarAsync()
+    {
+        _cargando = true;
+        _error = null;
+        StateHasChanged();
+
+        HttpResp<ListadoCalificacionesDTO> resp =
+            await Http.GetAsync<ListadoCalificacionesDTO>($"api/prestador/{Sesion.Id}/calificaciones");
+
+        if (resp.Error)
+        {
+            _error = await resp.ObtenerMensajeAsync("No pudimos cargar las calificaciones.");
+            _datos = new ListadoCalificacionesDTO();
+        }
+        else
+        {
+            _datos = resp.Respuesta ?? new ListadoCalificacionesDTO();
+        }
+
+        _cargando = false;
+        StateHasChanged();
+    }
+
+    private int ObtenerCantidadEstrella(int estrella)
+    {
+        return _datos.comentarios.Count(c => c.puntaje == estrella);
+    }
+
+    private int ObtenerCantidadMenorIgual3()
+    {
+        return _datos.comentarios.Count(c => c.puntaje <= 3);
+    }
+
+    private int ObtenerPorcentajeEstrella(int estrella)
+    {
+        if (TotalResenas == 0) return 0;
+        int cant = ObtenerCantidadEstrella(estrella);
+        return (int)Math.Round(cant * 100.0 / TotalResenas);
+    }
+
+    private void CambiarFiltro(string nuevoFiltro)
+    {
+        _filtro = nuevoFiltro;
+        _pagina = 1;
+    }
+
+    private void LimpiarFiltros()
+    {
+        _busqueda = string.Empty;
+        _filtro = FiltroTodas;
+        _orden = "recientes";
+        _pagina = 1;
+    }
+
+    private void ReiniciarPagina()
+    {
+        _pagina = 1;
+    }
+
+    private void CambiarPagina(int nuevaPagina)
+    {
+        if (nuevaPagina >= 1 && nuevaPagina <= TotalPaginas)
+        {
+            _pagina = nuevaPagina;
+        }
+    }
+
+    private static string ObtenerIniciales(string? nombre)
+    {
+        if (string.IsNullOrWhiteSpace(nombre))
+        {
+            return "CL";
+        }
+
+        string[] partes = nombre.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (partes.Length >= 2)
+        {
+            return $"{char.ToUpperInvariant(partes[0][0])}{char.ToUpperInvariant(partes[1][0])}";
+        }
+
+        return nombre.Trim().Length >= 2
+            ? nombre.Trim().Substring(0, 2).ToUpperInvariant()
+            : nombre.Trim().ToUpperInvariant();
+    }
+
+    public void Dispose()
+    {
+        Sesion.CambioSesion -= AlCambiarSesion;
+    }
+}

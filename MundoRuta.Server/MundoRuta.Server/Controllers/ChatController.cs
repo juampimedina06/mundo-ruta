@@ -61,12 +61,19 @@ namespace MundoRuta.Server.Controllers
                 await _chatRepo.CrearChat(nuevoChat);
                 chat = nuevoChat;
             }
-            if (dto.IdEmisor == viaje.IdUsuario && viaje.IdChofer == null)
+            if (dto.IdEmisor == viaje.IdPasajero && viaje.IdChofer == null)
                 throw new InvalidOperationException("El viaje todavía no tiene chofer asignado.");
 
-            int idReceptor = dto.IdEmisor == viaje.IdUsuario
-                             ? viaje.IdChofer!.Value
-                             : viaje.IdUsuario;
+            int idChoferUsuario = 0;
+            if (viaje.IdChofer.HasValue && viaje.IdChofer.Value > 0)
+            {
+                var chofer = await _context.Choferes.AsNoTracking().FirstOrDefaultAsync(c => c.Id == viaje.IdChofer.Value);
+                idChoferUsuario = chofer != null && chofer.IdUsuario > 0 ? chofer.IdUsuario : viaje.IdChofer.Value;
+            }
+
+            int idReceptor = dto.IdEmisor == viaje.IdPasajero
+                             ? (idChoferUsuario > 0 ? idChoferUsuario : viaje.IdUsuario)
+                             : viaje.IdPasajero;
 
 
             var mensaje = new Mensaje

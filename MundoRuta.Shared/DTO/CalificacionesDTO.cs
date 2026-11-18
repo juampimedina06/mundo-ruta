@@ -30,8 +30,16 @@ public class CalificacionItemDTO
 {
     public int id { get; set; }
     public int puntaje { get; set; }
-    public string comentario { get; set; }
+    public string comentario { get; set; } = string.Empty;
     public int usuarioId { get; set; }
+    public int viajeId { get; set; }
+    public string nombrePasajero { get; set; } = string.Empty;
+    public string origen { get; set; } = string.Empty;
+    public string destino { get; set; } = string.Empty;
+    public string tipoSolicitud { get; set; } = string.Empty;
+    public DateTime? fechaViaje { get; set; }
+    public string nombreChofer { get; set; } = string.Empty;
+    public string vehiculo { get; set; } = string.Empty;
 }
 
 
