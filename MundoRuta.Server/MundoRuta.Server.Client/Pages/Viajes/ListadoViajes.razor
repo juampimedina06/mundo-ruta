@@ -258,6 +258,12 @@
                                             <!-- VIAJE ID -->
                                             <td class="mr-td align-top">
                                                 <span class="mr-id-code">#MR-@viaje.Id</span>
+                                                @if (!string.IsNullOrWhiteSpace(viaje.DniReceptor))
+                                                {
+                                                    <div class="mr-date-secondary mt-1" title="DNI del receptor para validar entrega">
+                                                        DNI: <strong>@viaje.DniReceptor</strong>
+                                                    </div>
+                                                }
                                             </td>
 
                                             <!-- FECHA Y HORA VIAJE -->

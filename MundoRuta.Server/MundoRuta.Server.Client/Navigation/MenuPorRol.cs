@@ -19,6 +19,7 @@ namespace MundoRuta.Server.Client.Navigation
             new MenuItem("Inicio", "/usuario"),
             new MenuItem("Solicitar viaje", "/usuario/solicitar"),
             new MenuItem("Mis viajes", "/usuario/viajes"),
+            new MenuItem("Prestadores", "/prestadores"),
             new MenuItem("Mi perfil", "/usuario/perfil")
         };
 

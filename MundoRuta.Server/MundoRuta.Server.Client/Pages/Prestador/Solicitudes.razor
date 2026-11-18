@@ -405,14 +405,24 @@
                                 </div>
                             </div>
                         </div>
-                        <button type="button"
-                                class="pr-modal__close-btn"
-                                style="color: #cbd5e1;"
-                                aria-label="Cerrar"
-                                disabled="@(_procesandoId == solicitudActiva.Id)"
-                                @onclick="CerrarAccion">
-                            <span class="material-symbols-outlined text-[20px]">close</span>
-                        </button>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button"
+                                    class="pr-btn pr-btn--subtle pr-btn--sm"
+                                    style="background: rgba(255,255,255,0.1); color: #ffffff; border: 1px solid rgba(255,255,255,0.2);"
+                                    title="Seleccionar chofer, vehículo y monto de prueba"
+                                    @onclick="() => RellenarAsignacionSimulada(solicitudActiva)">
+                                <span class="material-symbols-outlined text-[16px]">auto_fix_high</span>
+                                <span>Rellenar prueba</span>
+                            </button>
+                            <button type="button"
+                                    class="pr-modal__close-btn"
+                                    style="color: #cbd5e1;"
+                                    aria-label="Cerrar"
+                                    disabled="@(_procesandoId == solicitudActiva.Id)"
+                                    @onclick="CerrarAccion">
+                                <span class="material-symbols-outlined text-[20px]">close</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="pr-modal__body d-flex flex-column gap-3" style="padding: 1.5rem;">
@@ -687,6 +697,28 @@
         _choferSeleccionado = 0;
         _vehiculoSeleccionado = 0;
         _nuevoMonto = 0;
+    }
+
+    private void RellenarAsignacionSimulada(ViajePrestadorDTO solicitud)
+    {
+        if (_choferes.Count > 0)
+        {
+            _choferSeleccionado = _choferes[Random.Shared.Next(_choferes.Count)].Id;
+        }
+
+        if (_vehiculos.Count > 0)
+        {
+            _vehiculoSeleccionado = _vehiculos[Random.Shared.Next(_vehiculos.Count)].Id;
+        }
+
+        if (_accionActiva == AccionContraofertar)
+        {
+            decimal porcentaje = 1.05m + (Random.Shared.Next(1, 5) * 0.05m);
+            _nuevoMonto = Math.Round((solicitud.Monto * porcentaje) / 500m, 0) * 500m;
+        }
+
+        _mensaje = null;
+        _mensajeError = false;
     }
 
     private async Task ConfirmarAsync(ViajePrestadorDTO solicitud)

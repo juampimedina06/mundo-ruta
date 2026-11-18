@@ -27,6 +27,7 @@ namespace MundoRuta.Shared.DTO
 
         public bool EquipajeCarga { get; set; }
         public string? DetalleCarga { get; set; }
+        public string DniReceptor { get; set; } = string.Empty;
 
         public string? MotivoCancelacion { get; set; }
 

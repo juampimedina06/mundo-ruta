@@ -3,6 +3,11 @@
    Scoped strictly to .chofer-nocturne so other roles remain untouched.
    ========================================================================== */
 
+html:has(.chofer-nocturne),
+body:has(.chofer-nocturne) {
+    background-color: #0a122a;
+}
+
 .chofer-nocturne {
     --cn-bg: #0a122a;
     --cn-bg-deep: #070d1e;

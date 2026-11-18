@@ -1,0 +1,878 @@
+/* ==========================================================================
+   Pantalla Inicio (Sesión Iniciada - Usuario) — Logistics & Freight System
+   ========================================================================== */
+
+.mr-u-home {
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    background-color: #f8f9ff;
+    color: #0b1c30;
+    font-family: 'Plus Jakarta Sans', 'Inter', var(--mr-fuente-cuerpo), sans-serif;
+    padding: 1.5rem 0 3.5rem;
+}
+
+.mr-u-container {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.mr-u-icon-16 {
+    font-size: 16px !important;
+}
+
+.mr-u-icon-18 {
+    font-size: 18px !important;
+}
+
+.mr-u-icon-22 {
+    font-size: 22px !important;
+}
+
+.mr-u-text-mint {
+    color: #57fdc6 !important;
+}
+
+.mr-u-text-right {
+    text-align: right !important;
+}
+
+.mr-u-text-center {
+    text-align: center !important;
+}
+
+.mr-u-star-filled {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    color: #f59e0b;
+}
+
+/* --------------------------------------------------------------------------
+   Top Operational Context Strip
+   -------------------------------------------------------------------------- */
+
+.mr-u-topbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-bottom: 1.25rem;
+}
+
+.mr-u-topbar__left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mr-u-context-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 9999px;
+    background-color: #dce9ff;
+    color: #0e1c2f;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 14px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.mr-u-context-pill__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background-color: #006c50;
+}
+
+/* --------------------------------------------------------------------------
+   Hero Section with Personalized Greeting
+   -------------------------------------------------------------------------- */
+
+.mr-u-hero {
+    position: relative;
+    border-radius: 0.875rem;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0e1c2f 0%, #0a2240 60%, #06282a 100%);
+    color: #ffffff;
+    box-shadow: 0 20px 25px -5px rgba(10, 34, 64, 0.14), 0 8px 10px -6px rgba(10, 34, 64, 0.08);
+}
+
+.mr-u-hero__glow-top {
+    position: absolute;
+    right: -6rem;
+    top: -6rem;
+    width: 24rem;
+    height: 24rem;
+    border-radius: 9999px;
+    background-color: rgba(87, 253, 198, 0.12);
+    filter: blur(64px);
+    pointer-events: none;
+}
+
+.mr-u-hero__glow-bottom {
+    position: absolute;
+    left: 33%;
+    bottom: -8rem;
+    width: 20rem;
+    height: 20rem;
+    border-radius: 9999px;
+    background-color: rgba(0, 108, 80, 0.2);
+    filter: blur(48px);
+    pointer-events: none;
+}
+
+.mr-u-hero__content {
+    position: relative;
+    z-index: 10;
+    padding: 2.25rem 2rem;
+}
+
+@media (min-width: 768px) {
+    .mr-u-hero__content {
+        padding: 2.75rem 2.5rem;
+    }
+}
+
+.mr-u-hero__copy {
+    max-width: 48rem;
+}
+
+.mr-u-hero__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.3rem 0.85rem;
+    border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    color: #57fdc6;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 14px;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.85rem;
+}
+
+.mr-u-hero__title {
+    margin: 0;
+    font-family: 'Manrope', 'Plus Jakarta Sans', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.18;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+    outline: none !important;
+}
+
+@media (min-width: 640px) {
+    .mr-u-hero__title {
+        font-size: 44px;
+        line-height: 1.15;
+    }
+}
+
+.mr-u-hero__title-accent {
+    color: #57fdc6;
+    font-weight: 400;
+}
+
+.mr-u-hero__desc {
+    margin: 0.65rem 0 0;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px;
+    color: #d3e4fe;
+    max-width: 42rem;
+}
+
+.mr-u-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.85rem;
+    margin-top: 1.5rem;
+}
+
+.mr-u-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.35rem;
+    border-radius: 0.625rem;
+    background-color: #006c49;
+    color: #ffffff;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0, 108, 73, 0.3);
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.mr-u-btn-primary:hover {
+    background-color: #005236;
+    color: #ffffff;
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.mr-u-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.25rem;
+    border-radius: 0.625rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    backdrop-filter: blur(8px);
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+}
+
+.mr-u-btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+/* --------------------------------------------------------------------------
+   Live Operation Alert + User Metrics Strip (12-Col Grid)
+   -------------------------------------------------------------------------- */
+
+.mr-u-mid-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1.75rem;
+}
+
+@media (min-width: 1024px) {
+    .mr-u-mid-grid {
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+
+    .mr-u-telemetry-card {
+        grid-column: span 8 / span 8;
+    }
+
+    .mr-u-kpis {
+        grid-column: span 4 / span 4;
+    }
+}
+
+.mr-u-telemetry-card {
+    padding: 1.5rem;
+    border-radius: 0.875rem;
+    background-color: #ffffff;
+    border: 1px solid rgba(211, 228, 254, 0.7);
+    box-shadow: 0 1px 3px 0 rgba(10, 34, 64, 0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.mr-u-telemetry-card__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.mr-u-telemetry-card__header-left {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mr-u-live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    background-color: rgba(87, 253, 198, 0.22);
+    color: #006c50;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 14px;
+    letter-spacing: 0.04em;
+}
+
+.mr-u-live-pill__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background-color: #006c50;
+    animation: mr-u-pulse 2s infinite;
+}
+
+.mr-u-shipment-id {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0b1c30;
+    font-variant-numeric: tabular-nums;
+}
+
+.mr-u-shipment-meta {
+    font-size: 12px;
+    color: #44474c;
+}
+
+.mr-u-telemetry-card__eta {
+    text-align: right;
+}
+
+.mr-u-telemetry-card__eta-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #44474c;
+}
+
+.mr-u-telemetry-card__eta-val {
+    margin: 0;
+    font-family: 'Manrope', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 24px;
+    color: #006c50;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Progress Bar */
+.mr-u-progress-wrap {
+    margin: 1rem 0;
+}
+
+.mr-u-progress-bar {
+    height: 8px;
+    width: 100%;
+    background-color: #e5eeff;
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.mr-u-progress-bar__fill {
+    height: 100%;
+    background-color: #006c50;
+    border-radius: 9999px;
+    transition: width 0.5s ease;
+}
+
+.mr-u-progress-labels {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 11px;
+    font-weight: 700;
+    color: #44474c;
+}
+
+.mr-u-progress-stop {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.mr-u-progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    display: inline-block;
+}
+
+.mr-u-progress-dot--active {
+    background-color: #006c50;
+}
+
+.mr-u-progress-dot--end {
+    background-color: #75777d;
+}
+
+.mr-u-progress-mid {
+    color: #0b1c30;
+    font-weight: 700;
+}
+
+/* Driver & Vehicle Box */
+.mr-u-driver-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    padding: 1rem;
+    border-radius: 0.625rem;
+    background-color: #eff4ff;
+}
+
+.mr-u-driver-box__left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mr-u-driver-box__avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 9999px;
+    object-fit: cover;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+}
+
+.mr-u-driver-box__name-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mr-u-driver-box__name {
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0b1c30;
+}
+
+.mr-u-driver-box__rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+    background-color: #e5eeff;
+    color: #0b1c30;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.mr-u-driver-box__rating .material-symbols-outlined {
+    font-size: 14px !important;
+}
+
+.mr-u-driver-box__cnrt {
+    font-size: 11px;
+    font-weight: 700;
+    color: #006c50;
+    background-color: #ffffff;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.mr-u-driver-box__vehicle {
+    margin: 0.15rem 0 0;
+    font-size: 12px;
+    color: #44474c;
+}
+
+.mr-u-driver-box__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mr-u-btn-contact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.875rem;
+    border-radius: 0.5rem;
+    background-color: #ffffff;
+    color: #0b1c30;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+}
+
+.mr-u-btn-contact:hover {
+    background-color: #dce9ff;
+    color: #0b1c30;
+    text-decoration: none;
+}
+
+.mr-u-btn-gps {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background-color: #0e1c2f;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+}
+
+.mr-u-btn-gps:hover {
+    background-color: #000b1f;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+/* Right 4 Cols: KPIs */
+.mr-u-kpis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.mr-u-kpi-card {
+    flex: 1;
+    padding: 1.25rem;
+    border-radius: 0.875rem;
+    background-color: #ffffff;
+    border: 1px solid rgba(211, 228, 254, 0.7);
+    box-shadow: 0 1px 3px 0 rgba(10, 34, 64, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.mr-u-kpi-card__left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mr-u-kpi-card__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 0.5rem;
+    background-color: #e5eeff;
+    color: #0e1c2f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.mr-u-kpi-card__label {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 14px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #44474c;
+}
+
+.mr-u-kpi-card__val {
+    margin: 0.15rem 0 0;
+    font-family: 'Manrope', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 24px;
+    color: #0b1c30;
+}
+
+.mr-u-kpi-card__delta {
+    font-size: 11px;
+    font-weight: 700;
+    color: #006c50;
+    white-space: nowrap;
+}
+
+.mr-u-kpi-card__rep-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+}
+
+.mr-u-kpi-card__tier {
+    font-size: 11px;
+    font-weight: 600;
+    color: #006c50;
+}
+
+.mr-u-kpi-card__verified {
+    color: #c5c6cd;
+    font-size: 22px;
+}
+
+/* --------------------------------------------------------------------------
+   Recent Shipments & One-Click Reorder Section
+   -------------------------------------------------------------------------- */
+
+.mr-u-history {
+    margin-top: 2.25rem;
+}
+
+.mr-u-history__header {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+@media (min-width: 640px) {
+    .mr-u-history__header {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.mr-u-history__title {
+    margin: 0;
+    font-family: 'Manrope', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 30px;
+    letter-spacing: -0.015em;
+    color: #0b1c30;
+}
+
+.mr-u-history__subtitle {
+    margin: 0.15rem 0 0;
+    font-size: 12px;
+    color: #44474c;
+}
+
+.mr-u-history__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mr-u-btn-tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 0.5rem;
+    background-color: #ffffff;
+    border: 1px solid rgba(211, 228, 254, 0.8);
+    color: #0b1c30;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+}
+
+.mr-u-btn-tool:hover {
+    background-color: #e5eeff;
+    color: #0b1c30;
+    text-decoration: none;
+}
+
+/* Table Card */
+.mr-u-table-card {
+    background-color: #ffffff;
+    border-radius: 0.875rem;
+    border: 1px solid rgba(211, 228, 254, 0.7);
+    box-shadow: 0 1px 3px 0 rgba(10, 34, 64, 0.05);
+    overflow: hidden;
+}
+
+.mr-u-table-scroll {
+    overflow-x: auto;
+}
+
+.mr-u-table {
+    width: 100%;
+    text-align: left;
+    border-collapse: collapse;
+}
+
+.mr-u-table thead tr {
+    background-color: #eff4ff;
+    height: 44px;
+    border-bottom: 1px solid #e5eeff;
+}
+
+.mr-u-table th {
+    padding: 0 1rem;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 14px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #44474c;
+    white-space: nowrap;
+}
+
+.mr-u-table tbody tr {
+    border-bottom: 1px solid #e5eeff;
+    transition: background-color 0.15s ease;
+}
+
+.mr-u-table tbody tr:hover {
+    background-color: rgba(239, 244, 255, 0.55);
+}
+
+.mr-u-table td {
+    padding: 0.9rem 1rem;
+    font-size: 12px;
+    color: #0b1c30;
+    vertical-align: middle;
+}
+
+.mr-u-cell-id {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0e1c2f;
+    font-variant-numeric: tabular-nums;
+}
+
+.mr-u-cell-main {
+    font-weight: 600;
+    color: #0b1c30;
+}
+
+.mr-u-cell-sub {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #44474c;
+    margin-top: 0.1rem;
+}
+
+.mr-u-route-line {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.mr-u-route-node {
+    font-weight: 600;
+    color: #0b1c30;
+}
+
+.mr-u-route-arrow {
+    font-size: 16px !important;
+    color: #75777d;
+}
+
+.mr-u-cell-date {
+    color: #44474c;
+    white-space: nowrap;
+}
+
+.mr-u-cell-price {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0b1c30;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.mr-u-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 0.25rem;
+    background-color: #dce9ff;
+    color: #006c50;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.mr-u-status-pill__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background-color: #006c50;
+}
+
+.mr-u-btn-reorder {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.5rem;
+    background-color: #e5eeff;
+    color: #0b1c30;
+    font-size: 11px;
+    font-weight: 700;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mr-u-btn-reorder:hover {
+    background-color: #006c50;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.mr-u-table-footer {
+    padding: 1rem;
+    background-color: #eff4ff;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 12px;
+    color: #44474c;
+}
+
+.mr-u-table-footer__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 12px;
+    font-weight: 700;
+    color: #006c50;
+    text-decoration: none;
+}
+
+.mr-u-table-footer__link:hover {
+    text-decoration: underline;
+    color: #005236;
+}
+
+.mr-u-providers-section {
+    margin-top: 2.25rem;
+}
+
+.mr-u-providers-section ::deep .mr-catalogo-page {
+    min-height: auto;
+    padding: 0;
+    background: transparent;
+}
+
+.mr-u-providers-section ::deep .mr-container {
+    padding: 0;
+    max-width: 100%;
+}
+
+@keyframes mr-u-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.35;
+    }
+}

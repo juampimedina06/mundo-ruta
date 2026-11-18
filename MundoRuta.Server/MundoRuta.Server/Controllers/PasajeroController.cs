@@ -191,6 +191,7 @@ namespace MundoRuta.Server.Controllers
                 MontoEstimado = v.MontoEstimado,
                 MetodoDePago = v.MetodoDePago,
                 EquipajeCarga = v.EquipajeCarga,
+                DniReceptor = v.DniReceptor ?? string.Empty,
                 FechaHoraReserva = v.FechaHoraReserva
             }).ToList();
 
@@ -236,6 +237,7 @@ namespace MundoRuta.Server.Controllers
                 MetodoDePago = v.MetodoDePago,
                 EquipajeCarga = v.EquipajeCarga,
                 DetalleCarga = v.DetalleCarga,
+                DniReceptor = v.DniReceptor ?? string.Empty,
                 MotivoCancelacion = v.MotivoCancelacion,
                 IdPasajero = v.IdPasajero,
                 NombrePasajero = string.IsNullOrWhiteSpace(v.Pasajero?.Nombre) && string.IsNullOrWhiteSpace(v.Pasajero?.Apellido)
