@@ -27,6 +27,10 @@
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <h1 class="mr-header-title">Solicitar Viaje</h1>
                         <span class="mr-badge-module">Módulo Pasajero</span>
+                        @if (!string.IsNullOrWhiteSpace(Categoria))
+                        {
+                            <span class="mr-badge-module">@Categoria</span>
+                        }
                         <span class="mr-badge-active">
                             <span class="mr-badge-dot"></span>
                             <span>Ruta Activa</span>
@@ -304,6 +308,9 @@
     private const string TipoCajaDescubierta = "DESCUBIERTA";
     private const string TipoSolicitudExclusiva = "EXCLUSIVO";
     private const decimal PrecioMaximo = 5000000m;
+
+    [SupplyParameterFromQuery(Name = "categoria")]
+    public string? Categoria { get; set; }
 
     private readonly SolicitudModelo _modelo = new SolicitudModelo();
     private readonly List<string> _errores = new List<string>();

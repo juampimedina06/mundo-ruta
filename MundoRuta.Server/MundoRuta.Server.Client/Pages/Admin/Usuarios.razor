@@ -404,11 +404,13 @@
 
             if (!string.IsNullOrWhiteSpace(_busqueda))
             {
-                string termino = _busqueda.Trim();
+                string terminoNormalizado = NormalizarTexto(_busqueda.Trim());
                 filtrados = filtrados.Where(u =>
-                    u.Nombre.Contains(termino, StringComparison.OrdinalIgnoreCase) ||
-                    u.Apellido.Contains(termino, StringComparison.OrdinalIgnoreCase) ||
-                    u.Email.Contains(termino, StringComparison.OrdinalIgnoreCase));
+                    CoincideTermino(u.Nombre, terminoNormalizado) ||
+                    CoincideTermino(u.Apellido, terminoNormalizado) ||
+                    CoincideTermino(u.Email, terminoNormalizado) ||
+                    CoincideTermino($"{u.Nombre} {u.Apellido}", terminoNormalizado) ||
+                    CoincideTermino($"{u.Apellido} {u.Nombre}", terminoNormalizado));
             }
 
             if (!string.IsNullOrWhiteSpace(_filtroRol))
@@ -425,5 +427,25 @@
 
             return filtrados.ToList();
         }
+    }
+
+    private static bool CoincideTermino(string? campo, string terminoNormalizado)
+    {
+        if (string.IsNullOrWhiteSpace(campo)) return false;
+        return NormalizarTexto(campo).Contains(terminoNormalizado, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizarTexto(string texto)
+    {
+        string normalizado = texto.Normalize(System.Text.NormalizationForm.FormD);
+        var sb = new System.Text.StringBuilder(normalizado.Length);
+        foreach (char c in normalizado)
+        {
+            if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+            {
+                sb.Append(c);
+            }
+        }
+        return sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
     }
 }
