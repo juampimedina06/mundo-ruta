@@ -15,6 +15,7 @@ public class PrestadorPerfilPublicoDTO
     public string Estado { get; set; }
     public string Rol { get; set; }
     public string RazonSocial { get; set; }
-    public string Cuit { get; set; }
+    public double PromedioCalificacion { get; set; }
+    public int TotalCalificaciones { get; set; }
     public List<VehiculoDTO> Vehiculos { get; set; } = new List<VehiculoDTO>();
 }

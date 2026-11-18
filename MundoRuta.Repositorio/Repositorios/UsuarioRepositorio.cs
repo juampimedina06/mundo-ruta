@@ -50,6 +50,27 @@ namespace MundoRuta.Repositorio.Repositorios
                 .ToListAsync();
         }
 
+        public async Task<List<PrestadorCatalogoDTO>> ObtenerPrestadoresParaCatalogo(string estado)
+        {
+            return await context.Usuarios
+                .Where(u => u.Rol == Roles.Prestador && u.Estado == estado)
+                .Select(u => new PrestadorCatalogoDTO
+                {
+                    Id = u.Id,
+                    Nombre = u.Nombre,
+                    RazonSocial = u.RazonSocial,
+                    Email = u.Email,
+                    Telefono = u.Telefono,
+                    PromedioCalificacion = context.Calificaciones
+                        .Where(c => c.IdUsuarioPrestador == u.Id)
+                        .Select(c => (double?)c.Puntaje)
+                        .Average() ?? 0.0,
+                    TotalCalificaciones = context.Calificaciones
+                        .Count(c => c.IdUsuarioPrestador == u.Id)
+                })
+                .ToListAsync();
+        }
+
         public async Task<List<PrestadorSolicitudDTO>> ListarSolicitudesPrestador()
         {
             // FechaRegistro se guarda en UTC. SQL Server la devuelve con Kind = Unspecified, así que se

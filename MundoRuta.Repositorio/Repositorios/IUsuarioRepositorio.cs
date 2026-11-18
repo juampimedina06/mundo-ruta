@@ -10,6 +10,7 @@ namespace MundoRuta.Repositorio.Repositorios
         Task<bool> EmailExiste(string email, int idExcluir = 0);
         Task<Usuario?> ValidarCredenciales(string email, string password);
         Task<List<PrestadorListadoDTO>> ObtenerPrestadoresPorEstado(string estado);
+        Task<List<PrestadorCatalogoDTO>> ObtenerPrestadoresParaCatalogo(string estado);
         Task<List<PrestadorSolicitudDTO>> ListarSolicitudesPrestador();
         Task<List<AdminUsuarioListadoDTO>> ListarUsuarios();
         Task<bool> CambiarEstado(int id, string nuevoEstado);

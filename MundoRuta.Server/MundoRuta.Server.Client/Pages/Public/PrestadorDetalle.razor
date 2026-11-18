@@ -40,13 +40,20 @@
                     </div>
                 }
 
-                @if (!string.IsNullOrWhiteSpace(_perfil.Cuit))
-                {
-                    <div class="mr-perfil__fila">
-                        <span class="mr-perfil__etiqueta">CUIT</span>
-                        <span>@_perfil.Cuit</span>
-                    </div>
-                }
+                <div class="mr-perfil__fila">
+                    <span class="mr-perfil__etiqueta">Calificaciones</span>
+                    @if (_perfil.TotalCalificaciones > 0)
+                    {
+                        <span>
+                            @_perfil.PromedioCalificacion.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)
+                            (@_perfil.TotalCalificaciones @(_perfil.TotalCalificaciones == 1 ? "calificación" : "calificaciones"))
+                        </span>
+                    }
+                    else
+                    {
+                        <span>Sin calificaciones todavía</span>
+                    }
+                </div>
 
                 <div class="mr-perfil__fila">
                     <span class="mr-perfil__etiqueta">Email</span>

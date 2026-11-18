@@ -77,7 +77,7 @@
             </EditForm>
 
             <p class="mr-auth__pie">
-                <a href="/login">Ya tengo cuenta</a>
+                <a href="@ObtenerLoginUrl()">Ya tengo cuenta</a>
             </p>
         </div>
     </div>
@@ -88,6 +88,9 @@
     private bool _esPrestador;
     private bool _cargando;
     private string? _error;
+
+    [SupplyParameterFromQuery(Name = "redirect")]
+    public string? RedirectUrl { get; set; }
 
     private string ClaseTipoUsuario => _esPrestador ? "btn-outline-primary" : "btn-primary";
 
@@ -161,7 +164,38 @@
 
         string registrado = _esPrestador ? "2" : "1";
         _cargando = false;
-        Navegacion.NavigateTo("/login?registrado=" + registrado);
+        Navegacion.NavigateTo(ObtenerLoginUrl(registrado));
+    }
+
+    private string ObtenerLoginUrl()
+    {
+        string registrado = _esPrestador ? "2" : "1";
+        return ObtenerLoginUrl(registrado);
+    }
+
+    private string ObtenerLoginUrl(string registrado)
+    {
+        string url = "/login?registrado=" + registrado;
+        string redirect = ObtenerRedirectValido(RedirectUrl);
+
+        if (!string.IsNullOrEmpty(redirect))
+        {
+            url += "&redirect=" + Uri.EscapeDataString(redirect);
+        }
+
+        return url;
+    }
+
+    private static string ObtenerRedirectValido(string? redirect)
+    {
+        if (!string.IsNullOrWhiteSpace(redirect)
+            && redirect.StartsWith('/')
+            && !redirect.StartsWith("//"))
+        {
+            return redirect;
+        }
+
+        return string.Empty;
     }
 
     private sealed class RegistroModelo

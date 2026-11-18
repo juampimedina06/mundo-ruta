@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using MundoRuta.BD.Datos;
 using MundoRuta.Repositorio.Repositorios;
+using MundoRuta.Shared;
 using MundoRuta.Shared.DTO;
 
 namespace MundoRuta.Server.Controllers
@@ -20,9 +21,9 @@ namespace MundoRuta.Server.Controllers
         // GET 
         // Muestra el listado de todos los Prestadores disponibles para contratar.
         [HttpGet("fletes")] // api/servicios/fletes
-        public async Task<ActionResult<List<PrestadorListadoDTO>>> GetFletes()
+        public async Task<ActionResult<List<PrestadorCatalogoDTO>>> GetFletes()
         {
-            var prestadores = await repo.ObtenerPrestadoresPorEstado("APROBADO");
+            var prestadores = await repo.ObtenerPrestadoresParaCatalogo(EstadosPrestador.Aprobado);
             return Ok(prestadores);
         }
     }
