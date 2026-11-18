@@ -398,7 +398,7 @@ public class PrestadorController : ControllerBase
         }
 
         // 1. REQUERIMIENTO: Verificar que el viaje tenga un chofer asignado
-        if (viaje.IdChofer <= 0)
+        if (viaje.IdChofer == null || viaje.IdChofer <= 0)
         {
             return BadRequest("No se puede iniciar el viaje porque aún no tiene un chofer asignado.");
         }
@@ -451,6 +451,10 @@ public class PrestadorController : ControllerBase
         {
             return NotFound("Viaje no encontrado");
         }
+        if (viaje.Estado != EstadosViaje.Finalizado)
+        {
+            return BadRequest("Solo se puede registrar el pago de un viaje finalizado");
+        }
 
         viaje.EstadoPago = "PAGADO";
         viaje.Monto = dto.montoCobrado;
@@ -487,9 +491,9 @@ public class PrestadorController : ControllerBase
             return NotFound("Prestador no encontrado");
         }
 
-        if (dto.TarifaBaseKm < 0)
+        if (dto.TarifaBaseKm <= 0)
         {
-            return BadRequest("La tarifa base por kilómetro no puede ser negativa");
+            return BadRequest("La tarifa base por kilómetro debe ser mayor a cero");
         }
 
         prestador.TarifaBaseKm = dto.TarifaBaseKm;
